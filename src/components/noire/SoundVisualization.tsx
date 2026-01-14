@@ -1,170 +1,167 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { Volume2 } from "lucide-react";
 
 /**
- * NOIRE Sound Visualization Section
- * Abstract audio-wave animation synced to scroll
- * Purely visual but believable sound energy
+ * NOIRE Sound Visualization Section - Redesigned
+ * Clean, elegant audio visualization with clear purpose
  */
 
-const SoundVisualization = () => {
+interface SoundVisualizationProps {
+  onAuthClick?: (action: "login" | "signup") => void;
+}
+
+const SoundVisualization = ({ onAuthClick }: SoundVisualizationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"],
   });
 
-  // Create 40 bars for the visualization
-  const bars = Array.from({ length: 40 }, (_, i) => i);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.5, 1, 1, 0.5]);
+  const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
 
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.8, 1, 1, 0.8]);
+  const handleClick = () => {
+    if (onAuthClick) {
+      onAuthClick("signup");
+    } else {
+      window.location.href = "/login?action=signup";
+    }
+  };
+
+  // Generate visualization bars
+  const barCount = 50;
+  const bars = Array.from({ length: barCount }, (_, i) => ({
+    height: 20 + Math.sin((i / barCount) * Math.PI) * 80 + Math.random() * 30,
+    delay: i * 0.02,
+  }));
 
   return (
     <section
       id="sound"
       ref={containerRef}
-      className="relative py-32 md:py-48 overflow-hidden"
+      className="relative py-24 md:py-40 overflow-hidden"
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-noire-deep to-background" />
+      {/* Background */}
+      <div className="absolute inset-0 bg-background" />
 
       <motion.div
         className="container mx-auto px-4 relative z-10"
-        style={{ opacity, scale }}
+        style={{ opacity }}
       >
-        {/* Header */}
-        <motion.div
-          className="text-center mb-20 md:mb-32"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.span
-            className="font-body text-xs tracking-[0.3em] text-muted-foreground uppercase"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+        {/* Two column layout */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto">
+          {/* Left: Content */}
+          <motion.div
+            style={{ y }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            transition={{ duration: 0.8 }}
           >
-            Sound in Motion
-          </motion.span>
-          <motion.h2
-            className="font-display text-4xl md:text-6xl lg:text-7xl mt-4 text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            See the <span className="text-gradient-gold italic">rhythm</span>
-          </motion.h2>
-        </motion.div>
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/30 mb-6"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
+              <Volume2 className="w-4 h-4 text-primary" />
+              <span className="text-xs font-body text-muted-foreground uppercase tracking-wider">
+                Experience
+              </span>
+            </motion.div>
 
-        {/* Sound Bars Visualization */}
-        <div className="flex items-center justify-center gap-1 md:gap-2 h-48 md:h-64">
-          {bars.map((bar) => {
-            // Create organic wave pattern based on scroll and bar position
-            const baseDelay = bar * 0.05;
-            const heightMultiplier = Math.sin((bar / bars.length) * Math.PI) * 0.5 + 0.5;
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-6 leading-tight">
+              Sound that
+              <br />
+              <span className="text-gradient-gold italic">moves</span> you
+            </h2>
 
-            return (
-              <motion.div
-                key={bar}
-                className="relative"
-                initial={{ opacity: 0, scaleY: 0 }}
-                whileInView={{ opacity: 1, scaleY: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: baseDelay, duration: 0.5 }}
-              >
+            <p className="text-muted-foreground font-body text-lg leading-relaxed mb-8 max-w-md">
+              Our adaptive audio engine creates a listening experience that responds to your 
+              energy. Every beat, every pause, perfectly timed.
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+              {[
+                { value: "50M+", label: "Tracks" },
+                { value: "4K", label: "Quality" },
+                { value: "0ms", label: "Latency" },
+              ].map((stat, i) => (
                 <motion.div
-                  className="w-1 md:w-2 rounded-full bg-gradient-to-t from-noire-purple to-primary"
-                  style={{ 
-                    originY: 1,
-                    height: `${80 + heightMultiplier * 120}px`,
-                  }}
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                >
+                  <p className="font-display text-2xl md:text-3xl text-foreground">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground font-body uppercase tracking-wider">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.button
+              onClick={handleClick}
+              className="group inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-body font-medium text-sm rounded-full"
+              whileHover={{ scale: 1.02, boxShadow: "0 0 30px -5px hsl(38 90% 60% / 0.4)" }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Experience it yourself
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                →
+              </motion.span>
+            </motion.button>
+          </motion.div>
+
+          {/* Right: Visualization */}
+          <motion.div
+            className="relative h-64 md:h-80 flex items-end justify-center"
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Glow backdrop */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                className="w-64 h-64 rounded-full bg-primary/10 blur-[80px]"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+            </div>
+
+            {/* Sound bars */}
+            <div className="relative flex items-end justify-center gap-[2px] h-full w-full px-4">
+              {bars.map((bar, i) => (
+                <motion.div
+                  key={i}
+                  className="flex-1 max-w-2 rounded-full bg-gradient-to-t from-noire-purple to-primary"
+                  initial={{ height: 4, opacity: 0 }}
+                  whileInView={{ height: bar.height, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: bar.delay, duration: 0.5 }}
                   animate={{
-                    scaleY: [1, 0.3 + Math.random() * 0.7, 1],
-                    opacity: [0.6, 1, 0.6],
+                    height: [bar.height, bar.height * 0.4, bar.height],
                   }}
-                  transition={{
-                    duration: 1 + Math.random() * 0.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: baseDelay * 0.5,
+                  style={{
+                    animationDuration: `${1 + Math.random() * 0.5}s`,
+                    animationDelay: `${bar.delay}s`,
+                    animationIterationCount: "infinite",
+                    animationTimingFunction: "ease-in-out",
                   }}
                 />
-              </motion.div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
 
-        {/* Floating Orbs */}
-        <div className="relative h-20 md:h-32 mt-16">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-3 h-3 md:w-4 md:h-4 rounded-full bg-primary/60"
-              style={{
-                left: `${15 + i * 18}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.4, 1, 0.4],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 2 + i * 0.3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.4,
-              }}
-            />
-          ))}
+            {/* Reflection */}
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background to-transparent" />
+          </motion.div>
         </div>
-
-        {/* Waveform Lines */}
-        <motion.svg
-          className="w-full h-24 md:h-32 mt-8"
-          viewBox="0 0 1000 100"
-          preserveAspectRatio="none"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5, duration: 1 }}
-        >
-          <motion.path
-            d="M0,50 Q100,20 200,50 T400,50 T600,50 T800,50 T1000,50"
-            fill="none"
-            stroke="url(#gradient1)"
-            strokeWidth="2"
-            initial={{ pathLength: 0 }}
-            whileInView={{ pathLength: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-          />
-          <motion.path
-            d="M0,50 Q100,80 200,50 T400,50 T600,50 T800,50 T1000,50"
-            fill="none"
-            stroke="url(#gradient2)"
-            strokeWidth="1.5"
-            initial={{ pathLength: 0, opacity: 0.5 }}
-            whileInView={{ pathLength: 1, opacity: 0.5 }}
-            viewport={{ once: true }}
-            transition={{ duration: 2.5, ease: "easeInOut", delay: 0.2 }}
-          />
-          <defs>
-            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(280 50% 25%)" />
-              <stop offset="50%" stopColor="hsl(38 90% 60%)" />
-              <stop offset="100%" stopColor="hsl(280 50% 25%)" />
-            </linearGradient>
-            <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(38 90% 60% / 0.3)" />
-              <stop offset="100%" stopColor="hsl(280 60% 40% / 0.3)" />
-            </linearGradient>
-          </defs>
-        </motion.svg>
       </motion.div>
     </section>
   );

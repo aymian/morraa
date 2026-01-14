@@ -1,216 +1,197 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { Play, Music } from "lucide-react";
 
 /**
- * NOIRE Afrobeat & Amapiano Spotlight
- * Rhythmic layout with staggered motion
- * Off-grid organic feel with dancing typography
+ * NOIRE Afrobeat & Amapiano Spotlight - Redesigned
+ * Clean artist showcase with visual rhythm
  */
 
-const AfrobeatSpotlight = () => {
+interface AfrobeatSpotlightProps {
+  onAuthClick?: (action: "login" | "signup") => void;
+}
+
+const AfrobeatSpotlight = ({ onAuthClick }: AfrobeatSpotlightProps) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });
 
-  const y1 = useTransform(scrollYProgress, [0, 1], [100, -100]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [50, -50]);
-  const y3 = useTransform(scrollYProgress, [0, 1], [150, -150]);
-  const rotate = useTransform(scrollYProgress, [0, 1], [-5, 5]);
+  const x = useTransform(scrollYProgress, [0, 1], [-50, 50]);
+
+  const handleClick = () => {
+    if (onAuthClick) {
+      onAuthClick("signup");
+    } else {
+      window.location.href = "/login?action=signup";
+    }
+  };
 
   const artists = [
-    { name: "Burna Boy", genre: "Afrofusion", offset: "translate-y-8" },
-    { name: "Wizkid", genre: "Afrobeats", offset: "-translate-y-4" },
-    { name: "Tems", genre: "Alternative", offset: "translate-y-12" },
-    { name: "Kabza De Small", genre: "Amapiano", offset: "-translate-y-8" },
-    { name: "Rema", genre: "Afro-Rave", offset: "translate-y-4" },
+    { name: "Burna Boy", genre: "Afrofusion", image: "🎤" },
+    { name: "Wizkid", genre: "Afrobeats", image: "🎵" },
+    { name: "Tems", genre: "Alternative", image: "🎧" },
+    { name: "Kabza De Small", genre: "Amapiano", image: "🎹" },
+    { name: "Rema", genre: "Afro-Rave", image: "🔥" },
+    { name: "Ayra Starr", genre: "Afropop", image: "⭐" },
   ];
 
   return (
     <section
       id="afrobeat"
       ref={sectionRef}
-      className="relative py-32 md:py-48 overflow-hidden"
+      className="relative py-24 md:py-32 overflow-hidden"
     >
-      {/* Warm gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-[hsl(25_30%_6%)] to-background" />
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-noire-deep to-background" />
       
-      {/* Animated accent shapes */}
+      {/* Warm accent glow */}
       <motion.div
-        className="absolute top-1/4 -left-20 w-64 h-64 rounded-full bg-mood-afro/10 blur-[100px]"
-        style={{ y: y1 }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 -right-20 w-80 h-80 rounded-full bg-mood-afro/15 blur-[120px]"
-        style={{ y: y2 }}
+        className="absolute top-1/2 -translate-y-1/2 left-0 w-[600px] h-[600px] rounded-full bg-mood-afro/8 blur-[150px]"
+        style={{ x }}
       />
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Header with dancing typography */}
+        {/* Header */}
         <motion.div
-          className="mb-20 md:mb-32"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          className="max-w-4xl mb-16 md:mb-20"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
-          <motion.span
-            className="font-body text-xs tracking-[0.3em] text-mood-afro uppercase block mb-4"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+          <motion.div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-mood-afro/10 border border-mood-afro/20 mb-6"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
           >
-            The Pulse of Africa
-          </motion.span>
+            <Music className="w-4 h-4 text-mood-afro" />
+            <span className="text-xs font-body text-mood-afro uppercase tracking-wider">
+              Featured Genre
+            </span>
+          </motion.div>
 
-          {/* Large title with micro-animations */}
-          <div className="overflow-hidden">
-            <motion.h2
-              className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground leading-none"
-              initial={{ y: 100 }}
-              whileInView={{ y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {"Afrobeat".split("").map((char, i) => (
-                <motion.span
-                  key={i}
-                  className="inline-block"
-                  animate={{ 
-                    y: [0, -3, 0],
-                    rotate: [0, 1, 0],
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    delay: i * 0.1,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </motion.h2>
-          </div>
+          <h2 className="font-display text-4xl md:text-5xl lg:text-7xl text-foreground mb-4 leading-tight">
+            Afrobeat &
+            <br />
+            <span className="text-gradient-gold italic">Amapiano</span>
+          </h2>
 
-          <div className="overflow-hidden mt-2">
-            <motion.h2
-              className="font-display text-5xl md:text-7xl lg:text-8xl text-gradient-gold leading-none italic"
-              initial={{ y: 100 }}
-              whileInView={{ y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-              style={{ rotate }}
-            >
-              & Amapiano
-            </motion.h2>
-          </div>
+          <p className="text-muted-foreground font-body text-lg max-w-xl">
+            Experience the pulse of Africa. Curated playlists from the continent's 
+            most influential artists.
+          </p>
         </motion.div>
 
-        {/* Organic off-grid artist layout */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {artists.map((artist, index) => (
-            <motion.div
-              key={artist.name}
-              className={`${artist.offset} ${index % 2 === 0 ? 'md:mt-8' : 'md:-mt-8'}`}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
-            >
-              <motion.div
-                className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-noire-card cursor-pointer"
-                whileHover={{ scale: 1.03, y: -10 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        {/* Artist Cards - Horizontal scroll on mobile, grid on desktop */}
+        <div className="relative">
+          {/* Desktop grid */}
+          <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {artists.map((artist, index) => (
+              <motion.button
+                key={artist.name}
+                onClick={handleClick}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                whileHover={{ y: -10, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group relative aspect-[3/4] rounded-2xl bg-card/50 border border-border/30 overflow-hidden text-left"
               >
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-noire-black via-transparent to-transparent z-10" />
+                {/* Gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-t from-noire-black via-noire-black/50 to-transparent" />
                 
-                {/* Abstract pattern background */}
+                {/* Animated pattern */}
                 <motion.div
-                  className="absolute inset-0 opacity-30"
+                  className="absolute inset-0 opacity-20"
                   style={{
-                    background: `radial-gradient(circle at ${30 + index * 15}% ${50 + index * 10}%, hsl(var(--mood-afro) / 0.3) 0%, transparent 50%)`,
+                    background: `radial-gradient(circle at 50% 80%, hsl(var(--mood-afro) / 0.3) 0%, transparent 60%)`,
                   }}
-                  animate={{
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 4 + index,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 4, repeat: Infinity }}
                 />
 
-                {/* Rhythm lines */}
-                <div className="absolute inset-0 flex items-end justify-center gap-1 p-4 opacity-30 group-hover:opacity-60 transition-opacity">
-                  {[...Array(5)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1 bg-mood-afro rounded-full"
-                      animate={{
-                        height: [`${20 + i * 10}%`, `${40 + i * 8}%`, `${20 + i * 10}%`],
-                      }}
-                      transition={{
-                        duration: 0.8 + i * 0.1,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.1,
-                      }}
-                    />
-                  ))}
+                {/* Emoji placeholder for artist image */}
+                <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
+                  {artist.image}
                 </div>
 
-                {/* Artist info */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
-                  <motion.p
-                    className="font-body text-xs text-mood-afro tracking-wider uppercase mb-1"
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.3 + index * 0.1 }}
-                  >
+                {/* Play button on hover */}
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  initial={{ scale: 0.8 }}
+                  whileHover={{ scale: 1 }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                    <Play className="w-5 h-5 text-primary-foreground fill-current ml-0.5" />
+                  </div>
+                </motion.div>
+
+                {/* Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <p className="text-xs text-mood-afro font-body uppercase tracking-wider mb-1">
                     {artist.genre}
-                  </motion.p>
-                  <motion.h3
-                    className="font-display text-lg md:text-xl text-foreground"
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                  >
+                  </p>
+                  <h3 className="font-display text-base text-foreground">
                     {artist.name}
-                  </motion.h3>
+                  </h3>
                 </div>
+              </motion.button>
+            ))}
+          </div>
 
-                {/* Hover glow */}
-                <motion.div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    background: "radial-gradient(circle at center, hsl(var(--mood-afro) / 0.2) 0%, transparent 70%)",
-                  }}
-                />
-              </motion.div>
-            </motion.div>
-          ))}
+          {/* Mobile horizontal scroll */}
+          <div className="md:hidden overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            <div className="flex gap-3" style={{ width: "max-content" }}>
+              {artists.map((artist, index) => (
+                <motion.button
+                  key={artist.name}
+                  onClick={handleClick}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative w-36 aspect-[3/4] rounded-xl bg-card/50 border border-border/30 overflow-hidden flex-shrink-0"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-noire-black via-transparent to-transparent" />
+                  <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">
+                    {artist.image}
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-[10px] text-mood-afro font-body uppercase tracking-wider">
+                      {artist.genre}
+                    </p>
+                    <h3 className="font-display text-sm text-foreground">
+                      {artist.name}
+                    </h3>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Rhythmic quote */}
+        {/* Bottom CTA */}
         <motion.div
-          className="mt-20 md:mt-32 text-center"
+          className="text-center mt-12"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1 }}
+          transition={{ delay: 0.6 }}
         >
-          <motion.p
-            className="font-display text-2xl md:text-3xl text-muted-foreground italic"
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          <motion.button
+            onClick={handleClick}
+            className="inline-flex items-center gap-2 px-6 py-3 border border-border/50 text-foreground font-body text-sm rounded-full hover:bg-muted/30 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            "The rhythm is the heartbeat of the continent"
-          </motion.p>
+            View all artists
+            <span>→</span>
+          </motion.button>
         </motion.div>
       </div>
     </section>

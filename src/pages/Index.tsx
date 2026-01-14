@@ -18,31 +18,20 @@ import Footer from "@/components/noire/Footer";
  * - Luxury, cinematic, minimal, bold
  */
 const Index = () => {
+  const handleAuthClick = (action: "login" | "signup") => {
+    window.location.href = `/login?action=${action}`;
+  };
+
   return (
     <main className="relative min-h-screen bg-background overflow-x-hidden">
-      {/* Navigation */}
-      <Navbar />
-      <MobileBottomNav />
-
-      {/* Hero - Full viewport, cinematic */}
-      <HeroSection />
-
-      {/* Mood-Based Interaction - Emotion cards with parallax */}
-      <MoodSection />
-
-      {/* Sound Visualization - Abstract audio-wave animations */}
-      <SoundVisualization />
-
-      {/* Afrobeat Spotlight - Rhythmic, off-grid layout */}
-      <AfrobeatSpotlight />
-
-      {/* Call To Emotion - Poetic CTA */}
-      <CallToEmotion />
-
-      {/* Footer - Minimal, elite */}
+      <Navbar onAuthClick={handleAuthClick} />
+      <HeroSection onAuthClick={handleAuthClick} />
+      <MoodSection onAuthClick={handleAuthClick} />
+      <SoundVisualization onAuthClick={handleAuthClick} />
+      <AfrobeatSpotlight onAuthClick={handleAuthClick} />
+      <CallToEmotion onAuthClick={handleAuthClick} />
       <Footer />
-
-      {/* Bottom padding for mobile nav */}
+      <MobileBottomNav onAuthClick={handleAuthClick} />
       <div className="h-24 md:h-0" />
     </main>
   );

@@ -1,70 +1,23 @@
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import { useState } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { Play, Headphones, Sparkles } from "lucide-react";
 
 /**
- * NOIRE Hero Section
- * Full viewport, cinematic, emotionally-driven
- * Floating animated typography with letter-by-letter subtext
+ * NOIRE Hero Section - Completely Redesigned
+ * Cinematic, emotional, with clear value proposition
+ * Focus on driving users to sign up
  */
 
-const MoodPill = ({ 
-  label, 
-  color, 
-  delay 
-}: { 
-  label: string; 
-  color: string; 
-  delay: number;
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
+interface HeroSectionProps {
+  onAuthClick?: (action: "login" | "signup") => void;
+}
 
-  return (
-    <motion.button
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="relative px-6 py-3 rounded-full border border-border/50 overflow-hidden group"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      {/* Ripple effect on hover */}
-      <motion.div
-        className={`absolute inset-0 ${color} opacity-0`}
-        animate={{ 
-          opacity: isHovered ? 0.2 : 0,
-          scale: isHovered ? 1 : 0.8,
-        }}
-        transition={{ duration: 0.3 }}
-      />
-      
-      {/* Morphing background */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        animate={{
-          background: isHovered 
-            ? `radial-gradient(circle at center, ${color === 'bg-mood-sad' ? 'hsl(220 60% 50% / 0.3)' : color === 'bg-mood-calm' ? 'hsl(180 40% 45% / 0.3)' : 'hsl(25 85% 55% / 0.3)'} 0%, transparent 70%)`
-            : 'transparent',
-        }}
-        transition={{ duration: 0.4 }}
-      />
+const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
 
-      <span className="relative z-10 font-body text-sm text-foreground/90 tracking-wide">
-        {label}
-      </span>
-    </motion.button>
-  );
-};
-
-const HeroSection = () => {
-  const subtext = "Feel music. Don't just play it.";
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const springConfig = { stiffness: 100, damping: 30 };
-  const x = useSpring(useTransform(mouseX, [0, 1], [-10, 10]), springConfig);
-  const y = useSpring(useTransform(mouseY, [0, 1], [-10, 10]), springConfig);
+  const springConfig = { stiffness: 50, damping: 20 };
+  const rotateX = useSpring(useTransform(mouseY, [0, 1], [5, -5]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-5, 5]), springConfig);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -72,140 +25,214 @@ const HeroSection = () => {
     mouseY.set((e.clientY - rect.top) / rect.height);
   };
 
+  const handleAuthClick = (action: "login" | "signup") => {
+    if (onAuthClick) {
+      onAuthClick(action);
+    } else {
+      window.location.href = `/login?action=${action}`;
+    }
+  };
+
+  const features = [
+    { icon: Headphones, text: "Mood-based discovery" },
+    { icon: Sparkles, text: "AI-curated playlists" },
+    { icon: Play, text: "Unlimited streaming" },
+  ];
+
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-noire-hero"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0"
       onMouseMove={handleMouseMove}
     >
-      {/* Ambient glow layers */}
-      <div className="absolute inset-0 bg-noire-glow opacity-60" />
+      {/* Layered background */}
+      <div className="absolute inset-0 bg-noire-hero" />
+      
+      {/* Animated gradient orbs */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-noire-purple/20 blur-[100px]"
-        animate={{ 
+        className="absolute top-1/4 left-1/6 w-[500px] h-[500px] rounded-full bg-noire-purple/30 blur-[150px]"
+        animate={{
           scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
+          x: [0, 30, 0],
+          y: [0, -20, 0],
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-accent/20 blur-[80px]"
-        animate={{ 
+        className="absolute bottom-1/4 right-1/6 w-[400px] h-[400px] rounded-full bg-primary/15 blur-[120px]"
+        animate={{
           scale: [1.2, 1, 1.2],
-          opacity: [0.2, 0.4, 0.2],
+          x: [0, -40, 0],
         }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Floating NOIRE title */}
-      <motion.div
-        className="relative z-10 text-center px-4"
-        style={{ x, y }}
-      >
-        <motion.h1
-          className="font-display text-8xl md:text-[12rem] lg:text-[16rem] tracking-tight leading-none"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {"NOIRE".split("").map((letter, index) => (
-            <motion.span
-              key={index}
-              className="inline-block text-gradient-gold"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                delay: 0.1 * index, 
-                duration: 0.8, 
-                ease: [0.22, 1, 0.36, 1] 
-              }}
-              whileHover={{ 
-                y: -10, 
-                transition: { duration: 0.2 } 
-              }}
-              style={{ 
-                textShadow: "0 0 80px hsl(38 90% 60% / 0.3)" 
-              }}
-            >
-              {letter}
-            </motion.span>
-          ))}
-        </motion.h1>
+      {/* Subtle grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), 
+                           linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }}
+      />
 
-        {/* Letter-by-letter subtext */}
-        <motion.p
-          className="mt-8 md:mt-12 text-lg md:text-xl text-muted-foreground font-body tracking-widest"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          {subtext.split("").map((letter, index) => (
-            <motion.span
-              key={index}
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4">
+        <div className="max-w-5xl mx-auto">
+          {/* Floating card with 3D effect */}
+          <motion.div
+            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+            className="text-center"
+          >
+            {/* Tagline badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/30 mb-8"
+            >
+              <motion.div
+                className="w-2 h-2 rounded-full bg-primary"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-sm font-body text-muted-foreground">
+                Music that feels you
+              </span>
+            </motion.div>
+
+            {/* Main headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] mb-6"
+            >
+              <span className="text-foreground">Your emotions.</span>
+              <br />
+              <span className="text-gradient-gold">Our soundtrack.</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+              className="text-lg md:text-xl text-muted-foreground font-body max-w-2xl mx-auto mb-10 leading-relaxed"
+            >
+              NOIRE understands how you feel. Tell us your mood, and we'll craft the perfect 
+              listening experience. From melancholic nights to euphoric Afrobeats.
+            </motion.p>
+
+            {/* Feature badges */}
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ 
-                delay: 1 + index * 0.04,
-                duration: 0.3,
-              }}
+              transition={{ delay: 1 }}
+              className="flex flex-wrap justify-center gap-4 mb-12"
             >
-              {letter}
-            </motion.span>
-          ))}
-        </motion.p>
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.text}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1 + index * 0.1 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 border border-border/20"
+                >
+                  <feature.icon className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-body text-foreground/80">{feature.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
 
-        {/* Mood Pills */}
-        <motion.div
-          className="mt-12 md:mt-16 flex flex-wrap justify-center gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-        >
-          <MoodPill label="Sad" color="bg-mood-sad" delay={2.1} />
-          <MoodPill label="Calm" color="bg-mood-calm" delay={2.2} />
-          <MoodPill label="Afro-Amapiano" color="bg-mood-afro" delay={2.3} />
-        </motion.div>
-
-        {/* CTA Button with liquid hover */}
-        <motion.div
-          className="mt-12 md:mt-16"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2.5, duration: 0.6 }}
-        >
-          <motion.button
-            className="relative px-10 py-4 bg-primary text-primary-foreground font-body font-medium text-sm tracking-wider rounded-full overflow-hidden group"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {/* Liquid morph effect */}
+            {/* CTA Buttons */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-primary via-noire-gold-soft to-primary"
-              animate={{ x: ["-100%", "100%"] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              style={{ opacity: 0.5 }}
-            />
-            <span className="relative z-10">Enter Your Mood</span>
-          </motion.button>
-        </motion.div>
-      </motion.div>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              {/* Primary CTA */}
+              <motion.button
+                onClick={() => handleAuthClick("signup")}
+                className="relative group px-8 py-4 bg-primary text-primary-foreground font-body font-medium text-base rounded-full overflow-hidden w-full sm:w-auto"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* Shimmer effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Play className="w-5 h-5 fill-current" />
+                  Start Free Trial
+                </span>
+              </motion.button>
+
+              {/* Secondary CTA */}
+              <motion.button
+                onClick={() => handleAuthClick("login")}
+                className="group px-8 py-4 border border-border/50 text-foreground font-body font-medium text-base rounded-full hover:bg-muted/30 transition-all duration-300 w-full sm:w-auto"
+                whileHover={{ scale: 1.02, borderColor: "hsl(var(--primary) / 0.5)" }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  I have an account
+                </span>
+              </motion.button>
+            </motion.div>
+
+            {/* Social proof */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.6 }}
+              className="mt-12 flex items-center justify-center gap-6"
+            >
+              {/* User avatars */}
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-10 h-10 rounded-full border-2 border-background bg-gradient-to-br from-noire-purple to-primary"
+                    initial={{ scale: 0, x: -10 }}
+                    animate={{ scale: 1, x: 0 }}
+                    transition={{ delay: 1.6 + i * 0.1 }}
+                  />
+                ))}
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-body text-foreground">100K+ listeners</p>
+                <p className="text-xs text-muted-foreground">feeling the vibe</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
 
       {/* Scroll indicator */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:block"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, y: [0, 10, 0] }}
-        transition={{ 
-          opacity: { delay: 3, duration: 0.5 },
-          y: { delay: 3, duration: 2, repeat: Infinity, ease: "easeInOut" }
-        }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
       >
-        <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2">
+        <motion.div
+          className="w-6 h-10 rounded-full border border-muted-foreground/30 flex justify-center pt-2"
+          animate={{ y: [0, 5, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
           <motion.div
-            className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50"
-            animate={{ y: [0, 16, 0] }}
+            className="w-1 h-2 rounded-full bg-primary/60"
+            animate={{ y: [0, 12, 0], opacity: [1, 0.3, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
-        </div>
+        </motion.div>
       </motion.div>
     </section>
   );

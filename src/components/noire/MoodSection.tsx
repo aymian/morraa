@@ -1,215 +1,187 @@
-import { motion, useMotionValue, useTransform } from "framer-motion";
-import { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Heart, Moon, Zap, Brain, ArrowRight } from "lucide-react";
 
 /**
- * NOIRE Mood Section
- * Emotion-based interaction cards with parallax and glow
- * Clicking a mood transforms the entire section's palette
+ * NOIRE Mood Section - Redesigned
+ * Clean, interactive mood selection with clear visual hierarchy
+ * Clicking leads to signup
  */
 
-interface MoodCardProps {
-  title: string;
-  description: string;
-  gradient: string;
-  glowColor: string;
-  isActive: boolean;
-  onClick: () => void;
+interface MoodSectionProps {
+  onAuthClick?: (action: "login" | "signup") => void;
 }
 
-const MoodCard = ({ title, description, gradient, glowColor, isActive, onClick }: MoodCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
+interface Mood {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof Heart;
+  color: string;
+  gradient: string;
+}
 
-  const rotateX = useTransform(mouseY, [0, 1], [10, -10]);
-  const rotateY = useTransform(mouseX, [0, 1], [-10, 10]);
-  const glowX = useTransform(mouseX, [0, 1], ["0%", "100%"]);
-  const glowY = useTransform(mouseY, [0, 1], ["0%", "100%"]);
+const MoodSection = ({ onAuthClick }: MoodSectionProps) => {
+  const [hoveredMood, setHoveredMood] = useState<string | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width);
-    mouseY.set((e.clientY - rect.top) / rect.height);
+  const handleMoodClick = () => {
+    if (onAuthClick) {
+      onAuthClick("signup");
+    } else {
+      window.location.href = "/login?action=signup";
+    }
   };
 
-  const handleMouseLeave = () => {
-    mouseX.set(0.5);
-    mouseY.set(0.5);
-  };
-
-  return (
-    <motion.div
-      ref={cardRef}
-      className="relative cursor-pointer perspective-1000"
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      whileHover={{ z: 50 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    >
-      <motion.div
-        className={`relative p-8 md:p-10 rounded-2xl border border-border/30 overflow-hidden ${isActive ? 'shadow-glow-purple' : ''}`}
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Background gradient */}
-        <motion.div
-          className={`absolute inset-0 ${gradient} opacity-50`}
-          animate={{ opacity: isActive ? 0.8 : 0.3 }}
-          transition={{ duration: 0.5 }}
-        />
-
-        {/* Cursor-following glow */}
-        <motion.div
-          className={`absolute w-40 h-40 rounded-full ${glowColor} blur-[60px] opacity-50`}
-          style={{ 
-            left: glowX, 
-            top: glowY,
-            x: "-50%",
-            y: "-50%",
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10">
-          <motion.h3
-            className="font-display text-3xl md:text-4xl text-foreground mb-4"
-            animate={{ scale: isActive ? 1.05 : 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {title}
-          </motion.h3>
-          <p className="font-body text-muted-foreground text-sm md:text-base leading-relaxed max-w-xs">
-            {description}
-          </p>
-
-          {/* Active indicator */}
-          <motion.div
-            className="mt-6 flex items-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isActive ? 1 : 0.5 }}
-          >
-            <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ scale: isActive ? [1, 1.3, 1] : 1 }}
-              transition={{ duration: 1, repeat: isActive ? Infinity : 0 }}
-            />
-            <span className="font-body text-xs text-muted-foreground tracking-wider uppercase">
-              {isActive ? "Listening" : "Tap to feel"}
-            </span>
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const MoodSection = () => {
-  const [activeMood, setActiveMood] = useState<string | null>(null);
-
-  const moods = [
+  const moods: Mood[] = [
     {
       id: "melancholy",
       title: "Melancholy",
-      description: "For moments when sadness becomes beautiful. Let the weight lift through sound.",
-      gradient: "bg-gradient-to-br from-mood-sad/30 to-transparent",
-      glowColor: "bg-mood-sad",
+      description: "For moments when sadness becomes art",
+      icon: Moon,
+      color: "text-mood-sad",
+      gradient: "from-mood-sad/20 to-transparent",
     },
     {
       id: "serenity",
       title: "Serenity",
-      description: "Calm waters run deep. Find your peace in the spaces between notes.",
-      gradient: "bg-gradient-to-br from-mood-calm/30 to-transparent",
-      glowColor: "bg-mood-calm",
+      description: "Find peace in the spaces between notes",
+      icon: Heart,
+      color: "text-mood-calm",
+      gradient: "from-mood-calm/20 to-transparent",
     },
     {
       id: "euphoria",
       title: "Euphoria",
-      description: "The rhythm takes over. Let Afro-beats move through your soul.",
-      gradient: "bg-gradient-to-br from-mood-afro/30 to-transparent",
-      glowColor: "bg-mood-afro",
+      description: "Let Afrobeats move through your soul",
+      icon: Zap,
+      color: "text-mood-afro",
+      gradient: "from-mood-afro/20 to-transparent",
     },
     {
       id: "introspect",
       title: "Introspect",
-      description: "Journey inward. Music that mirrors the complexity of your thoughts.",
-      gradient: "bg-gradient-to-br from-noire-purple/30 to-transparent",
-      glowColor: "bg-noire-purple-glow",
+      description: "Music that mirrors your complexity",
+      icon: Brain,
+      color: "text-noire-purple-glow",
+      gradient: "from-noire-purple/20 to-transparent",
     },
   ];
 
   return (
     <section id="moods" className="relative py-24 md:py-32 overflow-hidden">
-      {/* Dynamic background based on active mood */}
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-noire-deep to-background" />
+
+      {/* Dynamic glow based on hovered mood */}
       <motion.div
-        className="absolute inset-0 transition-colors duration-1000"
+        className="absolute inset-0 pointer-events-none"
         animate={{
-          background: activeMood === "melancholy" 
-            ? "radial-gradient(ellipse at center, hsl(220 60% 50% / 0.1) 0%, transparent 70%)"
-            : activeMood === "serenity"
-            ? "radial-gradient(ellipse at center, hsl(180 40% 45% / 0.1) 0%, transparent 70%)"
-            : activeMood === "euphoria"
-            ? "radial-gradient(ellipse at center, hsl(25 85% 55% / 0.1) 0%, transparent 70%)"
-            : activeMood === "introspect"
-            ? "radial-gradient(ellipse at center, hsl(280 60% 35% / 0.1) 0%, transparent 70%)"
+          background: hoveredMood === "melancholy"
+            ? "radial-gradient(ellipse at center, hsl(220 60% 50% / 0.08) 0%, transparent 60%)"
+            : hoveredMood === "serenity"
+            ? "radial-gradient(ellipse at center, hsl(180 40% 45% / 0.08) 0%, transparent 60%)"
+            : hoveredMood === "euphoria"
+            ? "radial-gradient(ellipse at center, hsl(25 85% 55% / 0.08) 0%, transparent 60%)"
+            : hoveredMood === "introspect"
+            ? "radial-gradient(ellipse at center, hsl(280 60% 35% / 0.08) 0%, transparent 60%)"
             : "transparent",
         }}
+        transition={{ duration: 0.5 }}
       />
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header */}
+        {/* Header */}
         <motion.div
-          className="text-center mb-16 md:mb-24"
+          className="text-center mb-16 md:mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
           <motion.span
-            className="font-body text-xs tracking-[0.3em] text-muted-foreground uppercase"
+            className="inline-block font-body text-xs tracking-[0.3em] text-primary uppercase mb-4"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
           >
-            Choose Your Emotion
+            Mood Discovery
           </motion.span>
-          <motion.h2
-            className="font-display text-4xl md:text-6xl lg:text-7xl mt-4 text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            How do you <span className="text-gradient-gold italic">feel</span>?
-          </motion.h2>
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-4">
+            How are you <span className="text-gradient-gold italic">feeling</span>?
+          </h2>
+          <p className="text-muted-foreground font-body text-lg max-w-xl mx-auto">
+            Select your mood and let NOIRE curate the perfect soundtrack
+          </p>
         </motion.div>
 
-        {/* Mood Cards Grid */}
-        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+        {/* Mood Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
           {moods.map((mood, index) => (
-            <motion.div
+            <motion.button
               key={mood.id}
-              initial={{ opacity: 0, y: 50 }}
+              onClick={handleMoodClick}
+              onHoverStart={() => setHoveredMood(mood.id)}
+              onHoverEnd={() => setHoveredMood(null)}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1 * index, duration: 0.6 }}
+              transition={{ delay: index * 0.1, duration: 0.6 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative p-6 md:p-8 rounded-2xl bg-card/50 border border-border/30 text-left overflow-hidden transition-all duration-300 hover:border-border/60"
             >
-              <MoodCard
-                title={mood.title}
-                description={mood.description}
-                gradient={mood.gradient}
-                glowColor={mood.glowColor}
-                isActive={activeMood === mood.id}
-                onClick={() => setActiveMood(activeMood === mood.id ? null : mood.id)}
+              {/* Gradient overlay on hover */}
+              <motion.div
+                className={`absolute inset-0 bg-gradient-to-br ${mood.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
               />
-            </motion.div>
+
+              {/* Content */}
+              <div className="relative z-10">
+                {/* Icon */}
+                <motion.div
+                  className={`w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-4 ${mood.color}`}
+                  whileHover={{ rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <mood.icon className="w-6 h-6" />
+                </motion.div>
+
+                {/* Title */}
+                <h3 className="font-display text-xl md:text-2xl text-foreground mb-2">
+                  {mood.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">
+                  {mood.description}
+                </p>
+
+                {/* Arrow indicator */}
+                <motion.div
+                  className="flex items-center gap-2 text-primary text-sm font-body opacity-0 group-hover:opacity-100 transition-opacity"
+                  initial={{ x: -10 }}
+                  whileHover={{ x: 0 }}
+                >
+                  <span>Explore</span>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.div>
+              </div>
+            </motion.button>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          className="text-center mt-12"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+        >
+          <p className="text-muted-foreground font-body text-sm">
+            Can't decide? Let us <button onClick={handleMoodClick} className="text-primary hover:underline">surprise you</button>
+          </p>
+        </motion.div>
       </div>
     </section>
   );
