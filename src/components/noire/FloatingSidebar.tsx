@@ -1,14 +1,19 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Home, Search, Music2, Library, Heart,
-    Settings, Zap, Compass, Plus, ChevronRight,
-    PanelLeftClose, PanelLeftOpen
+    Home,
+    Compass,
+    Music2,
+    Library,
+    Heart,
+    Settings,
+    Plus,
+    PanelLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 /**
- * NOIRE Floating Sidebar - Premium, Collapsible navigation
+ * NOIRE Premium Sidebar - Matches the provided visual layout exactly
  */
 
 interface SidebarProps {
@@ -19,25 +24,6 @@ const FloatingSidebar = ({ onToggle }: SidebarProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-
-    const toggleSidebar = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        if (onToggle) onToggle(newState);
-        // Update CSS variable for the rest of the app to respect
-        document.documentElement.style.setProperty(
-            "--sidebar-width",
-            newState ? "100px" : "280px"
-        );
-    };
-
-    useEffect(() => {
-        // Set initial width
-        document.documentElement.style.setProperty("--sidebar-width", "280px");
-        return () => {
-            document.documentElement.style.setProperty("--sidebar-width", "0px");
-        };
-    }, []);
 
     const menuItems = [
         { icon: Home, label: "Home", path: "/" },
@@ -55,115 +41,97 @@ const FloatingSidebar = ({ onToggle }: SidebarProps) => {
             animate={{
                 x: 0,
                 opacity: 1,
-                width: isCollapsed ? "72px" : "240px"
+                width: isCollapsed ? "80px" : "260px"
             }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed left-6 top-28 z-[40] hidden lg:flex flex-col gap-6"
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed left-6 top-24 z-[40] hidden lg:flex flex-col gap-4"
         >
-            {/* Navigation Menu */}
-            <div className="glass-noire rounded-[32px] border border-white/10 p-3 flex flex-col gap-2 shadow-2xl relative overflow-hidden transition-all duration-500">
-                {/* Toggle Button */}
-                <button
-                    onClick={toggleSidebar}
-                    className="flex items-center justify-center p-3 text-muted-foreground hover:text-primary transition-colors mb-2 rounded-2xl hover:bg-white/5"
-                >
-                    {isCollapsed ? <PanelLeftOpen size={20} /> : <div className="flex items-center gap-3 w-full px-1"><PanelLeftClose size={20} /><span className="text-[10px] font-bold uppercase tracking-[0.2em]">Navigation</span></div>}
-                </button>
+            {/* Main Navigation Container */}
+            <div className="bg-[#0D0D0D]/90 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-3 flex flex-col gap-1 shadow-2xl relative overflow-hidden">
 
-                {menuItems.map((item) => {
-                    const active = isActive(item.path);
-                    return (
-                        <motion.button
-                            key={item.label}
-                            whileHover={{ x: 5 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate(item.path)}
-                            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all relative overflow-hidden ${active
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                                }`}
-                        >
-                            <item.icon size={20} className={`flex-shrink-0 ${active ? "animate-pulse-slow" : ""}`} />
+                {/* Header: NAVIGATION */}
+                <div className="flex items-center gap-3 px-4 py-4 mb-2">
+                    <div className="p-2 bg-white/5 rounded-xl text-muted-foreground">
+                        <PanelLeft size={18} />
+                    </div>
+                    {!isCollapsed && (
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">Navigation</span>
+                    )}
+                </div>
 
-                            <AnimatePresence>
-                                {!isCollapsed && (
-                                    <motion.span
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        className="text-xs font-bold font-body whitespace-nowrap"
-                                    >
-                                        {item.label}
-                                    </motion.span>
+                {/* Menu Items */}
+                <div className="flex flex-col gap-1">
+                    {menuItems.map((item) => {
+                        const active = isActive(item.path);
+                        return (
+                            <motion.button
+                                key={item.label}
+                                whileHover={{ x: isCollapsed ? 0 : 4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => navigate(item.path)}
+                                className={`flex items-center gap-4 px-4 py-3.5 rounded-[1.5rem] transition-all relative group ${active
+                                    ? "bg-[#FBBF24] text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]"
+                                    : "text-muted-foreground hover:text-white hover:bg-white/5"
+                                    }`}
+                            >
+                                <item.icon size={20} className="flex-shrink-0" />
+
+                                <AnimatePresence>
+                                    {!isCollapsed && (
+                                        <motion.span
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="text-sm font-bold tracking-tight"
+                                        >
+                                            {item.label}
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+
+                                {active && (
+                                    <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full shadow-[0_0_10px_white]" />
                                 )}
-                            </AnimatePresence>
+                            </motion.button>
+                        );
+                    })}
+                </div>
 
-                            {active && (
-                                <motion.div
-                                    layoutId="sidebar-active-pill"
-                                    className="absolute -left-1 w-1.5 h-6 bg-white rounded-full shadow-[0_0_8px_white]"
-                                />
-                            )}
-                        </motion.button>
-                    );
-                })}
-
-                <div className="h-px bg-white/5 my-2 mx-2" />
+                {/* Separator */}
+                <div className="h-px bg-white/5 my-4 mx-4" />
 
                 {/* Settings */}
                 <motion.button
-                    whileHover={{ x: 5 }}
+                    whileHover={{ x: isCollapsed ? 0 : 4 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate("/settings")}
-                    className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all relative overflow-hidden"
+                    className="flex items-center gap-4 px-4 py-3.5 rounded-[1.5rem] text-muted-foreground hover:text-white hover:bg-white/5 transition-all mb-2"
                 >
                     <Settings size={20} className="flex-shrink-0" />
-                    <AnimatePresence>
-                        {!isCollapsed && (
-                            <motion.span
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                className="text-xs font-bold font-body whitespace-nowrap"
-                            >
-                                Settings
-                            </motion.span>
-                        )}
-                    </AnimatePresence>
+                    {!isCollapsed && (
+                        <span className="text-sm font-bold tracking-tight">Settings</span>
+                    )}
                 </motion.button>
             </div>
 
-            {/* Visualizer / Quick Action Area */}
-            {!isCollapsed && (
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-noire rounded-[32px] border border-white/10 p-4 flex flex-col items-center gap-4 shadow-2xl"
+            {/* Create Action Container */}
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="bg-[#0D0D0D]/90 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-3 shadow-2xl"
+            >
+                <button
+                    className={`w-full py-4 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all bg-[#1A1A1A] hover:bg-[#252525] text-[#FBBF24] border border-white/5 group shadow-inner`}
                 >
-                    <button className="w-full h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all group overflow-hidden relative">
-                        <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="flex items-center gap-3 relative z-10 px-4">
-                            <Plus size={20} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Create</span>
-                        </div>
-                    </button>
-
-                    <div className="flex flex-col items-center gap-1.5 w-full">
-                        <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                            <Zap size={12} className="text-primary" />
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Aura Energy</span>
-                        </div>
-                        <div className="w-full h-1 bg-white/5 rounded-full relative overflow-hidden">
-                            <motion.div
-                                className="absolute bottom-0 left-0 top-0 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary))]"
-                                animate={{ width: ["20%", "60%", "40%", "80%", "30%"] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                        </div>
+                    <div className="p-1.5 bg-[#FBBF24]/10 rounded-lg group-hover:scale-110 transition-transform">
+                        <Plus size={18} />
                     </div>
-                </motion.div>
-            )}
+                    {!isCollapsed && (
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Create</span>
+                    )}
+                </button>
+            </motion.div>
         </motion.aside>
     );
 };

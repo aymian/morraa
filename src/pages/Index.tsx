@@ -1,6 +1,7 @@
 import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import HeroSection from "@/components/noire/HeroSection";
+import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -23,8 +24,9 @@ const Index = () => {
   };
 
   return (
-    <main className="relative min-h-screen bg-background overflow-x-hidden content-shift">
+    <main className={`relative min-h-screen bg-background overflow-x-hidden ${user ? "lg:pl-[280px]" : ""}`}>
       <Navbar onAuthClick={handleAuthClick} />
+      {user && <FloatingSidebar />}
       <HeroSection onAuthClick={handleAuthClick} />
       <MobileBottomNav onAuthClick={handleAuthClick} />
     </main>
