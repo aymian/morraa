@@ -731,22 +731,22 @@ const Onboarding = () => {
                         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         className="w-full"
                     >
-                        {step === 'splash' && <SplashScreen />}
-                        {step === 'value-prop' && <ValueProp />}
-                        {step === 'framing' && <Framing />}
-                        {step === 'birthday' && <BirthdayStep />}
-                        {step === 'phone' && <PhoneStep />}
-                        {step === 'otp' && <OtpStep />}
-                        {step === 'username' && <UsernameStep />}
-                        {step === 'gender' && <GenderStep />}
-                        {step === 'bio' && <BioStep />}
-                        {step === 'photo' && <PhotoStep />}
-                        {step === 'monetization' && <MonetizationStep />}
-                        {step === 'safety' && <SafetyStep />}
-                        {step === 'follows' && <FollowsStep />}
-                        {step === 'invite' && <InviteStep />}
-                        {step === 'notifications' && <NotificationStep />}
-                        {step === 'welcome' && <WelcomeStep />}
+                        {step === 'splash' && SplashScreen()}
+                        {step === 'value-prop' && ValueProp()}
+                        {step === 'framing' && Framing()}
+                        {step === 'birthday' && BirthdayStep()}
+                        {step === 'phone' && PhoneStep()}
+                        {step === 'otp' && OtpStep()}
+                        {step === 'username' && UsernameStep()}
+                        {step === 'gender' && GenderStep()}
+                        {step === 'bio' && BioStep()}
+                        {step === 'photo' && PhotoStep()}
+                        {step === 'monetization' && MonetizationStep()}
+                        {step === 'safety' && SafetyStep()}
+                        {step === 'follows' && FollowsStep()}
+                        {step === 'invite' && InviteStep()}
+                        {step === 'notifications' && NotificationStep()}
+                        {step === 'welcome' && WelcomeStep()}
                     </motion.div>
                 </AnimatePresence>
             </div>
