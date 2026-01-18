@@ -1,260 +1,203 @@
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Play, Headphones, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-
-/**
- * NOIRE Hero Section - Completely Redesigned
- * Cinematic, emotional, with clear value proposition
- * Focus on driving users to sign up
- */
+import { motion } from "framer-motion";
+import { ArrowRight, Heart, MessageCircle, Share2, Sparkles } from "lucide-react";
 
 interface HeroSectionProps {
-  onAuthClick?: (action: "login" | "signup") => void;
+  onAuthClick: (action: "login" | "signup") => void;
 }
 
 const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
-  const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-
-  const springConfig = { stiffness: 50, damping: 20 };
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-5, 5]), springConfig);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width);
-    mouseY.set((e.clientY - rect.top) / rect.height);
-  };
-
-  const handleAuthClick = (action: "login" | "signup") => {
-    if (user) {
-      navigate("/profile");
-      return;
-    }
-
-    if (onAuthClick) {
-      onAuthClick(action);
-    } else {
-      window.location.href = `/login?action=${action}`;
-    }
-  };
-
-  const features = [
-    { icon: Headphones, text: "Mood-based discovery" },
-    { icon: Sparkles, text: "AI-curated playlists" },
-    { icon: Play, text: "Unlimited streaming" },
+  const cards = [
+    {
+      id: 1,
+      image: "/assets/hero/lifestyle.png",
+      user: "Alex Rivers",
+      handle: "@arivers",
+      caption: "Living in the future. 🚀 #MorraMoment",
+      likes: "12.4k",
+      comments: "842",
+      rotation: -6,
+      y: 20,
+    },
+    {
+      id: 2,
+      image: "/assets/hero/creative.png",
+      user: "Sarah Chen",
+      handle: "@sarah.studio",
+      caption: "My new workspace setup finally complete. Thoughts? ✨",
+      likes: "45.2k",
+      comments: "2.1k",
+      rotation: 0,
+      y: 0,
+      scale: 1.05,
+      zIndex: 10,
+    },
+    {
+      id: 3,
+      image: "/assets/hero/community.png",
+      user: "The Nexus Group",
+      handle: "@nexus.community",
+      caption: "Magic happens when great minds connect. #Networking",
+      likes: "8.9k",
+      comments: "432",
+      rotation: 6,
+      y: 40,
+    },
   ];
 
   return (
-    <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0"
-      onMouseMove={handleMouseMove}
-    >
-      {/* Layered background */}
-      <div className="absolute inset-0 bg-noire-hero" />
+    <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-screen flex flex-col items-center justify-center">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "2s" }} />
+      </div>
 
-      {/* Animated gradient orbs */}
-      <motion.div
-        className="absolute top-1/4 left-1/6 w-[500px] h-[500px] rounded-full bg-noire-purple/30 blur-[150px]"
-        animate={{
-          scale: [1, 1.2, 1],
-          x: [0, 30, 0],
-          y: [0, -20, 0],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 right-1/6 w-[400px] h-[400px] rounded-full bg-primary/15 blur-[120px]"
-        animate={{
-          scale: [1.2, 1, 1.2],
-          x: [0, -40, 0],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <div className="container mx-auto text-center z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-noire border border-primary/30 text-primary text-xs font-bold tracking-widest uppercase mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            The Future of Social Connection
+          </span>
 
-      {/* Subtle grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), 
-                           linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px'
-        }}
-      />
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
+            Connect Beyond <br />
+            <span className="text-gradient-gold italic">Dimensions</span>
+          </h1>
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Floating card with 3D effect */}
-          <motion.div
-            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            className="text-center"
-          >
-            {/* Tagline badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/30 mb-8"
+          <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-12 font-body font-light leading-relaxed">
+            Morra isn't just an app. It's an immersive social ecosystem where your
+            digital presence feels as real as your physical one. Share, connect, and thrive.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onAuthClick("signup")}
+              className="group relative px-8 py-4 bg-primary text-primary-foreground font-bold rounded-full overflow-hidden shadow-glow-gold transition-all duration-300"
             >
-              <motion.div
-                className="w-2 h-2 rounded-full bg-primary"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <span className="text-sm font-body text-muted-foreground">
-                Music that feels you
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <span className="relative flex items-center gap-2">
+                Get Started <ArrowRight className="w-4 h-4" />
               </span>
-            </motion.div>
-
-            {/* Main headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] mb-6"
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-4 glass-noire border border-border/50 text-foreground font-bold rounded-full hover:bg-muted/30 transition-all duration-300"
             >
-              <span className="text-foreground">Your emotions.</span>
-              <br />
-              <span className="text-gradient-gold">Our soundtrack.</span>
-            </motion.h1>
+              Learn More
+            </motion.button>
+          </div>
+        </motion.div>
 
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="text-lg md:text-xl text-muted-foreground font-body max-w-2xl mx-auto mb-10 leading-relaxed"
-            >
-              NOIRE understands how you feel. Tell us your mood, and we'll craft the perfect
-              listening experience. From melancholic nights to euphoric Afrobeats.
-            </motion.p>
-
-            {/* Feature badges */}
+        {/* Three Cards UI like Instagram */}
+        <div className="relative flex justify-center items-center mt-12 mb-20 w-full max-w-6xl mx-auto">
+          {cards.map((card, index) => (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="flex flex-wrap justify-center gap-4 mb-12"
+              key={card.id}
+              initial={{ opacity: 0, y: 100, rotate: card.rotation }}
+              animate={{ opacity: 1, y: card.y, rotate: card.rotation, scale: card.scale || 1 }}
+              transition={{ delay: 0.2 + index * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className={`relative w-72 md:w-80 glass-noire rounded-3xl overflow-hidden border border-border/30 shadow-noire-elevated group cursor-pointer ${index !== 1 ? 'hidden md:block' : ''}`}
+              style={{ zIndex: card.zIndex || 5, transformStyle: "preserve-3d" }}
+              whileHover={{
+                y: card.y - 20,
+                rotate: 0,
+                scale: (card.scale || 1) + 0.05,
+                transition: { duration: 0.4 }
+              }}
             >
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.text}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1 + index * 0.1 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 border border-border/20"
-                >
-                  <feature.icon className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-body text-foreground/80">{feature.text}</span>
-                </motion.div>
-              ))}
-            </motion.div>
+              {/* Card Header */}
+              <div className="p-4 flex items-center justify-between border-b border-border/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent overflow-hidden">
+                    <img src={`https://i.pravatar.cc/150?u=${card.user}`} alt={card.user} />
+                  </div>
+                  <div className="text-left leading-tight">
+                    <p className="text-sm font-bold">{card.user}</p>
+                    <p className="text-[10px] text-muted-foreground">{card.handle}</p>
+                  </div>
+                </div>
+                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+              </div>
 
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              {/* Primary CTA */}
-              <motion.button
-                onClick={() => handleAuthClick("signup")}
-                className="relative group px-8 py-4 bg-primary text-primary-foreground font-body font-bold text-base rounded-2xl overflow-hidden w-full sm:w-auto"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {/* Shimmer effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  animate={{ x: ["-100%", "200%"] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              {/* Card Content (Image) */}
+              <div className="aspect-square overflow-hidden relative">
+                <img
+                  src={card.image}
+                  alt={card.caption}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Play className="w-5 h-5 fill-current" />
-                  {user ? "Continue Listening" : "Start Free Trial"}
-                </span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Card Interaction */}
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-4">
+                  <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
+                  <MessageCircle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <Share2 className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold mb-1">{card.likes} likes</p>
+                  <p className="text-xs font-light line-clamp-2">
+                    <span className="font-bold mr-1">{card.handle}</span> {card.caption}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tighter">View all {card.comments} comments</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Impact Subtext & Secondary CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="mt-12 flex flex-col items-center"
+          >
+            <p className="text-xl md:text-2xl text-muted-foreground font-display italic mb-10 max-w-xl">
+              "A social network where your voice and growth matter."
+            </p>
+
+            <div className="flex flex-col items-center gap-6">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onAuthClick("signup")}
+                className="px-10 py-4 bg-primary text-primary-foreground font-bold rounded-full shadow-glow-gold transition-all"
+              >
+                Get Started
               </motion.button>
 
-              {/* Secondary CTA - Only if not logged in */}
-              {!user && (
-                <motion.button
-                  onClick={() => handleAuthClick("login")}
-                  className="group px-8 py-4 border border-border/50 text-foreground font-body font-medium text-base rounded-2xl hover:bg-muted/30 transition-all duration-300 w-full sm:w-auto"
-                  whileHover={{ scale: 1.02, borderColor: "hsl(var(--primary) / 0.5)" }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    I have an account
-                  </span>
-                </motion.button>
-              )}
-            </motion.div>
+              <button
+                onClick={() => onAuthClick("login")}
+                className="text-sm font-bold text-muted-foreground hover:text-foreground transition-all flex items-center gap-2 group"
+              >
+                Already have an account? <span className="text-primary group-hover:underline">Log in</span>
+              </button>
+            </div>
 
-            {/* Social proof */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.6 }}
-              className="mt-12 flex items-center justify-center gap-6"
-            >
-              {/* User avatars */}
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-10 h-10 rounded-full border-2 border-background bg-gradient-to-br from-noire-purple to-primary"
-                    initial={{ scale: 0, x: -10 }}
-                    animate={{ scale: 1, x: 0 }}
-                    transition={{ delay: 1.6 + i * 0.1 }}
-                  />
-                ))}
+            {/* Subtle Reasonings - Visualizing 'Why this works' */}
+            <div className="mt-16 grid grid-cols-2 gap-8 md:gap-16 opacity-40">
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold mb-2">Clear Value</span>
+                <p className="text-xs italic">Create + Earn</p>
               </div>
-              <div className="text-left">
-                <p className="text-sm font-body text-foreground">100K+ listeners</p>
-                <p className="text-xs text-muted-foreground">feeling the vibe</p>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold mb-2">No Overload</span>
+                <p className="text-xs italic">Immersive & Focused</p>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
       </div>
-
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:block"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
-      >
-        <motion.div
-          className="w-6 h-10 rounded-full border border-muted-foreground/30 flex justify-center pt-2"
-          animate={{ y: [0, 5, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <motion.div
-            className="w-1 h-2 rounded-full bg-primary/60"
-            animate={{ y: [0, 12, 0], opacity: [1, 0.3, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
-      </motion.div>
     </section>
   );
 };

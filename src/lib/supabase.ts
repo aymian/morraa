@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://fnhjschnvtoexrtnawor.supabase.co';
+const supabaseUrl = 'https://nelpccazznqwnbdinovk.supabase.co';
 // Note: This should be your anon/public key from Supabase dashboard
-// It should start with 'eyJ' and be much longer
-const supabaseAnonKey = 'sb_publishable_vrQss_A_lOlW4bcHqR6HYA_ctS4f65L';
+const supabaseAnonKey = 'sb_publishable_n3iGMRTE_r7e38YnUr1R6g_GrKniZQJ';
 
 // Create client with error handling
 let supabase: any;

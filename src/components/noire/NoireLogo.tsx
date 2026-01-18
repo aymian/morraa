@@ -14,7 +14,7 @@ interface NoireLogoProps {
 
 const NoireLogo = ({ size = 32, showText = true, className = "" }: NoireLogoProps) => {
   return (
-    <motion.div 
+    <motion.div
       className={`flex items-center gap-3 ${className}`}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -94,13 +94,13 @@ const NoireLogo = ({ size = 32, showText = true, className = "" }: NoireLogoProp
 
       {/* Text */}
       {showText && (
-        <motion.span 
+        <motion.span
           className="font-display text-xl tracking-wider text-foreground"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          NOIRE
+          MORRA
         </motion.span>
       )}
     </motion.div>

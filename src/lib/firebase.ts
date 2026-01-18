@@ -6,13 +6,14 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDdrjAKnCxAQa0w8iE-qm1TWg36Qr2PifM",
-  authDomain: "noire-cb8fa.firebaseapp.com",
-  projectId: "noire-cb8fa",
-  storageBucket: "noire-cb8fa.firebasestorage.app",
-  messagingSenderId: "993213025108",
-  appId: "1:993213025108:web:ac050ad7bd40cc3e2c56c1",
-  measurementId: "G-EKPCBK5KPY"
+  apiKey: "AIzaSyBpZ5YXe-_PKvSPsdoU5ffjRal8fnV6_VA",
+  authDomain: "mora-4b89d.firebaseapp.com",
+  databaseURL: "https://mora-4b89d-default-rtdb.firebaseio.com",
+  projectId: "mora-4b89d",
+  storageBucket: "mora-4b89d.firebasestorage.app",
+  messagingSenderId: "758534233604",
+  appId: "1:758534233604:web:b66a44293cdfc844525f51",
+  measurementId: "G-8YLCRE5T9X"
 };
 
 // Initialize Firebase

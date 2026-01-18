@@ -1,15 +1,13 @@
 import { motion } from "framer-motion";
-import { Disc3, User, LogIn, Home, Search, Library, Music, MapPin } from "lucide-react";
+import { Home, Info, MessageSquare, UserPlus, LogIn, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { useNavigate, useLocation } from "react-router-dom";
 
 /**
- * NOIRE Mobile Bottom Navigation
- * Transforms based on auth state
- * Desktop: Hidden
+ * MORRA Mobile Bottom Navigation
+ * Premium UI for unauthenticated users
  */
 
 interface MobileBottomNavProps {
@@ -18,23 +16,13 @@ interface MobileBottomNavProps {
 
 const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
   const [user, setUser] = useState<any>(null);
-  const [userData, setUserData] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
-      } else {
-        setUserData(null);
-      }
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -48,75 +36,70 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const navItems = [
+    { icon: Home, label: "Home", path: "/" },
+    { icon: Info, label: "About", path: "/about" },
+    { icon: MessageSquare, label: "Contact", path: "/contact" },
+  ];
+
+  if (user) return null; // We are building this specifically for unauthenticated as requested
+
   return (
     <motion.nav
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe"
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed bottom-6 inset-x-0 mx-auto z-50 md:hidden w-[90%] max-w-sm"
     >
-      {/* Gradient fade at top */}
-      <div className="absolute -top-10 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-
-      <div className="glass-noire mx-4 mb-4 rounded-3xl px-2 py-2.5 border border-border/20 shadow-2xl">
-        {user ? (
-          // AUTHENTICATED BOTTOM NAV
-          <div className="flex items-center justify-around">
-            {[
-              { icon: Home, label: "Home", path: "/" },
-              { icon: Search, label: "Discovery", path: "/discovery" },
-              { icon: Library, label: "Library", path: "/library" },
-              { icon: User, label: "Profile", path: "/profile" },
-            ].map((item) => {
-              const active = isActive(item.path);
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => navigate(item.path)}
-                  className="relative flex flex-col items-center gap-1 p-2 group"
-                >
-                  {active && (
-                    <motion.div
-                      layoutId="nav-active"
-                      className="absolute -top-1 w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_hsl(var(--primary))]"
-                    />
-                  )}
-                  <item.icon
-                    className={`w-5 h-5 transition-all duration-300 ${active ? "text-primary scale-110" : "text-muted-foreground group-hover:text-foreground"
-                      }`}
+      <div className="glass-noire rounded-[2rem] px-4 py-3 border border-white/10 shadow-2xl flex items-center justify-between gap-2">
+        {/* Navigation Links */}
+        <div className="flex items-center gap-1">
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <button
+                key={item.label}
+                onClick={() => navigate(item.path)}
+                className="relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 group"
+              >
+                {active && (
+                  <motion.div
+                    layoutId="mobile-nav-active"
+                    className="absolute inset-0 bg-primary/20 rounded-2xl -z-10 border border-primary/30"
                   />
-                  <span className={`text-[10px] font-body uppercase tracking-[0.1em] font-bold transition-all duration-300 ${active ? "text-primary opacity-100" : "text-muted-foreground opacity-60"
-                    }`}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          // GUEST BOTTOM NAV
-          <div className="flex items-center justify-between gap-2">
-            <motion.button
-              onClick={() => handleAuthClick("signup")}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-primary-foreground font-body font-bold text-sm shadow-lg shadow-primary/20"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Disc3 className="w-4 h-4 animate-spin-slow" />
-              <span>Join NOIRE</span>
-            </motion.button>
+                )}
+                <item.icon
+                  className={`w-5 h-5 transition-all duration-300 ${active ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"
+                    }`}
+                />
+              </button>
+            );
+          })}
+        </div>
 
-            <motion.button
-              onClick={() => handleAuthClick("login")}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-border/50 text-foreground font-body text-sm bg-muted/20"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
-            </motion.button>
-          </div>
-        )}
+        {/* Separator */}
+        <div className="w-px h-8 bg-white/10 mx-1" />
+
+        {/* Primary Action */}
+        <div className="flex items-center gap-2 flex-1">
+          <motion.button
+            onClick={() => handleAuthClick("signup")}
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-2xl font-body font-bold text-xs shadow-glow-gold overflow-hidden relative group"
+            whileTap={{ scale: 0.95 }}
+          >
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            <span>Join Morra</span>
+            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+          </motion.button>
+
+          <motion.button
+            onClick={() => handleAuthClick("login")}
+            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted/30 border border-white/5 text-foreground transition-colors"
+            whileTap={{ scale: 0.95 }}
+          >
+            <LogIn className="w-4 h-4" />
+          </motion.button>
+        </div>
       </div>
     </motion.nav>
   );

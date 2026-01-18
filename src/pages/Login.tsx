@@ -1,42 +1,29 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
-  Lock,
-  User,
-  Phone,
-  Eye,
-  EyeOff,
   ArrowRight,
   Shield,
-  Headphones,
-  Radio,
-  Mic2,
-  Music2,
+  Heart,
+  MessageCircle,
+  Share2,
 } from "lucide-react";
 import NoireLogo from "@/components/noire/NoireLogo";
 import { auth, db } from "@/lib/firebase";
-import { supabase } from "@/lib/supabase";
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   GoogleAuthProvider,
-  GithubAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * NOIRE Login Page - Compact 2-Column Layout
- * No scrolling needed - everything fits perfectly
+ * MORRA Login Page - Social First & Premium
  */
 
 type AuthMode = "login" | "signup";
-type InputType = "email" | "username" | "phone";
 
-// Real brand SVG icons
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -46,547 +33,229 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const AppleIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+const SpotifyIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+    <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm5.49 17.306c-.215.353-.672.464-1.025.25-2.863-1.748-6.467-2.144-10.713-1.174-.403.092-.806-.164-.898-.568-.092-.403.164-.806.568-.898 4.646-1.064 8.636-.6 11.817 1.341.353.215.464.672.25 1.025zm1.467-3.259c-.271.442-.843.582-1.285.311-3.277-2.015-8.269-2.6-12.143-1.423-.497.151-1.025-.133-1.176-.63-.151-.497.133-1.025.63-1.176 4.436-1.35 9.948-.68 13.66 1.6 0 .445-.274.845-.586 1.318-.001zm.135-3.414C15.203 8.12 8.503 7.897 4.593 9.082c-.611.185-1.25-.164-1.434-.775-.184-.611.164-1.25.775-1.434 4.496-1.365 11.903-1.107 16.381 1.551.55.326.732 1.035.405 1.585-.327.55-1.036.732-1.586.405z" />
   </svg>
 );
 
-const GitHubIcon = () => (
+const XIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const AppleIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+    <path d="M12.152 6.896c-.341 0-1.121-.194-2.126-.194-1.175 0-2.433.882-3.13 1.956-1.152 1.76-1.152 4.156-.379 6.225.378 1.012 1.06 2.016 1.956 2.593.44.285 1.01.441 1.63.441.743 0 1.252-.441 2.025-.441.773 0 1.25.441 2.024.441s1.512-.441 1.956-1.011c.783-.997 1.152-2.112 1.252-2.316-.015-.03-.984-.378-1.555-1.109-.571-.734-.875-1.637-.875-2.64 0-1.076.326-1.958.986-2.613.661-.655 1.488-1.016 1.488-1.016-.076-.106-.411-.531-1.077-.966-.667-.435-1.745-.733-3.175-.365zm2.348-2.67c.72-.88 1.134-1.986 1.134-3.125 0-.154-.014-.308-.041-.462-1.027.041-2.022.44-2.73 1.189-.72.88-1.134 1.986-1.134 3.125 0 .154.014.308.041.462.153 0 .307.014.46.014.87 0 1.763-.34 2.27-1.203z" />
   </svg>
 );
 
 const Login = () => {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [inputType, setInputType] = useState<InputType>("email");
-  const [showPassword, setShowPassword] = useState(false);
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const socialProviders = [
-    { name: "Google", icon: GoogleIcon, color: "hover:bg-blue-500/10 hover:border-blue-500/50" },
-    { name: "Apple", icon: AppleIcon, color: "hover:bg-gray-500/10 hover:border-gray-400/50" },
-    { name: "GitHub", icon: GitHubIcon, color: "hover:bg-purple-500/10 hover:border-purple-500/50" },
+  const cards = [
+    { id: 1, image: "/assets/hero/lifestyle.png", user: "Alex Rivers", handle: "@arivers", rotation: -6, y: 10, scale: 0.8 },
+    { id: 2, image: "/assets/hero/creative.png", user: "Sarah Chen", handle: "@sarah.studio", rotation: 0, y: 0, scale: 0.9, zIndex: 10 },
+    { id: 3, image: "/assets/hero/community.png", user: "The Nexus", handle: "@nexus", rotation: 6, y: 20, scale: 0.8 },
   ];
-
-  const inputTypes = [
-    { type: "email" as InputType, icon: Mail, placeholder: "your@email.com" },
-    { type: "username" as InputType, icon: User, placeholder: "@username" },
-    { type: "phone" as InputType, icon: Phone, placeholder: "+1 (555) 000-0000" },
-  ];
-
-  const getPasswordStrength = (pass: string) => {
-    if (pass.length === 0) return { strength: 0, label: "", color: "" };
-    if (pass.length < 6) return { strength: 25, label: "Weak", color: "bg-red-500" };
-    if (pass.length < 10) return { strength: 50, label: "Fair", color: "bg-orange-500" };
-    if (pass.length < 14) return { strength: 75, label: "Good", color: "bg-yellow-500" };
-    return { strength: 100, label: "Strong", color: "bg-green-500" };
-  };
-
-  const passwordStrength = getPasswordStrength(password);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Safeguard: Force stop loading after 15 seconds if nothing happens
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        setIsLoading(false);
-        toast({
-          title: "Connection Timeout",
-          description: "The request is taking too long. Please check your internet connection.",
-          variant: "destructive",
-        });
-      }
-    }, 15000);
-
-    try {
-      if (authMode === "signup") {
-        if (inputType !== "email") {
-          toast({
-            title: "Email Required",
-            description: "Please use email for signup",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-
-        console.log("Starting Firebase Signup...");
-
-        // 1. Create user with Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, identifier, password);
-        const user = userCredential.user;
-        console.log("Firebase User Created Successfully:", user.uid);
-
-        // 2. Save user to Firestore
-        try {
-          console.log("Saving to Firestore...");
-          await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            email: identifier,
-            fullName: fullName || "",
-            createdAt: serverTimestamp(),
-            emailVerified: false,
-          });
-          console.log("Firestore Record Created");
-        } catch (firestoreError: any) {
-          console.error("Firestore Error:", firestoreError);
-          // If Firestore fails, we still have the user created, but we should inform them
-        }
-
-        // 3. Send verification email via Supabase
-        try {
-          console.log("Sending Supabase OTP...");
-          const { error: supabaseError } = await supabase.auth.signInWithOtp({
-            email: identifier,
-            options: {
-              emailRedirectTo: `${window.location.origin}/onboarding`,
-            },
-          });
-
-          if (supabaseError) {
-            console.warn("Supabase OTP Warning:", supabaseError.message);
-          } else {
-            console.log("Supabase Verification Sent");
-          }
-        } catch (supabaseEx) {
-          console.error("Supabase Exception:", supabaseEx);
-        }
-
-        toast({
-          title: "Success",
-          description: "Account created! Redirecting to verification...",
-        });
-
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          console.log("Navigating to verify-email...");
-          navigate("/verify-email");
-        }, 500);
-
-      } else {
-        // Sign in
-        console.log("Starting Firebase Signin...");
-        await signInWithEmailAndPassword(auth, identifier, password);
-        console.log("Firebase Signin Success");
-
-        toast({
-          title: "Welcome back!",
-          description: "Sign in successful",
-        });
-
-        navigate("/");
-      }
-    } catch (error: any) {
-      console.error("Critical Auth error:", error);
-      let errorMsg = "Something went wrong. Please try again.";
-
-      if (error.code === 'auth/email-already-in-use') {
-        errorMsg = "This email is already registered.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMsg = "Password should be at least 6 characters.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMsg = "Please enter a valid email address.";
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMsg = "Invalid email or password.";
-      }
-
-      toast({
-        title: "Authentication Error",
-        description: errorMsg,
-        variant: "destructive",
-      });
-    } finally {
-      clearTimeout(timeoutId);
-      setIsLoading(false);
-    }
-  };
 
   const handleSocialAuth = async (provider: string) => {
     try {
-      let authProvider;
-
-      if (provider === "Google") {
-        authProvider = new GoogleAuthProvider();
-      } else if (provider === "GitHub") {
-        authProvider = new GithubAuthProvider();
-      } else {
-        toast({
-          title: "Coming Soon",
-          description: `${provider} authentication will be available soon`,
-        });
+      if (provider !== "Google") {
+        toast({ title: "Coming Soon", description: `${provider} login will be active shortly.` });
         return;
       }
-
+      const authProvider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, authProvider);
       const user = result.user;
 
-      // Save user to Firestore if new
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         fullName: user.displayName || "",
         createdAt: serverTimestamp(),
-        emailVerified: user.emailVerified,
       }, { merge: true });
-
-      toast({
-        title: "Success!",
-        description: `Signed in with ${provider}`,
-      });
 
       navigate("/");
     } catch (error: any) {
-      console.error("Social auth error:", error);
-      toast({
-        title: "Authentication Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
-      });
+      toast({ title: "Social Auth Error", description: error.message, variant: "destructive" });
     }
   };
 
+  const socialButtons = [
+    {
+      name: "Google",
+      icon: GoogleIcon,
+      bg: "bg-white text-black",
+      hover: "hover:bg-gray-100",
+      action: () => handleSocialAuth("Google")
+    },
+    {
+      name: "X",
+      icon: XIcon,
+      bg: "bg-black text-white border border-white/20",
+      hover: "hover:bg-white/5",
+      action: () => handleSocialAuth("X")
+    },
+    {
+      name: "Apple",
+      icon: AppleIcon,
+      bg: "bg-[#050505] text-white",
+      hover: "hover:bg-black/80",
+      action: () => handleSocialAuth("Apple")
+    },
+    {
+      name: "Spotify",
+      icon: SpotifyIcon,
+      bg: "bg-[#1DB954] text-black",
+      hover: "hover:bg-[#1ed760] hover:shadow-[0_0_20px_rgba(29,185,84,0.4)]",
+      action: () => handleSocialAuth("Spotify"),
+      className: "shadow-[0_0_15px_rgba(29,185,84,0.15)] animate-pulse-slow"
+    },
+    {
+      name: "Email or Phone",
+      icon: Mail,
+      bg: "glass-noire text-foreground border border-white/10",
+      hover: "hover:bg-white/5",
+      action: () => navigate(`/email-phone?type=${authMode}`)
+    },
+  ];
+
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden flex items-center">
-      {/* 2-Column Grid - Centered */}
-      <div className="w-full max-w-6xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 p-6">
+    <div className="relative min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] -z-10" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px] -z-10" />
 
-          {/* LEFT COLUMN - Branding */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative hidden lg:flex flex-col justify-center p-8 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent rounded-2xl overflow-hidden"
-          >
-            {/* Animated Background */}
-            <motion.div
-              className="absolute inset-0 opacity-20"
-              animate={{
-                background: [
-                  "radial-gradient(circle at 30% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%)",
-                  "radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)",
-                  "radial-gradient(circle at 30% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%)",
-                ],
-              }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-5xl glass-noire rounded-[2.5rem] border border-white/10 shadow-noire-elevated overflow-hidden grid lg:grid-cols-2"
+        style={{ minHeight: "600px" }}
+      >
+        {/* LEFT COLUMN - PREVIEW UI */}
+        <div className="hidden lg:flex flex-col items-center justify-center p-12 bg-muted/5 relative overflow-hidden border-r border-white/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
 
-            {/* Floating Icons */}
-            {[Headphones, Radio, Mic2, Music2].map((Icon, i) => (
+          <div className="relative flex justify-center items-center w-full h-64 mb-12 scale-75 xl:scale-90">
+            {cards.map((card, index) => (
               <motion.div
-                key={i}
-                className="absolute text-primary/5"
+                key={card.id}
+                initial={{ opacity: 0, x: 0, y: 50 }}
                 animate={{
-                  y: [0, -20, 0],
-                  rotate: [0, 5, 0],
+                  opacity: 1,
+                  x: index === 0 ? -120 : index === 2 ? 120 : 0,
+                  y: card.y,
+                  rotate: card.rotation,
+                  scale: card.scale
                 }}
-                transition={{
-                  duration: 3 + i,
-                  repeat: Infinity,
-                  delay: i * 0.3,
+                whileHover={{
+                  x: index === 0 ? -120 : index === 2 ? 120 : 0,
+                  y: card.y - 15,
+                  rotate: 0,
+                  scale: (card.scale || 1) + 0.1,
+                  zIndex: 20,
+                  transition: { duration: 0.4, ease: "easeOut" }
                 }}
-                style={{
-                  left: `${15 + i * 20}%`,
-                  top: `${20 + i * 15}%`,
-                }}
+                className="absolute w-56 glass-noire rounded-2xl overflow-hidden border border-white/10 shadow-xl cursor-pointer"
+                style={{ zIndex: card.zIndex || 5, transformStyle: "preserve-3d" }}
               >
-                <Icon className="w-16 h-16" />
+                <div className="p-2.5 flex items-center gap-2 border-b border-white/5">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 overflow-hidden text-[0] flex-shrink-0">
+                    <img src={`https://i.pravatar.cc/100?u=${card.user}`} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-[10px] font-bold truncate flex-1">{card.user}</p>
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse flex-shrink-0" />
+                </div>
+                <div className="aspect-square relative overflow-hidden">
+                  <img src={card.image} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                </div>
+                <div className="p-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Heart className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500 transition-colors" />
+                    <MessageCircle className="w-3.5 h-3.5 text-muted-foreground hover:text-primary transition-colors" />
+                    <Share2 className="w-3.5 h-3.5 text-muted-foreground hover:text-primary transition-colors" />
+                  </div>
+                </div>
               </motion.div>
             ))}
+          </div>
 
-            {/* Content */}
-            <div className="relative z-10 space-y-6">
-              <NoireLogo size={48} showText={true} />
-
-              <div className="space-y-3">
-                <h1 className="text-4xl font-display font-bold text-foreground leading-tight">
-                  Your emotions.
-                  <br />
-                  <span className="text-gradient-gold">Our soundtrack.</span>
-                </h1>
-                <p className="text-lg text-muted-foreground font-body">
-                  Music that understands how you feel
-                </p>
-              </div>
-
-              {/* Stats */}
-              <div className="flex gap-6 pt-4">
-                {[
-                  { value: "100K+", label: "Listeners" },
-                  { value: "50K+", label: "Playlists" },
-                  { value: "1M+", label: "Songs" },
-                ].map((stat) => (
-                  <div key={stat.label}>
-                    <div className="text-2xl font-display font-bold text-primary">
-                      {stat.value}
-                    </div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Visualizer */}
-              <div className="flex items-end gap-1 h-12 pt-4">
-                {[...Array(15)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1 bg-gradient-to-t from-primary/50 to-primary rounded-full"
-                    animate={{
-                      height: [`${Math.random() * 30 + 20}%`, `${Math.random() * 60 + 40}%`, `${Math.random() * 30 + 20}%`],
-                    }}
-                    transition={{
-                      duration: 0.6,
-                      repeat: Infinity,
-                      delay: i * 0.05,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* RIGHT COLUMN - Auth Form */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center"
-          >
-            <div className="w-full max-w-md mx-auto space-y-6">
-              {/* Mobile Logo */}
-              <div className="lg:hidden text-center">
-                <NoireLogo size={36} showText={true} />
-              </div>
-
-              {/* Header */}
-              <div>
-                <h2 className="text-2xl font-display font-bold text-foreground mb-1">
-                  {authMode === "login" ? "Welcome back" : "Create account"}
-                </h2>
-                <p className="text-sm text-muted-foreground font-body">
-                  {authMode === "login" ? "Sign in to continue" : "Join thousands of music lovers"}
-                </p>
-              </div>
-
-              {/* Auth Mode Toggle */}
-              <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
-                {(["login", "signup"] as AuthMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setAuthMode(mode)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-body font-medium transition-all duration-300 ${authMode === mode
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
-                  >
-                    {mode === "login" ? "Sign In" : "Sign Up"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Social Auth with Real Icons */}
-              <div className="grid grid-cols-3 gap-3">
-                {socialProviders.map((provider) => (
-                  <button
-                    key={provider.name}
-                    onClick={() => handleSocialAuth(provider.name)}
-                    className={`flex items-center justify-center p-3 bg-muted/20 border border-border/30 rounded-xl transition-all duration-300 ${provider.color}`}
-                    title={`Continue with ${provider.name}`}
-                  >
-                    <provider.icon />
-                  </button>
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/30" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-2 text-muted-foreground font-body">Or</span>
-                </div>
-              </div>
-
-              {/* Input Type Selector */}
-              <div className="flex gap-2">
-                {inputTypes.map((type) => (
-                  <button
-                    key={type.type}
-                    onClick={() => setInputType(type.type)}
-                    className={`flex-1 flex items-center justify-center p-2 rounded-lg border transition-all duration-300 ${inputType === type.type
-                      ? "bg-primary/10 border-primary/50 text-primary"
-                      : "bg-muted/20 border-border/30 text-muted-foreground"
-                      }`}
-                  >
-                    <type.icon className="w-4 h-4" />
-                  </button>
-                ))}
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Full Name (Signup) */}
-                <AnimatePresence>
-                  {authMode === "signup" && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="relative"
-                    >
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Full Name"
-                        className="w-full pl-10 pr-3 py-2.5 text-sm bg-muted/30 border border-border/30 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Email/Username/Phone */}
-                <div className="relative">
-                  {(() => {
-                    const Icon = inputTypes.find(t => t.type === inputType)!.icon;
-                    return <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />;
-                  })()}
-                  <input
-                    type={inputType === "email" ? "email" : "text"}
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={inputTypes.find(t => t.type === inputType)?.placeholder}
-                    className="w-full pl-10 pr-3 py-2.5 text-sm bg-muted/30 border border-border/30 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body"
-                    required
-                  />
-                </div>
-
-                {/* Password */}
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm bg-muted/30 border border-border/30 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {/* Password Strength */}
-                <AnimatePresence>
-                  {authMode === "signup" && password.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-1"
-                    >
-                      <div className="flex justify-between text-xs font-body">
-                        <span className="text-muted-foreground">Strength</span>
-                        <span className={`font-medium ${passwordStrength.strength >= 75 ? "text-green-500" :
-                          passwordStrength.strength >= 50 ? "text-yellow-500" : "text-red-500"
-                          }`}>
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                        <motion.div
-                          className={`h-full ${passwordStrength.color}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${passwordStrength.strength}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Forgot Password */}
-                {authMode === "login" && (
-                  <div className="flex justify-end">
-                    <a href="#" className="text-xs text-primary hover:text-primary/80 transition-colors font-body">
-                      Forgot password?
-                    </a>
-                  </div>
-                )}
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-body font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <motion.div
-                        className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      {authMode === "login" ? "Sign In" : "Create Account"}
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Footer */}
-              <div className="space-y-3">
-                <p className="text-center text-xs text-muted-foreground font-body">
-                  {authMode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-                  <button
-                    onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}
-                    className="text-primary hover:text-primary/80 font-medium"
-                  >
-                    {authMode === "login" ? "Sign up" : "Sign in"}
-                  </button>
-                </p>
-
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-body">
-                  <Shield className="w-3 h-3 text-green-500" />
-                  <span>Secured & encrypted</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          <div className="relative z-10 text-center max-w-sm">
+            <h2 className="text-2xl font-display font-bold mb-4">The Premium Workspace</h2>
+            <p className="text-sm text-muted-foreground font-body leading-relaxed">
+              Join Morra to access an elite space where visionaries share,
+              collaborate, and build the future together.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Back to Home */}
-      <a
-        href="/"
-        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-body"
+        {/* RIGHT COLUMN - AUTH FORM */}
+        <div className="p-8 md:p-12 flex flex-col justify-center overflow-y-auto max-h-[90vh]">
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-4">
+              <NoireLogo size={32} />
+            </div>
+            <h3 className="text-3xl font-display font-bold mb-2">
+              {authMode === "login" ? "Welcome Back" : "Register"}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {authMode === "login" ? "Enter the premium ecosystem" : "Start your professional journey"}
+            </p>
+          </div>
+
+          {/* Mode Switcher - Now at Top Level */}
+          <div className="flex p-1 bg-muted/20 border border-white/5 rounded-xl mb-6">
+            {(["login", "signup"] as AuthMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setAuthMode(mode)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${authMode === mode ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                {mode === "login" ? "Login" : "Join"}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {socialButtons.map((btn) => (
+              <motion.button
+                key={btn.name}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={btn.action}
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl font-bold text-sm transition-all shadow-lg ${btn.bg} ${btn.hover} ${btn.className || ""}`}
+              >
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <btn.icon />
+                </div>
+                <span className="flex-1">{authMode === "login" ? "Continue with" : "Sign up with"} {btn.name}</span>
+                <ArrowRight className="w-4 h-4 opacity-50" />
+              </motion.button>
+            ))}
+          </div>
+
+          <div className="mt-10 flex justify-center items-center gap-2 text-[10px] text-muted-foreground font-body">
+            <Shield className="w-3.5 h-3.5 text-green-500" />
+            <span>End-to-end secured authentication enabled</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Back to Home Button */}
+      <motion.button
+        onClick={() => navigate("/")}
+        className="absolute top-8 left-8 flex items-center gap-2 text-muted-foreground hover:text-foreground group"
+        whileHover={{ x: -4 }}
       >
         <ArrowRight className="w-4 h-4 rotate-180" />
-        Home
-      </a>
+        <span className="text-xs font-bold uppercase tracking-widest leading-none">Back</span>
+      </motion.button>
     </div>
   );
 };
