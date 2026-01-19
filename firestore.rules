@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 👤 USERS: The core identity layer
+    match /users/{userId} {
+      // Allow any authenticated user to discover profiles (required for search)
+      allow read: if request.auth != null;
+      
+      // Only the owner can manage their primary profile data
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // 🤝 FOLLOW SYSTEM: Subcollections
+      match /following/{followingId} {
+        allow read: if request.auth != null;
+        // Only the owner can follow others
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      match /followers/{followerId} {
+        allow read: if request.auth != null;
+        // Allow users to add themselves to another user's followers list
+        allow write: if request.auth != null && request.auth.uid == followerId;
+      }
+    }
+    
+    // 📸 POSTS: The influence layer
+    match /posts/{postId} {
+      // Posts are public for maximum reach ("The Pulse")
+      allow read: if true;
+      
+      // Only authenticated users can deploy influence
+      allow create: if request.auth != null;
+      
+      // Only the author can modify or retract their posts
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        request.resource.data.userId == request.auth.uid
+      );
+    }
+
+    // 🔔 NOTIFICATIONS: The social heartbeat
+    match /notifications/{notifId} {
+      // Users can see their own notifications
+      allow read: if request.auth != null && (
+        resource.data.toUserId == request.auth.uid || 
+        resource.data.fromUserId == request.auth.uid
+      );
+      
+      // Any authenticated user can create a notification (like follow request)
+      allow create: if request.auth != null;
+      
+      // Only parties involved can modify or delete
+      allow update, delete: if request.auth != null && (
+        resource.data.toUserId == request.auth.uid || 
+        resource.data.fromUserId == request.auth.uid
+      );
+    }
+    
+    // 🚫 DEFAULT: Guard the perimeter
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

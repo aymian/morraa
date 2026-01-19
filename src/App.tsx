@@ -14,7 +14,10 @@ import Profile from "./pages/Profile";
 import Library from "./pages/Library";
 import Moods from "./pages/Moods";
 import Settings from "./pages/Settings";
-import Admin from "./pages/Admin";
+import Create from "./pages/Create";
+import PostEntry from "./pages/PostEntry";
+import UserDetails from "./pages/UserDetails";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,11 +36,14 @@ const App = () => (
           <Route path="/email-phone" element={<EmailPhoneAuth />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/create" element={<Create />} />
+          <Route path="/post-entry" element={<PostEntry />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/library" element={<Library />} />
           <Route path="/moods" element={<Moods />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/:username" element={<UserDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

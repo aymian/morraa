@@ -17,7 +17,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const EmailPhoneAuth = () => {
@@ -67,9 +67,26 @@ const EmailPhoneAuth = () => {
                 toast({ title: "Success", description: "Account created! Welcome to Morra." });
                 navigate("/onboarding");
             } else {
-                await signInWithEmailAndPassword(auth, identifier, password);
-                toast({ title: "Welcome back!", description: "Sign in successful" });
-                navigate("/");
+                const userCredential = await signInWithEmailAndPassword(auth, identifier, password);
+                const user = userCredential.user;
+
+                // Show preloader experience while checking status
+                setIsLoading(true);
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.onboardingComplete) {
+                        toast({ title: "Welcome back!", description: "Sign in successful" });
+                        navigate("/");
+                    } else {
+                        toast({ title: "Resume Setup", description: "Let's finish your Morra profile." });
+                        navigate("/onboarding");
+                    }
+                } else {
+                    toast({ title: "Welcome back!", description: "Sign in successful" });
+                    navigate("/");
+                }
             }
         } catch (error: any) {
             toast({ title: "Auth Error", description: error.message, variant: "destructive" });

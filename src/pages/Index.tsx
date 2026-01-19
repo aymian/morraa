@@ -2,6 +2,7 @@ import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import HeroSection from "@/components/noire/HeroSection";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
+import DashboardFeed from "@/components/noire/DashboardFeed";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -24,10 +25,18 @@ const Index = () => {
   };
 
   return (
-    <main className={`relative min-h-screen bg-background overflow-x-hidden ${user ? "lg:pl-[280px]" : ""}`}>
+    <main className={`relative min-h-screen bg-background text-foreground overflow-x-hidden ${user ? "content-shift" : ""}`}>
       <Navbar onAuthClick={handleAuthClick} />
       {user && <FloatingSidebar />}
-      <HeroSection onAuthClick={handleAuthClick} />
+
+      {user ? (
+        <div className="pt-24 pb-12">
+          <DashboardFeed />
+        </div>
+      ) : (
+        <HeroSection onAuthClick={handleAuthClick} />
+      )}
+
       <MobileBottomNav onAuthClick={handleAuthClick} />
     </main>
   );

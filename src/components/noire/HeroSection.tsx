@@ -96,34 +96,34 @@ const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
         </motion.div>
 
         {/* Three Cards UI like Instagram */}
-        <div className="relative flex justify-center items-center mt-12 mb-20 w-full max-w-6xl mx-auto">
+        <div className="relative flex justify-center items-center mt-8 mb-16 w-full max-w-5xl mx-auto">
           {cards.map((card, index) => (
             <motion.div
               key={card.id}
               initial={{ opacity: 0, y: 100, rotate: card.rotation }}
               animate={{ opacity: 1, y: card.y, rotate: card.rotation, scale: card.scale || 1 }}
               transition={{ delay: 0.2 + index * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className={`relative w-72 md:w-80 glass-noire rounded-3xl overflow-hidden border border-border/30 shadow-noire-elevated group cursor-pointer ${index !== 1 ? 'hidden md:block' : ''}`}
+              className={`relative w-60 md:w-64 glass-noire rounded-[2rem] overflow-hidden border border-border/30 shadow-noire-elevated group cursor-pointer ${index !== 1 ? 'hidden md:block' : ''}`}
               style={{ zIndex: card.zIndex || 5, transformStyle: "preserve-3d" }}
               whileHover={{
-                y: card.y - 20,
+                y: card.y - 10,
                 rotate: 0,
-                scale: (card.scale || 1) + 0.05,
+                scale: (card.scale || 1) + 0.03,
                 transition: { duration: 0.4 }
               }}
             >
               {/* Card Header */}
-              <div className="p-4 flex items-center justify-between border-b border-border/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent overflow-hidden">
+              <div className="p-3 flex items-center justify-between border-b border-border/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent overflow-hidden border border-white/10">
                     <img src={`https://i.pravatar.cc/150?u=${card.user}`} alt={card.user} />
                   </div>
                   <div className="text-left leading-tight">
-                    <p className="text-sm font-bold">{card.user}</p>
-                    <p className="text-[10px] text-muted-foreground">{card.handle}</p>
+                    <p className="text-[12px] font-bold tracking-tight text-white">{card.user}</p>
+                    <p className="text-[9px] text-muted-foreground font-mono">@{card.handle.split('@')[1]}</p>
                   </div>
                 </div>
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
               </div>
 
               {/* Card Content (Image) */}
@@ -131,24 +131,26 @@ const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
                 <img
                   src={card.image}
                   alt={card.caption}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
 
               {/* Card Interaction */}
-              <div className="p-4 space-y-3">
-                <div className="flex items-center gap-4">
-                  <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
-                  <MessageCircle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
-                  <Share2 className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+              <div className="p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Heart className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors" />
+                    <MessageCircle className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                    <Share2 className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                  </div>
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold mb-1">{card.likes} likes</p>
-                  <p className="text-xs font-light line-clamp-2">
-                    <span className="font-bold mr-1">{card.handle}</span> {card.caption}
+                  <p className="text-[11px] font-bold mb-0.5 tracking-tight">{card.likes} likes</p>
+                  <p className="text-[11px] leading-tight line-clamp-2">
+                    <span className="font-bold mr-1">@{card.handle.split('@')[1]}</span>
+                    <span className="text-muted-foreground">{card.caption}</span>
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tighter">View all {card.comments} comments</p>
                 </div>
               </div>
             </motion.div>

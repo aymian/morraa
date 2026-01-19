@@ -1,16 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon } from "lucide-react";
+import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon, Bell, Heart, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NoireLogo from "./NoireLogo";
 import UserDropdown from "./UserDropdown";
+import SearchModal from "./SearchModal";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-
-/**
- * Morra Navbar - Cinematic Top Bar
- */
+import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 
 interface NavbarProps {
   onAuthClick?: (action: "login" | "signup") => void;
@@ -19,39 +16,69 @@ interface NavbarProps {
 
 const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key.toLowerCase() === 's' &&
+        !isSearchOpen &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    let unsubNotifs: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        // Fetch user data
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data());
         }
+
+        // Real-time notification count (pending requests)
+        const q = query(
+          collection(db, "notifications"),
+          where("toUserId", "==", currentUser.uid),
+          where("status", "==", "pending")
+        );
+        unsubNotifs = onSnapshot(q, (snapshot) => {
+          setNotificationCount(snapshot.size);
+        });
       } else {
         setUserData(null);
+        setNotificationCount(0);
+        if (unsubNotifs) unsubNotifs();
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubNotifs) unsubNotifs();
+    };
   }, []);
 
   const guestNavItems = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
-  ];
-
-  const proNavItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: Compass, label: "Discovery", path: "/discovery" },
-    { icon: Music2, label: "Moods", path: "/moods" },
-    { icon: LibraryIcon, label: "Library", path: "/library" },
   ];
 
   const handleAuthClick = (action: "login" | "signup") => {
@@ -128,13 +155,33 @@ const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
           ))}
 
           {!adminMode && (
-            <motion.button
-              className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Search className="w-4 h-4" />
-            </motion.button>
+            <div className="flex items-center gap-0.5">
+              <motion.button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Search className="w-4 h-4" />
+              </motion.button>
+
+              <motion.button
+                onClick={() => navigate("/notifications")}
+                className="p-3 text-muted-foreground hover:text-white transition-colors rounded-full hover:bg-white/10 relative"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Bell className="w-5 h-5" />
+                {notificationCount > 0 && (
+                  <div className="absolute -top-3 -right-5 flex ite ms-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
+                    <User className="w-4 h-4 text-white fill-white" />
+                    <span className="text-sm font-black text-white leading-none">
+                      {notificationCount}
+                    </span>
+                  </div>
+                )}
+              </motion.button>
+            </div>
           )}
 
           <div className="w-px h-6 bg-border/50" />
@@ -176,14 +223,34 @@ const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
             <NoireLogo size={26} showText={true} />
           </button>
 
-          <motion.button
-            className="p-2 text-foreground rounded-full hover:bg-muted/30"
-            whileTap={{ scale: 0.9 }}
-          >
-            <Search className="w-5 h-5" />
-          </motion.button>
+          <div className="flex items-center gap-1">
+            <motion.button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 text-foreground rounded-full hover:bg-muted/30"
+              whileTap={{ scale: 0.9 }}
+            >
+              <Search className="w-5 h-5" />
+            </motion.button>
+
+            <motion.button
+              onClick={() => navigate("/notifications")}
+              className="p-2.5 text-muted-foreground rounded-full hover:bg-white/10 relative"
+              whileTap={{ scale: 0.9 }}
+            >
+              <Bell className="w-6 h-6" />
+              {notificationCount > 0 && (
+                <div className="absolute -top-2 -right-4 flex items-center gap-2 bg-[#FF3B30] px-4 py-2 rounded-full rounded-bl-sm shadow-[0_0_25px_rgba(255,59,48,0.5)] border-2 border-white/20 z-50">
+                  <User className="w-5 h-5 text-white fill-white" />
+                  <span className="text-base font-black text-white leading-none">
+                    {notificationCount}
+                  </span>
+                </div>
+              )}
+            </motion.button>
+          </div>
         </div>
       </motion.nav>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
 };
