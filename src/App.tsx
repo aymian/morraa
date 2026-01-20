@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import AppLayout from "./layouts/AppLayout";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -48,30 +49,22 @@ const App = () => (
             <Route path="/email-phone" element={<EmailPhoneAuth />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/create" element={<Create />} />
-            <Route path="/post-entry" element={<PostEntry />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/moods" element={<Moods />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/messages/:userId" element={<Messages />} />
+            {/* Protected / App Routes */}
+            <Route element={<AppLayout />}>
+              <Route path="/create" element={<Create />} />
+              <Route path="/post-entry" element={<PostEntry />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/moods" element={<Moods />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:userId" element={<Messages />} />
+              <Route path="/wallet" element={<Wallet />} />
 
-            {/* Story Experience Routes */}
-            <Route path="/story-upload" element={<StoryUpload />} />
-            <Route path="/story-share" element={<StoryShare />} />
-            <Route path="/stories/:username" element={<StoryView />} />
-
-            {/* Video Call Routes */}
-            <Route path="/video-call-setup" element={<VideoCallSetup />} />
-            <Route path="/call" element={<CallPage />} />
-
-            {/* Identity Routes (must be below specific segment routes) */}
-            <Route path="/:username" element={<UserDetails />} />
-
-            <Route path="*" element={<NotFound />} />
-            <Route path="/wallet" element={<Wallet />} />
+              {/* Identity Routes (must be below specific segment routes) */}
+              <Route path="/:username" element={<UserDetails />} />
+            </Route>
           </Routes>
         </CallProvider>
       </BrowserRouter>
