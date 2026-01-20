@@ -12,9 +12,10 @@ import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/fire
 interface NavbarProps {
   onAuthClick?: (action: "login" | "signup") => void;
   adminMode?: boolean;
+  logoOnly?: boolean;
 }
 
-const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
+const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -111,105 +112,107 @@ const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
       >
         <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group">
           <button onClick={() => navigate("/")} className="flex items-center">
-            <NoireLogo size={28} showText={true} />
+            <NoireLogo size={28} showText={!logoOnly} />
           </button>
         </div>
       </motion.div>
 
-      <motion.nav
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-6 right-6 z-50 hidden md:flex"
-      >
-        <div className="glass-noire rounded-full px-2 py-2 flex items-center gap-1 border border-border/30 relative">
-          {!adminMode && guestNavItems.map((item, index) => (
-            <motion.a
-              key={item.label}
-              href={item.href}
-              onMouseEnter={() => setHoveredItem(item.label)}
-              onMouseLeave={() => setHoveredItem(null)}
-              onClick={(e) => {
-                if (item.href.startsWith("/")) {
-                  e.preventDefault();
-                  navigate(item.href);
-                }
-              }}
-              className="relative px-5 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors duration-300 rounded-full cursor-pointer z-10"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.5 }}
-            >
-              {hoveredItem === item.label && (
-                <motion.div
-                  layoutId="nav-glow"
-                  className="absolute inset-0 bg-primary/10 rounded-full -z-10 border border-primary/20"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
-                />
-              )}
-              {item.label}
-            </motion.a>
-          ))}
-
-          {!adminMode && (
-            <div className="flex items-center gap-0.5">
-              <motion.button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+      {!logoOnly && (
+        <motion.nav
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed top-6 right-6 z-50 hidden md:flex"
+        >
+          <div className="glass-noire rounded-full px-2 py-2 flex items-center gap-1 border border-border/30 relative">
+            {!adminMode && guestNavItems.map((item, index) => (
+              <motion.a
+                key={item.label}
+                href={item.href}
+                onMouseEnter={() => setHoveredItem(item.label)}
+                onMouseLeave={() => setHoveredItem(null)}
+                onClick={(e) => {
+                  if (item.href.startsWith("/")) {
+                    e.preventDefault();
+                    navigate(item.href);
+                  }
+                }}
+                className="relative px-5 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors duration-300 rounded-full cursor-pointer z-10"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * index, duration: 0.5 }}
               >
-                <Search className="w-4 h-4" />
-              </motion.button>
-
-              <motion.button
-                onClick={() => navigate("/notifications")}
-                className="p-3 text-muted-foreground hover:text-white transition-colors rounded-full hover:bg-white/10 relative"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Bell className="w-5 h-5" />
-                {notificationCount > 0 && (
-                  <div className="absolute -top-3 -right-5 flex ite ms-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
-                    <User className="w-4 h-4 text-white fill-white" />
-                    <span className="text-sm font-black text-white leading-none">
-                      {notificationCount}
-                    </span>
-                  </div>
+                {hoveredItem === item.label && (
+                  <motion.div
+                    layoutId="nav-glow"
+                    className="absolute inset-0 bg-primary/10 rounded-full -z-10 border border-primary/20"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                  />
                 )}
-              </motion.button>
-            </div>
-          )}
+                {item.label}
+              </motion.a>
+            ))}
 
-          <div className="w-px h-6 bg-border/50" />
+            {!adminMode && (
+              <div className="flex items-center gap-0.5">
+                <motion.button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Search className="w-4 h-4" />
+                </motion.button>
 
-          <div className="flex items-center gap-2">
-            {adminMode ? (
-              <UserDropdown user={adminUser as any} userData={adminData} />
-            ) : user ? (
-              <UserDropdown user={user} userData={userData} />
-            ) : (
-              <>
-                <button
-                  onClick={() => handleAuthClick("login")}
-                  className="px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
+                <motion.button
+                  onClick={() => navigate("/notifications")}
+                  className="p-3 text-muted-foreground hover:text-white transition-colors rounded-full hover:bg-white/10 relative"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  Sign in
-                </button>
-                <button
-                  onClick={() => handleAuthClick("signup")}
-                  className="px-5 py-2 text-sm font-body font-medium bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/20"
-                >
-                  Get Started
-                </button>
-              </>
+                  <Bell className="w-5 h-5" />
+                  {notificationCount > 0 && (
+                    <div className="absolute -top-3 -right-5 flex ite ms-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
+                      <User className="w-4 h-4 text-white fill-white" />
+                      <span className="text-sm font-black text-white leading-none">
+                        {notificationCount}
+                      </span>
+                    </div>
+                  )}
+                </motion.button>
+              </div>
             )}
+
+            <div className="w-px h-6 bg-border/50" />
+
+            <div className="flex items-center gap-2">
+              {adminMode ? (
+                <UserDropdown user={adminUser as any} userData={adminData} />
+              ) : user ? (
+                <UserDropdown user={user} userData={userData} />
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleAuthClick("login")}
+                    className="px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => handleAuthClick("signup")}
+                    className="px-5 py-2 text-sm font-body font-medium bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/20"
+                  >
+                    Get Started
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </motion.nav>
+        </motion.nav>
+      )}
 
       {/* Mobile Top Navbar */}
       <motion.nav
@@ -220,34 +223,36 @@ const Navbar = ({ onAuthClick, adminMode }: NavbarProps) => {
       >
         <div className="glass-noire px-4 py-3 flex items-center justify-between border-b border-border/20">
           <button onClick={() => navigate("/")}>
-            <NoireLogo size={26} showText={true} />
+            <NoireLogo size={26} showText={!logoOnly} />
           </button>
 
-          <div className="flex items-center gap-1">
-            <motion.button
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-foreground rounded-full hover:bg-muted/30"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Search className="w-5 h-5" />
-            </motion.button>
+          {!logoOnly && (
+            <div className="flex items-center gap-1">
+              <motion.button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 text-foreground rounded-full hover:bg-muted/30"
+                whileTap={{ scale: 0.9 }}
+              >
+                <Search className="w-5 h-5" />
+              </motion.button>
 
-            <motion.button
-              onClick={() => navigate("/notifications")}
-              className="p-2.5 text-muted-foreground rounded-full hover:bg-white/10 relative"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Bell className="w-6 h-6" />
-              {notificationCount > 0 && (
-                <div className="absolute -top-2 -right-4 flex items-center gap-2 bg-[#FF3B30] px-4 py-2 rounded-full rounded-bl-sm shadow-[0_0_25px_rgba(255,59,48,0.5)] border-2 border-white/20 z-50">
-                  <User className="w-5 h-5 text-white fill-white" />
-                  <span className="text-base font-black text-white leading-none">
-                    {notificationCount}
-                  </span>
-                </div>
-              )}
-            </motion.button>
-          </div>
+              <motion.button
+                onClick={() => navigate("/notifications")}
+                className="p-2.5 text-muted-foreground rounded-full hover:bg-white/10 relative"
+                whileTap={{ scale: 0.9 }}
+              >
+                <Bell className="w-6 h-6" />
+                {notificationCount > 0 && (
+                  <div className="absolute -top-2 -right-4 flex items-center gap-2 bg-[#FF3B30] px-4 py-2 rounded-full rounded-bl-sm shadow-[0_0_25px_rgba(255,59,48,0.5)] border-2 border-white/20 z-50">
+                    <User className="w-5 h-5 text-white fill-white" />
+                    <span className="text-base font-black text-white leading-none">
+                      {notificationCount}
+                    </span>
+                  </div>
+                )}
+              </motion.button>
+            </div>
+          )}
         </div>
       </motion.nav>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />

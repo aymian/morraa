@@ -379,7 +379,7 @@ const UserDetails = () => {
 
                                 {isFollowing && (
                                     <button
-                                        onClick={() => navigate(`/messages/${targetUid}`)}
+                                        onClick={() => navigate(`/messages/${userData.username}`)}
                                         className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
                                     >
                                         <MessageCircle size={18} />

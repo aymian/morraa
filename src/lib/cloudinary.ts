@@ -17,34 +17,41 @@ export const cld = new Cloudinary({
     }
 });
 
-export const uploadToCloudinary = async (file: File, folder: string = "morraa_posts"): Promise<string> => {
-    console.log("Starting Cloudinary upload for file:", file.name, "Size:", file.size, "Folder:", folder);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
-    formData.append("cloud_name", CLOUDINARY_CONFIG.cloudName);
-    formData.append("folder", folder);
+export const uploadToCloudinary = async (
+    file: File,
+    folder: string = "morraa_posts",
+    onProgress?: (progress: number) => void
+): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+        formData.append("cloud_name", CLOUDINARY_CONFIG.cloudName);
+        formData.append("folder", folder);
 
-    try {
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/auto/upload`,
-            {
-                method: "POST",
-                body: formData,
-            }
-        );
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/auto/upload`);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error("Cloudinary Error Response:", data);
-            throw new Error(data.error?.message || "Cloudinary Upload Failed with status " + response.status);
+        if (onProgress) {
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const progress = Math.round((event.loaded / event.total) * 100);
+                    onProgress(progress);
+                }
+            };
         }
 
-        console.log("Cloudinary Upload Success:", data.secure_url);
-        return data.secure_url;
-    } catch (error: any) {
-        console.error("Cloudinary upload catch block:", error);
-        throw new Error(error.message || "Network error during Cloudinary upload");
-    }
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data.secure_url);
+            } else {
+                const error = JSON.parse(xhr.responseText);
+                reject(new Error(error.error?.message || "Cloudinary Upload Failed"));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during Cloudinary upload"));
+        xhr.send(formData);
+    });
 };

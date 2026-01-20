@@ -56,6 +56,35 @@ service cloud.firestore {
         resource.data.fromUserId == request.auth.uid
       );
     }
+
+    // 💬 MESSAGING: High-security communication layer
+    match /conversations/{chatId} {
+      // Allow read if user is a participant
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      
+      // Allow creation if the creator is correctly assigned as a participant
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
+      
+      // Enhanced update rule: allow updating lastMessage, lastMessageTime, and typingStatus
+      allow update: if request.auth != null && request.auth.uid in resource.data.participants;
+
+      // ✉️ MESSAGES: The content subcollection
+      match /messages/{messageId} {
+        // Strict participant-only access for core messaging actions
+        allow read: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(chatId)).data.participants;
+        
+        // Only participants can send messages
+        allow create: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(chatId)).data.participants &&
+          request.resource.data.senderId == request.auth.uid;
+
+        // Only the sender can update (edit/unsend) or react (if participant)
+        allow update: if request.auth != null && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(chatId)).data.participants &&
+          (resource.data.senderId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reaction']));
+      }
+    }
     
     // 🚫 DEFAULT: Guard the perimeter
     match /{document=**} {

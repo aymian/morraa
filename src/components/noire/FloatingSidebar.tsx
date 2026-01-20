@@ -46,6 +46,13 @@ const FloatingSidebar = () => {
         }
     }, [isCollapsed]);
 
+    // Auto-collapse on /messages route
+    useEffect(() => {
+        if (location.pathname.startsWith('/messages')) {
+            setIsCollapsed(true);
+        }
+    }, [location.pathname]);
+
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
