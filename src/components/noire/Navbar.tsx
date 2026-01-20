@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon, Bell, Heart, User } from "lucide-react";
+import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon, Bell, Heart, User, PanelLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NoireLogo from "./NoireLogo";
@@ -7,7 +7,8 @@ import UserDropdown from "./UserDropdown";
 import SearchModal from "./SearchModal";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
+import { Plus } from "lucide-react";
 
 interface NavbarProps {
   onAuthClick?: (action: "login" | "signup") => void;
@@ -22,6 +23,10 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [activeStories, setActiveStories] = useState<any[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('morraa-sidebar-collapsed') === 'true';
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -70,9 +75,17 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
       }
     });
 
+    const handleToggle = () => {
+      const newState = !(localStorage.getItem('morraa-sidebar-collapsed') === 'true');
+      setIsSidebarCollapsed(newState);
+    };
+
+    window.addEventListener('morraa:toggleSidebar', handleToggle);
+
     return () => {
       unsubscribe();
       if (unsubNotifs) unsubNotifs();
+      window.removeEventListener('morraa:toggleSidebar', handleToggle);
     };
   }, []);
 
@@ -104,19 +117,23 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
 
   return (
     <>
+      {/* Primary Logo Section - Detached Bubble */}
       <motion.div
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-6 left-6 z-50 hidden md:flex"
       >
-        <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group">
+        <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group flex-shrink-0 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
           <button onClick={() => navigate("/")} className="flex items-center">
             <NoireLogo size={28} showText={!logoOnly} />
           </button>
         </div>
       </motion.div>
 
+
+
+      {/* Right-side Navigation */}
       {!logoOnly && (
         <motion.nav
           initial={{ y: -100, opacity: 0 }}
@@ -175,7 +192,7 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
                 >
                   <Bell className="w-5 h-5" />
                   {notificationCount > 0 && (
-                    <div className="absolute -top-3 -right-5 flex ite ms-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
+                    <div className="absolute -top-3 -right-5 flex items-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
                       <User className="w-4 h-4 text-white fill-white" />
                       <span className="text-sm font-black text-white leading-none">
                         {notificationCount}
@@ -226,6 +243,29 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
             <NoireLogo size={26} showText={!logoOnly} />
           </button>
 
+          {user && !logoOnly && (
+            <div className="flex-1 flex justify-center px-4 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2">
+                {activeStories.slice(0, 5).map((group) => (
+                  <div key={group.userId} className={`w-9 h-9 rounded-full p-[1.5px] ${group.hasUnseen ? 'bg-[#FBBF24]' : 'bg-white/10'}`}>
+                    <div
+                      className="w-full h-full rounded-full bg-black overflow-hidden cursor-pointer"
+                      onClick={() => navigate(`/stories/@${group.username}`)}
+                    >
+                      {group.userAvatar ? (
+                        <img src={group.userAvatar} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-white/40">
+                          {group.userName?.[0]}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!logoOnly && (
             <div className="flex items-center gap-1">
               <motion.button
@@ -261,3 +301,15 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
 };
 
 export default Navbar;
+function unsubscribe() {
+  throw new Error("Function not implemented.");
+}
+
+function unsubNotifs() {
+  throw new Error("Function not implemented.");
+}
+
+function unsubStories() {
+  throw new Error("Function not implemented.");
+}
+

@@ -20,6 +20,16 @@ import UserDetails from "./pages/UserDetails";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import StoryUpload from "./pages/StoryUpload";
+import StoryShare from "./pages/StoryShare";
+import StoryView from "./pages/StoryView";
+import VideoCallSetup from "./pages/VideoCallSetup";
+import CallPage from "./pages/Call";
+import Wallet from "./pages/Wallet";
+import { CallProvider } from "./components/calling/CallProvider";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
+
+
 
 const queryClient = new QueryClient();
 
@@ -29,27 +39,41 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/email-phone" element={<EmailPhoneAuth />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/post-entry" element={<PostEntry />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/moods" element={<Moods />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/messages/:userId" element={<Messages />} />
-          <Route path="/:username" element={<UserDetails />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <CallProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/email-phone" element={<EmailPhoneAuth />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/create" element={<Create />} />
+            <Route path="/post-entry" element={<PostEntry />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/moods" element={<Moods />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:userId" element={<Messages />} />
+
+            {/* Story Experience Routes */}
+            <Route path="/story-upload" element={<StoryUpload />} />
+            <Route path="/story-share" element={<StoryShare />} />
+            <Route path="/stories/:username" element={<StoryView />} />
+
+            {/* Video Call Routes */}
+            <Route path="/video-call-setup" element={<VideoCallSetup />} />
+            <Route path="/call" element={<CallPage />} />
+
+            {/* Identity Routes (must be below specific segment routes) */}
+            <Route path="/:username" element={<UserDetails />} />
+
+            <Route path="*" element={<NotFound />} />
+            <Route path="/wallet" element={<Wallet />} />
+          </Routes>
+        </CallProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

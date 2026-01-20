@@ -18,6 +18,8 @@ import {
     ArrowRight,
     ChevronLeft
 } from "lucide-react";
+
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -29,12 +31,26 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
  */
 
 const FloatingSidebar = () => {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        return localStorage.getItem('morraa-sidebar-collapsed') === 'true';
+    });
     const [showMore, setShowMore] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Sync state with local storage and events
+    useEffect(() => {
+        const handleToggle = () => {
+            const newState = !(localStorage.getItem('morraa-sidebar-collapsed') === 'true');
+            localStorage.setItem('morraa-sidebar-collapsed', String(newState));
+            setIsCollapsed(newState);
+        };
+
+        window.addEventListener('morraa:toggleSidebar', handleToggle);
+        return () => window.removeEventListener('morraa:toggleSidebar', handleToggle);
+    }, []);
 
     // Dynamically update the global sidebar width for the content-shift utility
     useEffect(() => {
@@ -111,20 +127,17 @@ const FloatingSidebar = () => {
                 {/* Background Aura */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#FBBF24]/5 to-transparent pointer-events-none" />
 
-                {/* Header: STUDIO */}
-                <div className="flex items-center justify-between px-4 py-4 mb-2">
-                    {!isCollapsed && (
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-[#FBBF24] animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Command</span>
-                        </div>
-                    )}
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="p-2.5 bg-white/5 rounded-2xl text-muted-foreground hover:text-[#FBBF24] hover:bg-[#FBBF24]/10 transition-all"
+                {/* Header / Toggle Section */}
+                <div className={`p-2 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-4'}`}>
+                    {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Command</span>}
+                    <motion.button
+                        whileHover={{ scale: 1.1, color: "#FBBF24" }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => window.dispatchEvent(new CustomEvent('morraa:toggleSidebar'))}
+                        className="p-2 hover:bg-white/5 rounded-xl transition-colors text-white/20"
                     >
-                        <PanelLeft size={18} className={isCollapsed ? "rotate-180" : ""} />
-                    </button>
+                        <PanelLeft size={isCollapsed ? 20 : 16} className={`transition-transform duration-500 ${isCollapsed ? 'rotate-180' : 'rotate-0'}`} />
+                    </motion.button>
                 </div>
 
                 {/* Primary Menu Items */}
@@ -155,11 +168,13 @@ const FloatingSidebar = () => {
                                     </motion.button>
                                 )}
 
+
+
                                 <motion.button
                                     whileHover={{ x: isCollapsed ? 0 : 6 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => navigate(item.path)}
-                                    className={`flex items-center gap-4 px-4 py-3.5 rounded-[1.8rem] transition-all relative group ${active
+                                    className={`flex items-center gap-4 px-4 py-3.5 rounded-[1.8rem] transition-all relative group w-full ${active
                                         ? "bg-white/10 text-white shadow-xl"
                                         : "text-muted-foreground hover:text-white hover:bg-white/5"
                                         }`}
@@ -171,9 +186,24 @@ const FloatingSidebar = () => {
                                         )}
                                     </div>
                                     {!isCollapsed && (
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-sm font-bold tracking-tight ${active ? "text-white" : ""}`}>{item.label}</span>
-                                            {item.isVerified && <ShieldCheck size={14} className="text-[#FBBF24]" />}
+                                        <div className="flex flex-1 items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-sm font-bold tracking-tight ${active ? "text-white" : ""}`}>{item.label}</span>
+                                                {item.isVerified && <ShieldCheck size={14} className="text-[#FBBF24]" />}
+                                            </div>
+
+                                            {item.label === "Home" && (
+                                                <motion.div
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.dispatchEvent(new CustomEvent('morraa:toggleSidebar'));
+                                                    }}
+                                                    whileHover={{ scale: 1.2, color: "#FBBF24" }}
+                                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-white/20"
+                                                >
+                                                    <PanelLeft size={16} />
+                                                </motion.div>
+                                            )}
                                         </div>
                                     )}
                                     {active && (

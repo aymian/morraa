@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import {
     User, Mail, Phone, Calendar, Music, Heart,
     MapPin, Edit3, Share2, Shield, Settings,
-    ArrowLeft, CheckCircle, Sparkles, Search, X, UserMinus, UserPlus
+    ArrowLeft, CheckCircle, Sparkles, Search, X, UserMinus, UserPlus,
+    Bookmark
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -140,365 +141,248 @@ const Profile = () => {
         );
     }
 
-    const stats = [
-        { label: "Posts", value: userPosts.length.toString(), icon: Music, onClick: null },
-        { label: "Followers", value: followersCount.toString(), icon: User, onClick: () => fetchConnections("followers") },
-        { label: "Following", value: followingCount.toString(), icon: Share2, onClick: () => fetchConnections("following") },
-    ];
 
     return (
-        <div className="min-h-screen bg-background text-foreground overflow-x-hidden content-shift">
+        <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
             {firebaseUser && <FloatingSidebar />}
             <Navbar />
 
-            {/* Hero Header Section */}
-            <section className="relative h-[40vh] md:h-[50vh] flex items-center justify-center overflow-hidden">
-                {/* Cinematic Background Blur */}
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background/80 to-background" />
-                    <motion.div
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 0.3 }}
-                        transition={{ duration: 1.5 }}
-                        className="w-full h-full"
-                        style={{
-                            backgroundImage: `url(${userData?.avatarUrl || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            filter: 'blur(60px)'
-                        }}
-                    />
-                </div>
+            <main className="container max-w-4xl mx-auto px-4 pt-24 pb-20">
+                {/* Profile Header */}
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-8 md:gap-16 mb-12 px-4 md:px-0">
 
-                <div className="relative z-10 container mx-auto px-6 pt-20">
-                    <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
-                        {/* Profile Avatar with Unique Glow */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="relative group"
-                        >
-                            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-                            <div className="relative w-32 h-32 md:w-44 md:h-44 bg-muted/50 rounded-3xl overflow-hidden border border-border/30 backdrop-blur-md">
-                                {userData?.avatarUrl ? (
-                                    <img src={userData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/20 text-primary">
-                                        <User size={64} />
-                                    </div>
-                                )}
-                            </div>
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                className="absolute bottom-2 right-2 p-2.5 bg-primary text-primary-foreground rounded-xl shadow-xl z-20"
-                            >
-                                <Edit3 size={18} />
-                            </motion.button>
-                        </motion.div>
-
-                        {/* User Info Branding */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="text-center md:text-left flex-1"
-                        >
-                            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
-                                <h1 className="text-4xl md:text-5xl font-display font-bold">
-                                    {userData?.fullName || firebaseUser?.email || "User"}
-                                </h1>
-                                <div className="flex items-center justify-center md:justify-start gap-2">
-                                    {userData?.isVerified && (
-                                        <CheckCircle size={18} className="text-blue-500" />
+                    {/* Avatar Section */}
+                    <div className="flex-shrink-0 mx-auto md:mx-0 relative group">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-[2px] bg-gradient-to-tr from-zinc-700 to-zinc-900">
+                            <div className="w-full h-full rounded-full bg-black p-[3px]">
+                                <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900 relative">
+                                    {userData?.avatarUrl || userData?.profileImage ? (
+                                        <img
+                                            src={userData.avatarUrl || userData.profileImage}
+                                            alt={userData?.username}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                                            <User size={48} />
+                                        </div>
                                     )}
-                                    <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full border border-primary/20 uppercase tracking-widest flex items-center gap-1">
-                                        <Sparkles size={10} />
-                                        PRO MEMBER
-                                    </span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-muted-foreground font-body mb-4">
-                                <p className="flex items-center gap-1.5"><User size={14} className="text-primary" /> @{userData?.username || "aura"}</p>
-                                <p className="flex items-center gap-1.5"><MapPin size={14} className="text-primary" /> Earth, Milky Way</p>
-                            </div>
-                            <p className="text-sm text-foreground/80 max-w-md leading-relaxed whitespace-pre-wrap md:text-left text-center">
-                                {userData?.bio || "No bio yet. Define your aura."}
-                            </p>
+                        </div>
 
-                            {/* Quick Actions */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="flex flex-wrap gap-3 mt-6 justify-center md:justify-start"
-                            >
-                                <button
-                                    onClick={togglePrivacy}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl transition-all font-body font-bold border ${isPrivate
-                                        ? "bg-red-500/10 border-red-500/30 text-red-500"
-                                        : "bg-green-500/10 border-green-500/30 text-green-500"
-                                        }`}
-                                >
-                                    {isPrivate ? <Shield size={18} /> : <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
-                                    {isPrivate ? "Private Account" : "Public Account"}
-                                </button>
-                                <button className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all font-body font-bold">
-                                    <Edit3 size={18} />
-                                    Edit Aura
-                                </button>
-                            </motion.div>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Main Profile Content */}
-            <main className="container mx-auto px-6 py-12">
-                <div className="grid lg:grid-cols-12 gap-10">
-
-                    {/* Sidebar / Info Cards */}
-                    <div className="lg:col-span-4 space-y-6">
-                        {/* Stats Card */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="glass-noire rounded-3xl border border-border/30 p-8"
-                        >
-                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-6">Experience Stats</h3>
-                            <div className="grid gap-6">
-                                {stats.map((stat, i) => (
-                                    <div
-                                        key={i}
-                                        className={`flex items-center gap-4 group ${stat.onClick ? 'cursor-pointer' : ''}`}
-                                        onClick={stat.onClick || undefined}
-                                    >
-                                        <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 group-hover:scale-110 transition-transform text-primary">
-                                            <stat.icon size={20} />
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-display font-bold leading-none">{stat.value}</p>
-                                            <p className="text-xs text-muted-foreground font-body">{stat.label}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Favorite Genres Card */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                            className="glass-noire rounded-3xl border border-border/30 p-8"
-                        >
-                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-6">Your Vibe Palette</h3>
-                            <div className="flex flex-wrap gap-3">
-                                {userData?.genres?.map((genre: string) => (
-                                    <span key={genre} className="px-4 py-2 bg-muted/20 border border-border/20 rounded-xl text-xs font-body capitalize hover:border-primary/50 transition-colors cursor-default">
-                                        {genre}
-                                    </span>
-                                )) || <p className="text-sm text-muted-foreground italic">No genres selected</p>}
-                            </div>
-                        </motion.div>
-
-                        {/* Security Note */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/20 rounded-3xl flex items-start gap-4"
-                        >
-                            <Shield className="text-green-500 w-10 h-10 mt-1" />
-                            <div>
-                                <p className="font-bold text-sm mb-1 text-green-500">Secured Profile</p>
-                                <p className="text-xs text-muted-foreground font-body leading-relaxed">
-                                    Your identity is protected with end-to-end encryption. Only choosing what you share keeps your vibe yours.
-                                </p>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    {/* Social Feed Grid Area */}
-                    <div className="lg:col-span-8 space-y-10">
-                        <div>
-                            <div className="flex items-center justify-between mb-8 border-b border-border/10 pb-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 flex items-center gap-2">
-                                        <Music className="w-4 h-4 text-primary" />
-                                        <span className="text-xs font-bold uppercase tracking-widest text-primary">Grid View</span>
-                                    </div>
-                                    <button className="text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-white transition-colors">Tagged</button>
-                                </div>
-                            </div>
-
-                            {userPosts.length > 0 ? (
-                                <div className="grid grid-cols-3 gap-1 md:gap-4">
-                                    {userPosts.map((post) => (
-                                        <motion.div
-                                            key={post.id}
-                                            whileHover={{ scale: 1.02 }}
-                                            className="aspect-square relative group cursor-pointer overflow-hidden rounded-xl border border-border/10"
-                                        >
-                                            {post.mediaType === 'video' ? (
-                                                <video
-                                                    src={post.mediaUrl}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <img
-                                                    src={post.mediaUrl}
-                                                    alt="Post"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            )}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                                                <div className="flex items-center gap-1.5 text-white">
-                                                    <Heart className="w-5 h-5 fill-white" />
-                                                    <span className="font-bold">{post.likes || 0}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-white">
-                                                    <Music className="w-5 h-5 fill-white" />
-                                                    <span className="font-bold">{post.comments || 0}</span>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-20 flex flex-col items-center justify-center glass-noire rounded-[2.5rem] border border-border/20 text-center">
-                                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                        <Sparkles className="w-10 h-10 text-muted-foreground" />
-                                    </div>
-                                    <h3 className="text-xl font-display font-bold mb-2">No Visuals Yet</h3>
-                                    <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-                                        Your aura hasn't been shared with the world. Create your first post to start your journey.
-                                    </p>
-                                    <button
-                                        onClick={() => navigate('/create')}
-                                        className="mt-8 px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-bold transition-transform hover:scale-105"
-                                    >
-                                        Share My Aura
-                                    </button>
-                                </div>
-                            )}
+                        {/* Note Bubble (Cosmetic/Static for now based on image) */}
+                        <div className="absolute -top-4 -right-2 bg-[#262626] rounded-[1rem] px-3 py-2 text-[10px] text-zinc-300 shadow-xl border border-white/5 animate-in fade-in zoom-in duration-500 hidden md:block">
+                            <p className="font-bold mb-0.5">Listening to...</p>
+                            <p className="opacity-60 truncate max-w-[80px]">Major League ...</p>
                         </div>
                     </div>
 
-                </div>
-            </main>
+                    {/* User Info Section */}
+                    <div className="flex-1 flex flex-col gap-4 w-full">
+                        {/* Username Row */}
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+                            <h1 className="text-xl md:text-2xl font-normal text-zinc-100 flex items-center gap-2">
+                                {userData?.username || "username"}
+                                {userData?.isVerified && <CheckCircle size={16} className="text-blue-500 fill-blue-500/10" />}
+                            </h1>
+                            <div className="flex items-center gap-2">
+                                <button className="md:hidden px-4 py-1.5 bg-[#363636] rounded-lg text-sm font-semibold text-white">
+                                    Edit Profile
+                                </button>
+                                <button className="md:hidden p-1.5 bg-[#363636] rounded-lg text-white">
+                                    <UserPlus size={16} />
+                                </button>
+                            </div>
+                        </div>
 
-            {/* Footer Space */}
-            <div className="h-32" />
+                        {/* Stats Row */}
+                        <div className="flex items-center justify-center md:justify-start gap-8 text-sm md:text-base">
+                            <div className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity">
+                                <span className="font-bold text-white">{userPosts.length}</span>
+                                <span className="text-zinc-400">posts</span>
+                            </div>
+                            <div
+                                className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                onClick={() => fetchConnections("followers")}
+                            >
+                                <span className="font-bold text-white">{followersCount}</span>
+                                <span className="text-zinc-400">followers</span>
+                            </div>
+                            <div
+                                className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                onClick={() => fetchConnections("following")}
+                            >
+                                <span className="font-bold text-white">{followingCount}</span>
+                                <span className="text-zinc-400">following</span>
+                            </div>
+                        </div>
+
+                        {/* Bio Section */}
+                        <div className="hidden md:block space-y-1">
+                            <p className="font-bold text-sm text-white">{userData?.fullName || "Full Name"}</p>
+                            <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                                {userData?.bio || "Silent in flame, calm as steel. A warrior of steadfast spirit."}
+                            </p>
+                            {userData?.website && (
+                                <a href={userData.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-[#E0F1FF] hover:underline mt-1">
+                                    <Share2 size={12} className="rotate-45" />
+                                    {userData.website.replace(/^https?:\/\//, '')}
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Bio (Below Header) */}
+                <div className="md:hidden px-4 mb-6 space-y-2">
+                    <p className="font-bold text-sm text-white">{userData?.fullName || "Full Name"}</p>
+                    <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                        {userData?.bio || "Silent in flame, calm as steel."}
+                    </p>
+                    <div className="p-3 bg-[#1A1A1A] rounded-lg text-xs text-zinc-400 mt-4 mb-4">
+                        <p className="font-bold text-white mb-1">Professional Dashboard</p>
+                        <p>4.2K accounts reached in the last 30 days.</p>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mb-10 px-4 md:px-0">
+                    <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-lg transition-colors">
+                        Edit Profile
+                    </button>
+                    <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-lg transition-colors">
+                        View archive
+                    </button>
+                </div>
+
+                {/* Highlights Section */}
+                <div className="flex gap-6 overflow-x-auto no-scrollbar mb-12 px-4 md:px-0 pb-2">
+                    {[
+                        { label: "Highlights", img: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=150&h=150&fit=crop" },
+                        { label: "love", img: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=150&h=150&fit=crop" },
+                        { label: "silence", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=150&h=150&fit=crop" },
+                        { label: "New", isAdd: true }
+                    ].map((item, i) => (
+                        <div key={i} className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full p-[1px] bg-zinc-800 border border-white/10 group-hover:border-white/30 transition-colors">
+                                <div className="w-full h-full rounded-full bg-black p-[2px] overflow-hidden flex items-center justify-center">
+                                    {item.isAdd ? (
+                                        <div className="w-full h-full border border-white/20 rounded-full flex items-center justify-center bg-zinc-900 group-hover:bg-zinc-800">
+                                            <Search size={24} className="text-white rotate-90" /> {/* Using Search as a generic plus-like icon for now? Actually lets use a proper Plus */}
+                                            {/* Lucide Plus imported above is fine, replacing Search with Plus logic visually if needed or just styling */}
+                                            <span className="text-2xl text-white font-thin">+</span>
+                                        </div>
+                                    ) : (
+                                        <img src={item.img} className="w-full h-full object-cover rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
+                                    )}
+                                </div>
+                            </div>
+                            <span className="text-xs text-zinc-100 font-medium">{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Profile Tabs */}
+                <div className="border-t border-zinc-800 mb-1">
+                    <div className="flex justify-center gap-12">
+                        <button className="flex items-center gap-2 py-4 border-t border-white text-xs font-bold uppercase tracking-widest text-white -mt-[1px]">
+                            <svg aria-label="" className="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12">
+                                <rect fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" width="18" x="3" y="3"></rect>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="9.015" x2="9.015" y1="3" y2="21"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="14.985" x2="14.985" y1="3" y2="21"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="21" x2="3" y1="9.015" y2="9.015"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="21" x2="3" y1="14.985" y2="14.985"></line>
+                            </svg>
+                            Posts
+                        </button>
+                        <button className="flex items-center gap-2 py-4 border-t border-transparent text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors -mt-[1px]">
+                            <Bookmark size={12} />
+                            Saved
+                        </button>
+                        <button className="flex items-center gap-2 py-4 border-t border-transparent text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors -mt-[1px]">
+                            <User size={12} />
+                            Tagged
+                        </button>
+                    </div>
+                </div>
+
+                {/* Posts Grid */}
+                {userPosts.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-1 md:gap-4">
+                        {userPosts.map((post) => (
+                            <motion.div
+                                key={post.id}
+                                className="aspect-square relative group cursor-pointer bg-zinc-900"
+                            >
+                                {post.mediaType === 'video' ? (
+                                    <video src={post.mediaUrl} className="w-full h-full object-cover" />
+                                ) : (
+                                    <img src={post.mediaUrl} alt="Post" className="w-full h-full object-cover" />
+                                )}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                                    <div className="flex items-center gap-1.5 text-white">
+                                        <Heart className="w-6 h-6 fill-white" />
+                                        <span className="font-bold">{post.likes || 0}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-white">
+                                        <Music className="w-6 h-6 fill-white" />
+                                        <span className="font-bold">{post.comments || 0}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full border-2 border-zinc-800 flex items-center justify-center">
+                            <Music size={32} className="text-zinc-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Share Photos</h3>
+                        <p className="text-sm text-zinc-400 max-w-xs">When you share photos, they will appear on your profile.</p>
+                        <button
+                            onClick={() => navigate('/create')}
+                            className="text-blue-500 font-bold text-sm hover:text-blue-400"
+                        >
+                            Share your first photo
+                        </button>
+                    </div>
+                )}
+            </main>
 
             {/* Connections Modal */}
             <AnimatePresence>
                 {showConnections && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowConnections(false)}
-                            className="absolute inset-0 bg-background/80 backdrop-blur-xl"
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative w-full max-w-md bg-muted/30 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-2xl"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[#262626] w-full max-w-sm rounded-[12px] overflow-hidden shadow-2xl border border-zinc-800"
                         >
-                            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                                <h2 className="text-xl font-display font-bold capitalize">
-                                    {connectionsType}
-                                </h2>
-                                <button
-                                    onClick={() => setShowConnections(false)}
-                                    className="p-2 hover:bg-white/5 rounded-full transition-colors"
-                                >
-                                    <X size={20} />
-                                </button>
+                            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                                <h3 className="font-bold text-center flex-1 capitalize text-zinc-100">{connectionsType}</h3>
+                                <button onClick={() => setShowConnections(false)}><X size={20} className="text-zinc-100" /></button>
                             </div>
-
-                            <div className="p-4">
-                                <div className="relative mb-6">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                    <input
-                                        type="text"
-                                        placeholder={`Search ${connectionsType}...`}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                                    />
-                                </div>
-
-                                <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                                    {connectionsLoading ? (
-                                        <div className="py-20 flex justify-center">
-                                            <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                                className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            {connections
-                                                .filter(c =>
-                                                    c.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                    c.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-                                                )
-                                                .map((conn) => (
-                                                    <motion.div
-                                                        key={conn.uid}
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        className="flex items-center justify-between group"
-                                                    >
-                                                        <div
-                                                            className="flex items-center gap-3 cursor-pointer"
-                                                            onClick={() => {
-                                                                setShowConnections(false);
-                                                                navigate(`/@${conn.username}`);
-                                                            }}
-                                                        >
-                                                            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-muted/50 border border-white/5 relative">
-                                                                {conn.avatarUrl || conn.profileImage ? (
-                                                                    <img src={conn.avatarUrl || conn.profileImage} className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center text-primary/50">
-                                                                        <User size={20} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-sm leading-tight text-white group-hover:text-primary transition-colors">
-                                                                    {conn.fullName || conn.username}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground font-body">
-                                                                    @{conn.username}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/10 transition-all"
-                                                            onClick={() => navigate(`/@${conn.username}`)}
-                                                        >
-                                                            View
-                                                        </button>
-                                                    </motion.div>
-                                                ))
-                                            }
-                                            {connections.length === 0 && !connectionsLoading && (
-                                                <div className="py-20 text-center text-muted-foreground">
-                                                    <p className="text-sm font-body">No {connectionsType} yet.</p>
+                            <div className="p-2 h-[400px] overflow-y-auto custom-scrollbar">
+                                {connectionsLoading ? (
+                                    <div className="flex justify-center p-8"><span className="loader"></span></div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {connections.map((u) => (
+                                            <div key={u.uid} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-zinc-800 bg-cover bg-center" style={{ backgroundImage: `url(${u.avatarUrl || u.profileImage})` }} />
+                                                    <div>
+                                                        <p className="font-bold text-sm text-zinc-100">{u.username}</p>
+                                                        <p className="text-xs text-zinc-400">{u.fullName}</p>
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
+                                                <button className="px-4 py-1.5 bg-[#363636] text-white text-xs font-bold rounded-lg">Remove</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>

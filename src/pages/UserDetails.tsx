@@ -258,214 +258,206 @@ const UserDetails = () => {
         );
     }
 
-    const stats = [
-        { label: "Posts", value: userPosts.length.toString(), icon: Music },
-        { label: "Followers", value: userData?.followersCount || "0", icon: User },
-        { label: "Following", value: userData?.followingCount || "0", icon: Share2 },
-    ];
 
     return (
-        <div className="min-h-screen bg-background text-foreground overflow-x-hidden content-shift">
+        <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
             {currentUser && <FloatingSidebar />}
             <Navbar />
 
-            {/* Hero Header Section */}
-            <section className="relative h-[40vh] md:h-[50vh] flex items-center justify-center overflow-hidden">
-                {/* Cinematic Background Blur */}
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/80 to-background" />
-                    <motion.div
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 0.3 }}
-                        transition={{ duration: 1.5 }}
-                        className="w-full h-full"
-                        style={{
-                            backgroundImage: `url(${userData?.profileImage || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            filter: 'blur(60px)'
-                        }}
-                    />
-                </div>
+            <main className="container max-w-4xl mx-auto px-4 pt-24 pb-20">
+                {/* Profile Header */}
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-8 md:gap-16 mb-12 px-4 md:px-0">
 
-                <div className="relative z-10 container mx-auto px-6 pt-20">
-                    <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
-                        {/* Profile Avatar */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="relative group"
-                        >
-                            <div className="absolute -inset-1.5 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-                            <div className="relative w-32 h-32 md:w-44 md:h-44 bg-muted/50 rounded-3xl overflow-hidden border border-border/30 backdrop-blur-md">
-                                {userData?.profileImage ? (
-                                    <img src={userData.profileImage} alt="Avatar" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/20 text-primary">
-                                        <User size={64} />
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-
-                        {/* User Info */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="text-center md:text-left flex-1"
-                        >
-                            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
-                                <h1 className="text-4xl md:text-5xl font-display font-bold">
-                                    {userData?.fullName || userData?.username || "Aura Identity"}
-                                </h1>
-                                <div className="flex items-center justify-center md:justify-start gap-2">
-                                    {userData?.isVerified && (
-                                        <CheckCircle size={18} className="text-blue-500" />
-                                    )}
-                                    {userData?.isPro && (
-                                        <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full border border-primary/20 uppercase tracking-widest flex items-center gap-1">
-                                            <Sparkles size={10} />
-                                            PRO
-                                        </span>
+                    {/* Avatar Section */}
+                    <div className="flex-shrink-0 mx-auto md:mx-0 relative group">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-[2px] bg-gradient-to-tr from-zinc-700 to-zinc-900">
+                            <div className="w-full h-full rounded-full bg-black p-[3px]">
+                                <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900 relative">
+                                    {userData?.profileImage ? (
+                                        <img
+                                            src={userData.profileImage}
+                                            alt={userData?.username}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                                            <User size={48} />
+                                        </div>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-muted-foreground font-body mb-4">
-                                <p className="flex items-center gap-1.5"><User size={14} className="text-primary" /> @{userData?.username || "identity"}</p>
-                                <p className="flex items-center gap-1.5"><MapPin size={14} className="text-primary" /> Earth, Milky Way</p>
-                            </div>
-                            <p className="text-sm text-foreground/80 max-w-md leading-relaxed whitespace-pre-wrap md:text-left text-center">
-                                {userData?.bio || "No bio yet. This aura is still forming."}
-                            </p>
-                        </motion.div>
+                        </div>
+                    </div>
 
-                        {/* Actions */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex items-center gap-3 relative"
-                        >
-                            <div className="flex gap-2">
+                    {/* User Info Section */}
+                    <div className="flex-1 flex flex-col gap-4 w-full">
+                        {/* Username Row */}
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+                            <h1 className="text-xl md:text-2xl font-normal text-zinc-100 flex items-center gap-2">
+                                {userData?.username || "identity"}
+                                {userData?.isVerified && <CheckCircle size={16} className="text-blue-500 fill-blue-500/10" />}
+                            </h1>
+                            
+                            {/* Desktop Actions */}
+                            <div className="hidden md:flex items-center gap-2">
                                 <button
                                     onClick={handleFollowAction}
-                                    className={`flex items-center gap-2 px-8 py-4 rounded-2xl transition-all font-body font-bold border ${isFollowing
-                                        ? "bg-white/5 border-white/10 text-white"
-                                        : requestSent
-                                            ? "bg-white/5 border-white/10 text-muted-foreground cursor-default"
-                                            : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105"
-                                        }`}
+                                    className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                                        isFollowing 
+                                        ? "bg-[#363636] text-white hover:bg-[#262626]" 
+                                        : "bg-blue-500 text-white hover:bg-blue-600"
+                                    }`}
                                 >
-                                    {isFollowing ? (
-                                        <>
-                                            <Check size={18} />
-                                            <span>Following</span>
-                                            <MoreVertical size={16} className="ml-1 opacity-50" />
-                                        </>
-                                    ) : requestSent ? (
-                                        <>
-                                            <Sparkles size={18} />
-                                            <span>Requested</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <UserPlus size={18} />
-                                            <span>Follow</span>
-                                        </>
-                                    )}
+                                    {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
                                 </button>
-
+                                
                                 {isFollowing && (
                                     <button
                                         onClick={() => navigate(`/messages/${userData.username}`)}
-                                        className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
+                                        className="px-4 py-1.5 bg-[#363636] text-white text-sm font-semibold rounded-lg hover:bg-[#262626]"
                                     >
-                                        <MessageCircle size={18} />
-                                        <span>Message</span>
+                                        Message
+                                    </button>
+                                )}
+
+                                {isFollowing && (
+                                    <button
+                                        onClick={() => setShowFollowMenu(!showFollowMenu)}
+                                        className="p-1.5 bg-[#363636] text-white rounded-lg hover:bg-[#262626] relative"
+                                    >
+                                        <MoreVertical size={16} />
+                                        {/* Dropdown Menu */}
+                                        <AnimatePresence>
+                                            {showFollowMenu && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    className="absolute top-full right-0 mt-2 w-48 bg-[#262626] border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden"
+                                                >
+                                                    <button onClick={handleUnfollow} className="w-full text-left px-4 py-3 text-red-500 hover:bg-white/5 text-sm font-semibold">
+                                                        Unfollow
+                                                    </button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </button>
                                 )}
                             </div>
+                        </div>
 
-                            {/* Following Sub-Menu */}
-                            <AnimatePresence>
-                                {showFollowMenu && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute top-full left-0 mt-3 w-56 glass-noire border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl"
-                                    >
-                                        <div className="p-2 space-y-1">
-                                            <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 text-sm transition-all text-white group">
-                                                <div className="flex items-center gap-3">
-                                                    <Volume2 size={18} className="text-muted-foreground group-hover:text-white" />
-                                                    <span>Mute Aura</span>
-                                                </div>
-                                            </button>
-                                            <button
-                                                onClick={handleUnfollow}
-                                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-red-500/10 text-sm transition-all text-red-400 group"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <UserMinus size={18} />
-                                                    <span>Unfollow</span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Content Area */}
-            <main className="container mx-auto px-6 py-12">
-                <div className="grid lg:grid-cols-12 gap-10">
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="glass-noire rounded-3xl border border-border/30 p-8">
-                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-6">Experience Stats</h3>
-                            <div className="grid gap-6">
-                                {stats.map((stat, i) => (
-                                    <div key={i} className="flex items-center gap-4 group">
-                                        <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 group-hover:scale-110 transition-transform text-primary">
-                                            <stat.icon size={20} />
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-display font-bold leading-none">{stat.value}</p>
-                                            <p className="text-xs text-muted-foreground font-body">{stat.label}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                        {/* Stats Row */}
+                        <div className="flex items-center justify-center md:justify-start gap-8 text-sm md:text-base">
+                            <div className="flex gap-1.5">
+                                <span className="font-bold text-white">{userPosts.length}</span>
+                                <span className="text-zinc-400">posts</span>
+                            </div>
+                            <div className="flex gap-1.5">
+                                <span className="font-bold text-white">{userData?.followersCount || 0}</span>
+                                <span className="text-zinc-400">followers</span>
+                            </div>
+                            <div className="flex gap-1.5">
+                                <span className="font-bold text-white">{userData?.followingCount || 0}</span>
+                                <span className="text-zinc-400">following</span>
                             </div>
                         </div>
 
-                        {userData?.isPrivate && (
-                            <div className="p-8 glass-noire border border-red-500/20 rounded-3xl text-center space-y-4">
-                                <Shield className="w-12 h-12 text-red-500 mx-auto" />
-                                <h4 className="text-lg font-bold">This Aura is Private</h4>
-                                <p className="text-sm text-muted-foreground leading-relaxed">
-                                    Follow this user to see their posts and influence deployments.
-                                </p>
-                            </div>
-                        )}
+                        {/* Bio Section */}
+                        <div className="hidden md:block space-y-1">
+                            <p className="font-bold text-sm text-white">{userData?.fullName || "Aura Identity"}</p>
+                            <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                                {userData?.bio || "Silent in flame, calm as steel."}
+                            </p>
+                        </div>
                     </div>
+                </div>
 
-                    <div className="lg:col-span-8">
-                        {userData?.isPrivate && !isFollowing ? (
-                            <div className="h-64 flex items-center justify-center border-2 border-dashed border-white/5 rounded-[40px] text-muted-foreground uppercase tracking-widest font-black opacity-20">
-                                Protected Content
+                {/* Mobile Bio & Actions */}
+                <div className="md:hidden px-4 mb-6 space-y-4">
+                     <div className="space-y-1">
+                        <p className="font-bold text-sm text-white">{userData?.fullName || "Aura Identity"}</p>
+                        <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                            {userData?.bio || "Silent in flame, calm as steel."}
+                        </p>
+                     </div>
+
+                     <div className="flex gap-2">
+                        <button
+                            onClick={handleFollowAction}
+                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                isFollowing 
+                                ? "bg-[#363636] text-white" 
+                                : "bg-blue-500 text-white"
+                            }`}
+                        >
+                            {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
+                        </button>
+                        {isFollowing && (
+                            <button
+                                onClick={() => navigate(`/messages/${userData.username}`)}
+                                className="flex-1 py-2 bg-[#363636] text-white text-sm font-semibold rounded-lg"
+                            >
+                                Message
+                            </button>
+                        )}
+                     </div>
+                </div>
+
+                {/* Highlights Section */}
+                <div className="flex gap-6 overflow-x-auto no-scrollbar mb-12 px-4 md:px-0 pb-2">
+                    {[
+                        { label: "Highlights", img: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=150&h=150&fit=crop" },
+                        { label: "Vibe", img: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=150&h=150&fit=crop" },
+                        { label: "Life", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=150&h=150&fit=crop" }
+                    ].map((item, i) => (
+                        <div key={i} className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full p-[1px] bg-zinc-800 border border-white/10 group-hover:border-white/30 transition-colors">
+                                <div className="w-full h-full rounded-full bg-black p-[2px] overflow-hidden">
+                                    <img src={item.img} className="w-full h-full object-cover rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
+                                </div>
                             </div>
-                        ) : (
+                            <span className="text-xs text-zinc-100 font-medium">{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Profile Tabs */}
+                <div className="border-t border-zinc-800 mb-1">
+                    <div className="flex justify-center gap-12">
+                        <button className="flex items-center gap-2 py-4 border-t border-white text-xs font-bold uppercase tracking-widest text-white -mt-[1px]">
+                            <svg aria-label="" className="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12">
+                                <rect fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" width="18" x="3" y="3"></rect>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="9.015" x2="9.015" y1="3" y2="21"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="14.985" x2="14.985" y1="3" y2="21"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="21" x2="3" y1="9.015" y2="9.015"></line>
+                                <line fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="21" x2="3" y1="14.985" y2="14.985"></line>
+                            </svg>
+                            Posts
+                        </button>
+                        <button className="flex items-center gap-2 py-4 border-t border-transparent text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors -mt-[1px]">
+                             <User size={12} />
+                             Tagged
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content Logic */}
+                {userData?.isPrivate && !isFollowing ? (
+                    <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 border border-zinc-800 rounded-3xl mx-4 md:mx-0">
+                        <div className="w-16 h-16 rounded-full border-2 border-zinc-800 flex items-center justify-center">
+                            <Shield size={32} className="text-zinc-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">This Account is Private</h3>
+                        <p className="text-sm text-zinc-400 max-w-xs">Follow this account to see their photos and videos.</p>
+                    </div>
+                ) : (
+                    <>
+                        {userPosts.length > 0 ? (
                             <div className="grid grid-cols-3 gap-1 md:gap-4">
                                 {userPosts.map((post) => (
                                     <motion.div
                                         key={post.id}
-                                        whileHover={{ scale: 1.02 }}
-                                        className="aspect-square relative group cursor-pointer overflow-hidden rounded-xl border border-border/10"
+                                        className="aspect-square relative group cursor-pointer bg-zinc-900"
                                     >
                                         {post.mediaType === 'video' ? (
                                             <video src={post.mediaUrl} className="w-full h-full object-cover" />
@@ -474,28 +466,28 @@ const UserDetails = () => {
                                         )}
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
                                             <div className="flex items-center gap-1.5 text-white">
-                                                <Heart className="w-5 h-5 fill-white" />
+                                                <Heart className="w-6 h-6 fill-white" />
                                                 <span className="font-bold">{post.likes || 0}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-white">
-                                                <Music className="w-5 h-5 fill-white" />
+                                                <Music className="w-6 h-6 fill-white" />
                                                 <span className="font-bold">{post.comments || 0}</span>
                                             </div>
                                         </div>
                                     </motion.div>
                                 ))}
-                                {userPosts.length === 0 && (
-                                    <div className="col-span-3 py-20 text-center opacity-20 uppercase tracking-[0.4em] font-black">
-                                        No Influence Deployed
-                                    </div>
-                                )}
+                            </div>
+                        ) : (
+                            <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="w-16 h-16 rounded-full border-2 border-zinc-800 flex items-center justify-center">
+                                    <Music size={32} className="text-zinc-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">No Posts Yet</h3>
                             </div>
                         )}
-                    </div>
-                </div>
+                    </>
+                )}
             </main>
-
-            <div className="h-32" />
         </div>
     );
 };

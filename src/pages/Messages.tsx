@@ -732,20 +732,30 @@ const Messages = () => {
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="w-9 h-9 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-primary transition-all">
+                                                    <Button 
+                                                        onClick={() => navigate(`/video-call-setup?userId=${selectedChat.otherUid}&type=audio`)}
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="w-9 h-9 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-primary transition-all"
+                                                    >
                                                         <Phone className="w-4 h-4" />
                                                     </Button>
                                                 </TooltipTrigger>
-                                                <TooltipContent className="bg-black border-white/10 text-[10px] font-bold uppercase tracking-widest">Audio Link</TooltipContent>
+                                                <TooltipContent className="bg-black border-white/10 text-[10px] font-bold uppercase tracking-widest">Audio Session</TooltipContent>
                                             </Tooltip>
 
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="w-9 h-9 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-primary transition-all">
+                                                    <Button 
+                                                        onClick={() => navigate(`/video-call-setup?userId=${selectedChat.otherUid}&type=video`)}
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="w-9 h-9 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-primary transition-all"
+                                                    >
                                                         <Video className="w-4 h-4" />
                                                     </Button>
                                                 </TooltipTrigger>
-                                                <TooltipContent className="bg-black border-white/10 text-[10px] font-bold uppercase tracking-widest">Video Stream</TooltipContent>
+                                                <TooltipContent className="bg-black border-white/10 text-[10px] font-bold uppercase tracking-widest">Visual Presence</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </div>
