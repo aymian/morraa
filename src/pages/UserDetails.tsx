@@ -5,7 +5,7 @@ import {
     User, Mail, Phone, Calendar, Music, Heart,
     MapPin, Share2, Shield, Settings,
     ArrowLeft, CheckCircle, Sparkles, MessageCircle, UserPlus, Check,
-    Volume2, UserMinus, MoreVertical, X, Bell
+    Volume2, UserMinus, MoreVertical, X, Bell, Search
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -31,6 +31,15 @@ const UserDetails = () => {
     const [notFound, setNotFound] = useState(false);
     const [showFollowMenu, setShowFollowMenu] = useState(false);
     const navigate = useNavigate();
+
+    // Connections Modal State
+    const [showConnections, setShowConnections] = useState(false);
+    const [connectionsType, setConnectionsType] = useState<"followers" | "following">("followers");
+    const [connections, setConnections] = useState<any[]>([]);
+    const [connectionsLoading, setConnectionsLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [followersCount, setFollowersCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -155,6 +164,24 @@ const UserDetails = () => {
         checkStatus();
     }, [currentUser, targetUid]);
 
+    // Fetch real counts whenever targetUid changes
+    useEffect(() => {
+        if (!targetUid) return;
+
+        const fetchCounts = async () => {
+            try {
+                const followersSnap = await getDocs(collection(db, "users", targetUid, "followers"));
+                setFollowersCount(followersSnap.size);
+
+                const followingSnap = await getDocs(collection(db, "users", targetUid, "following"));
+                setFollowingCount(followingSnap.size);
+            } catch (error) {
+                console.error("Error fetching counts:", error);
+            }
+        };
+        fetchCounts();
+    }, [targetUid]);
+
 
     const handleFollowAction = async () => {
         console.log("Follow action triggered for target:", targetUid);
@@ -246,6 +273,40 @@ const UserDetails = () => {
         }
     };
 
+    const fetchConnections = async (type: "followers" | "following") => {
+        if (!targetUid) return;
+        setConnectionsType(type);
+        setShowConnections(true);
+        setConnectionsLoading(true);
+        setSearchQuery("");
+
+        try {
+            const subCol = type === "followers" ? "followers" : "following";
+            const snap = await getDocs(collection(db, "users", targetUid, subCol));
+            const uids = snap.docs.map(doc => doc.id);
+
+            if (uids.length === 0) {
+                setConnections([]);
+                setConnectionsLoading(false);
+                return;
+            }
+
+            // Fetch user details for each UID
+            const userDetails = await Promise.all(
+                uids.slice(0, 50).map(async (uid) => {
+                    const uDoc = await getDoc(doc(db, "users", uid));
+                    return uDoc.exists() ? { uid, ...uDoc.data() } : null;
+                })
+            );
+
+            setConnections(userDetails.filter(u => u !== null));
+        } catch (error) {
+            console.error("Error fetching connections:", error);
+        } finally {
+            setConnectionsLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -305,7 +366,7 @@ const UserDetails = () => {
                                     className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
                                         isFollowing 
                                         ? "bg-[#363636] text-white hover:bg-[#262626]" 
-                                        : "bg-blue-500 text-white hover:bg-blue-600"
+                                        : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
                                     }`}
                                 >
                                     {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
@@ -348,16 +409,22 @@ const UserDetails = () => {
 
                         {/* Stats Row */}
                         <div className="flex items-center justify-center md:justify-start gap-8 text-sm md:text-base">
-                            <div className="flex gap-1.5">
+                            <div className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity">
                                 <span className="font-bold text-white">{userPosts.length}</span>
                                 <span className="text-zinc-400">posts</span>
                             </div>
-                            <div className="flex gap-1.5">
-                                <span className="font-bold text-white">{userData?.followersCount || 0}</span>
+                            <div 
+                                className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                onClick={() => fetchConnections("followers")}
+                            >
+                                <span className="font-bold text-white">{followersCount}</span>
                                 <span className="text-zinc-400">followers</span>
                             </div>
-                            <div className="flex gap-1.5">
-                                <span className="font-bold text-white">{userData?.followingCount || 0}</span>
+                            <div 
+                                className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                onClick={() => fetchConnections("following")}
+                            >
+                                <span className="font-bold text-white">{followingCount}</span>
                                 <span className="text-zinc-400">following</span>
                             </div>
                         </div>
@@ -387,7 +454,7 @@ const UserDetails = () => {
                             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
                                 isFollowing 
                                 ? "bg-[#363636] text-white" 
-                                : "bg-blue-500 text-white"
+                                : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
                             }`}
                         >
                             {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
@@ -488,6 +555,81 @@ const UserDetails = () => {
                     </>
                 )}
             </main>
+
+            {/* Connections Modal */}
+            <AnimatePresence>
+                {showConnections && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[#1A1A1A] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+                        >
+                            <div className="p-4 border-b border-white/5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-center flex-1 capitalize text-white text-lg">{connectionsType}</h3>
+                                    <button onClick={() => setShowConnections(false)} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+                                        <X size={20} className="text-white" />
+                                    </button>
+                                </div>
+                                
+                                {/* Search Bar */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
+                                    <input 
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#FBBF24]/50 transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-2 h-[400px] overflow-y-auto custom-scrollbar">
+                                {connectionsLoading ? (
+                                    <div className="flex justify-center p-8">
+                                        <div className="w-8 h-8 border-2 border-[#FBBF24] border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        {connections
+                                            .filter(u => 
+                                                u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                u.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
+                                            )
+                                            .map((u) => (
+                                            <div 
+                                                key={u.uid} 
+                                                className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                                                onClick={() => {
+                                                    setShowConnections(false);
+                                                    navigate(`/@${u.username}`);
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-zinc-800 bg-cover bg-center border border-white/10" style={{ backgroundImage: `url(${u.avatarUrl || u.profileImage})` }} />
+                                                    <div>
+                                                        <p className="font-bold text-sm text-white">{u.username}</p>
+                                                        <p className="text-xs text-zinc-400">{u.fullName}</p>
+                                                    </div>
+                                                </div>
+                                                <button className="px-4 py-1.5 bg-white/5 text-white text-xs font-bold rounded-lg hover:bg-white/10 transition-colors border border-white/5">
+                                                    View
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {connections.length === 0 && !connectionsLoading && (
+                                            <p className="text-center text-zinc-500 py-8 text-sm">No users found.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
