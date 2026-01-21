@@ -33,7 +33,7 @@ const StoryShare = () => {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data from previous screen
-    const { mediaUrl, fileType, textOverlay, selectedMusic, selectedFile } = location.state || {};
+    const { mediaUrl, fileType, textOverlay, selectedMusic, selectedFile, duration } = location.state || {};
 
     // State for share options
     const [storyLocation, setStoryLocation] = useState("");
@@ -80,7 +80,8 @@ const StoryShare = () => {
                 expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 seenIds: [],
                 likedIds: [],
-                isVerified: userData?.isVerified || false
+                isVerified: userData?.isVerified || false,
+                duration: duration || null
             });
 
             toast({ title: "Influence Deployed", description: "Your story is now live globally." });

@@ -21,7 +21,8 @@ import {
     Sticker,
     Download,
     Save,
-    Settings
+    Settings,
+    Star
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -56,6 +57,7 @@ const StoryUpload = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
+    const [duration, setDuration] = useState<number>(5); // Default 5s for images
 
     // Music State
     const [showMusicPicker, setShowMusicPicker] = useState(false);
@@ -71,7 +73,9 @@ const StoryUpload = () => {
         weight: "900",
         style: "classic", // classic, neon, strong, typewriter
         fontFamily: "font-sans",
-        width: 320
+        width: 320,
+        x: 0.5,
+        y: 0.5
     });
     const [showTextEditor, setShowTextEditor] = useState(false);
 
@@ -87,12 +91,31 @@ const StoryUpload = () => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 50 * 1024 * 1024) {
-                toast({ title: "File too large", description: "Stories are limited to 50MB.", variant: "destructive" });
+                toast({ title: "File too large", description: "Stories are limited to 2 minutes / 50MB.", variant: "destructive" });
                 return;
             }
-            setSelectedFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            setFileType(file.type.startsWith('image') ? 'image' : 'video');
+
+            if (file.type.startsWith('video')) {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = function() {
+                    window.URL.revokeObjectURL(video.src);
+                    if (video.duration > 120) {
+                        toast({ title: "Video too long", description: "Stories are limited to 2 minutes.", variant: "destructive" });
+                        return;
+                    }
+                    setDuration(video.duration);
+                    setSelectedFile(file);
+                    setPreviewUrl(URL.createObjectURL(file));
+                    setFileType('video');
+                }
+                video.src = URL.createObjectURL(file);
+            } else {
+                setDuration(5);
+                setSelectedFile(file);
+                setPreviewUrl(URL.createObjectURL(file));
+                setFileType('image');
+            }
         }
     };
 
@@ -135,6 +158,7 @@ const StoryUpload = () => {
                 userAvatar: userData?.profileImage || null,
                 mediaUrl,
                 mediaType: fileType,
+                duration: duration,
                 textOverlay: textOverlay.content ? textOverlay : null,
                 music: selectedMusic ? {
                     ...selectedMusic,
@@ -249,7 +273,21 @@ const StoryUpload = () => {
                                 <motion.div
                                     drag
                                     dragConstraints={constraintsRef}
-                                    dragElastic={0.05}
+                                    dragMomentum={false}
+                                    onDragEnd={(_, info) => {
+                                        if (constraintsRef.current) {
+                                            const rect = constraintsRef.current.getBoundingClientRect();
+                                            const centerX = rect.width / 2;
+                                            const centerY = rect.height / 2;
+                                            const finalX = centerX + info.offset.x;
+                                            const finalY = centerY + info.offset.y;
+                                            setTextOverlay(prev => ({
+                                                ...prev,
+                                                x: finalX / rect.width,
+                                                y: finalY / rect.height
+                                            }));
+                                        }
+                                    }}
                                     className="relative pointer-events-auto cursor-move"
                                     style={{ width: 'auto', minWidth: '100px' }}
                                 >
@@ -314,7 +352,7 @@ const StoryUpload = () => {
                                     </button>
                                     <button className="flex flex-col items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
                                         <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
-                                            <StarIcon size={20} />
+                                            <Star size={20} />
                                         </div>
                                         <span className="text-[10px] font-medium">Close Friends</span>
                                     </button>
@@ -329,7 +367,8 @@ const StoryUpload = () => {
                                             fileType,
                                             textOverlay,
                                             selectedMusic,
-                                            selectedFile
+                                            selectedFile,
+                                            duration
                                         }
                                     })}
                                     className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:bg-gray-200 transition-colors"

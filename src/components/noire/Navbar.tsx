@@ -315,15 +315,4 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
 };
 
 export default Navbar;
-function unsubscribe() {
-  throw new Error("Function not implemented.");
-}
-
-function unsubNotifs() {
-  throw new Error("Function not implemented.");
-}
-
-function unsubStories() {
-  throw new Error("Function not implemented.");
-}
 

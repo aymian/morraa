@@ -60,6 +60,8 @@ const StoryView = () => {
     const [progress, setProgress] = useState(0);
     const [message, setMessage] = useState("");
     const [showInteractionModal, setShowInteractionModal] = useState<"seen" | "likes" | "menu" | null>(null);
+    const [realDuration, setRealDuration] = useState<number | null>(null);
+    const [previewViewers, setPreviewViewers] = useState<any[]>([]);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressTimer = useRef<any>(null);
@@ -135,7 +137,39 @@ const StoryView = () => {
         }
     }, [allStoryGroups, initialUsername, isLoading]);
 
-    // 3. Progress Timer Logic
+    // Reset state on story change
+    useEffect(() => {
+        setRealDuration(null);
+        setPreviewViewers([]);
+    }, [currentStoryIndex, currentGroupIndex]);
+
+    // 3. Preview Viewers Fetching
+    useEffect(() => {
+        if (currentGroupIndex === -1 || !user) return;
+        
+        const currentGroup = allStoryGroups[currentGroupIndex];
+        const currentStory = currentGroup?.stories[currentStoryIndex];
+        
+        if (currentGroup?.userId === user.uid && currentStory?.seenIds?.length > 0) {
+            const fetchPreviews = async () => {
+                try {
+                    const recentIds = currentStory.seenIds.slice(-3).reverse();
+                    const previews = await Promise.all(recentIds.map(async (uid: string) => {
+                         const snap = await getDoc(doc(db, "users", uid));
+                         return snap.exists() ? { id: uid, ...snap.data() } : null;
+                    }));
+                    setPreviewViewers(previews.filter(p => p !== null));
+                } catch (e) {
+                    console.error("Error fetching previews", e);
+                }
+            };
+            fetchPreviews();
+        } else {
+            setPreviewViewers([]);
+        }
+    }, [currentGroupIndex, currentStoryIndex, allStoryGroups, user]);
+
+    // 4. Progress Timer Logic
     useEffect(() => {
         if (isLoading || currentGroupIndex === -1 || isPaused) return;
 
@@ -143,7 +177,18 @@ const StoryView = () => {
         if (!currentGroup) return;
 
         const currentStory = currentGroup.stories[currentStoryIndex];
-        const duration = currentStory.mediaType === 'video' ? 15000 : STORY_DURATION;
+        
+        // Use real video duration if available, otherwise fallback to DB duration or default
+        let duration = STORY_DURATION;
+        if (currentStory.mediaType === 'video') {
+            if (realDuration) {
+                duration = realDuration * 1000;
+            } else if (currentStory.duration) {
+                duration = currentStory.duration * 1000;
+            } else {
+                duration = 15000;
+            }
+        }
 
         const startTime = Date.now() - (progress / 100) * duration;
         const interval = 50;
@@ -166,7 +211,7 @@ const StoryView = () => {
         }
 
         return () => clearInterval(progressTimer.current);
-    }, [currentGroupIndex, currentStoryIndex, isLoading, isPaused, user, allStoryGroups]);
+    }, [currentGroupIndex, currentStoryIndex, isLoading, isPaused, user, allStoryGroups, realDuration]);
 
     // Navigation Handlers
     const handleNext = () => {
@@ -333,7 +378,7 @@ const StoryView = () => {
 
                     {/* Header */}
                     <div className="absolute top-8 left-6 right-6 z-50 flex items-center justify-between">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${activeGroup.username}`)}>
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/@${activeGroup.username}`)}>
                             <div className="w-9 h-9 rounded-full border border-white/10 p-[1.5px] bg-black/20 backdrop-blur-md">
                                 <img src={activeGroup.userAvatar || "https://github.com/shadcn.png"} className="w-full h-full rounded-full object-cover" />
                             </div>
@@ -371,17 +416,24 @@ const StoryView = () => {
                                 playsInline
                                 onPlay={() => setIsPaused(false)}
                                 onPause={() => setIsPaused(true)}
+                                onLoadedMetadata={(e) => setRealDuration(e.currentTarget.duration)}
                             />
                         )}
 
                          {/* Text Overlay */}
                          {activeStory.textOverlay && (
-                            <div className="absolute inset-0 flex items-center justify-center p-12 pointer-events-none z-[45]">
+                            <div className="absolute inset-0 pointer-events-none z-[45] overflow-hidden">
                                 <p
                                     style={{
                                         fontSize: `${activeStory.textOverlay.size || 24}px`,
                                         fontWeight: activeStory.textOverlay.weight || '700',
-                                        fontFamily: activeStory.textOverlay.fontFamily === 'serif' ? 'serif' : activeStory.textOverlay.fontFamily === 'mono' ? 'monospace' : 'inherit'
+                                        fontFamily: activeStory.textOverlay.fontFamily === 'serif' ? 'serif' : activeStory.textOverlay.fontFamily === 'mono' ? 'monospace' : 'inherit',
+                                        position: 'absolute',
+                                        left: `${(activeStory.textOverlay.x !== undefined ? activeStory.textOverlay.x : 0.5) * 100}%`,
+                                        top: `${(activeStory.textOverlay.y !== undefined ? activeStory.textOverlay.y : 0.5) * 100}%`,
+                                        transform: 'translate(-50%, -50%)',
+                                        width: 'max-content',
+                                        maxWidth: '100%'
                                     }}
                                     className={`text-white text-center leading-tight drop-shadow-2xl
                                         ${activeStory.textOverlay.style === 'classic' ? 'bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20' : ''}
@@ -417,21 +469,25 @@ const StoryView = () => {
                                 }}
                                 className="w-full flex items-center justify-between px-4 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/15 transition-all"
                              >
-                                <div className="flex -space-x-2 overflow-hidden pl-1">
-                                    {activeStory.seenIds && activeStory.seenIds.length > 0 ? (
-                                        <>
-                                            <div className="w-6 h-6 rounded-full border border-black bg-zinc-700 flex items-center justify-center">
-                                                <Eye size={12} className="text-white/60"/>
-                                            </div>
-                                        </>
-                                    ) : (
-                                         <div className="w-6 h-6 rounded-full border border-black bg-zinc-800" />
-                                    )}
+                                <div className="flex items-center gap-3">
+                                    <div className="flex -space-x-3 overflow-hidden pl-1">
+                                        {previewViewers.length > 0 ? (
+                                            previewViewers.map((viewer) => (
+                                                <div key={viewer.id} className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 overflow-hidden z-[1]">
+                                                    <img src={viewer.profileImage || `https://i.pravatar.cc/150?u=${viewer.id}`} className="w-full h-full object-cover" />
+                                                </div>
+                                            ))
+                                        ) : (
+                                             <div className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center">
+                                                <Eye size={14} className="text-white/40"/>
+                                             </div>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-sm font-bold text-white">{activeStory.seenIds?.length || 0} Viewers</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-white">{activeStory.seenIds?.length || 0}</span>
-                                    <span className="text-sm text-white/60">Viewers</span>
-                                </div>
+
                                 <div className="flex items-center gap-4">
                                     <div onClick={(e) => { e.stopPropagation(); handleDelete(); }} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-red-500">
                                         <Trash2 size={18} />
@@ -515,7 +571,7 @@ const StoryView = () => {
                                         </div>
                                     ) : (
                                         viewersList.map((viewer) => (
-                                            <div key={viewer.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer" onClick={() => navigate(`/profile/${viewer.username}`)}>
+                                            <div key={viewer.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer" onClick={() => navigate(`/@${viewer.username}`)}>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden border border-white/10">
                                                         <img src={viewer.profileImage || `https://i.pravatar.cc/150?u=${viewer.id}`} className="w-full h-full object-cover" />
