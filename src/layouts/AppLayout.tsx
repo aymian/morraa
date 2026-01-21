@@ -9,6 +9,8 @@ const AppLayout = () => {
     const [user, setUser] = useState<any>(null);
     const location = useLocation();
     const isMessagesPage = location.pathname.startsWith('/messages');
+    const isStoryUploadPage = location.pathname.startsWith('/story-upload');
+    const isFocusMode = isMessagesPage || isStoryUploadPage;
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
@@ -17,8 +19,8 @@ const AppLayout = () => {
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
-            {user && <FloatingSidebar />}
-            <Navbar logoOnly={isMessagesPage} />
+            {user && !isFocusMode && <FloatingSidebar />}
+            <Navbar logoOnly={isFocusMode} />
             <Outlet />
         </div>
     );

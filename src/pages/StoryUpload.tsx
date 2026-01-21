@@ -17,7 +17,11 @@ import {
     Play,
     Pause,
     Plus,
-    Upload
+    Upload,
+    Sticker,
+    Download,
+    Save,
+    Settings
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -29,6 +33,7 @@ import Navbar from "@/components/noire/Navbar";
 /**
  * STORY UPLOAD EXPERIENCE - "The Lens"
  * High-end dedicated interface for story creation with Music Integration.
+ * Modeled after Instagram Stories UI/UX
  */
 
 interface Track {
@@ -160,121 +165,161 @@ const StoryUpload = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans overflow-hidden">
+        <div className="min-h-screen bg-black text-white flex flex-col font-sans overflow-hidden">
             <Navbar logoOnly />
 
             <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,video/*" className="hidden" />
             <input type="file" ref={audioInputRef} onChange={handleAudioSelect} accept="audio/*" className="hidden" />
 
-            <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FBBF24]/5 blur-[150px] rounded-full pointer-events-none" />
-
+            <main className="flex-1 flex flex-col items-center justify-center p-0 md:p-6 relative">
                 {!previewUrl ? (
+                    <div className="w-full h-full flex flex-col">
+                        {/* Camera Header */}
+                        <div className="absolute top-0 left-0 right-0 z-50 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
+                            <button onClick={() => navigate(-1)}><X className="text-white w-8 h-8" /></button>
+                            <div className="bg-black/50 backdrop-blur-md px-4 py-1 rounded-full">
+                                <span className="font-bold text-sm">Add to Story</span>
+                            </div>
+                            <button><Settings className="text-white w-6 h-6 opacity-0" /></button> {/* Spacer */}
+                        </div>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex-1 flex flex-col items-center justify-center gap-8 relative overflow-hidden bg-[#121212] rounded-none md:rounded-[2rem] w-full max-w-lg mx-auto aspect-[9/16] md:max-h-[85vh] border border-white/5"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <div className="w-full h-full absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center opacity-20 blur-xl" />
+                            
+                            <div className="relative z-10 flex flex-col items-center gap-6 cursor-pointer group">
+                                <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                    <Plus className="text-white w-10 h-10" />
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <h2 className="text-2xl font-bold tracking-tight">Create</h2>
+                                    <p className="text-white/50 text-sm font-medium">Tap to select photos or videos</p>
+                                </div>
+                            </div>
+
+                            {/* Recent Gallery Preview Strip (Mock) */}
+                            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent flex items-end justify-center pb-8 gap-3">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="w-12 h-16 rounded-lg bg-white/10 border border-white/10" />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                ) : (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-lg aspect-[9/16] md:max-h-[85vh] bg-zinc-900/50 rounded-[3rem] border border-white/5 backdrop-blur-3xl flex flex-col items-center justify-center gap-8 relative overflow-hidden group cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full max-w-md aspect-[9/16] md:max-h-[85vh] bg-black rounded-none md:rounded-[2rem] overflow-hidden border-0 md:border border-white/10 relative flex flex-col shadow-2xl"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-                        <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#FBBF24]/10 group-hover:border-[#FBBF24]/20 transition-all duration-500">
-                            <ImageIcon className="text-white/20 group-hover:text-[#FBBF24] transition-colors" size={32} />
-                        </div>
-                        <div className="text-center space-y-2">
-                            <h2 className="text-xl font-display font-bold">Select Media</h2>
-                            <p className="text-[10px] uppercase font-black tracking-[0.3em] text-white/20">Syncing with system lens</p>
-                        </div>
-                        {/* Corner Accents */}
-                        <div className="absolute top-8 left-8 w-4 h-4 border-t border-l border-white/10 group-hover:border-[#FBBF24]/40" />
-                        <div className="absolute top-8 right-8 w-4 h-4 border-t border-r border-white/10 group-hover:border-[#FBBF24]/40" />
-                        <div className="absolute bottom-8 left-8 w-4 h-4 border-b border-l border-white/10 group-hover:border-[#FBBF24]/40" />
-                        <div className="absolute bottom-8 right-8 w-4 h-4 border-b border-r border-white/10 group-hover:border-[#FBBF24]/40" />
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="w-full max-w-md aspect-[9/16] md:max-h-[85vh] bg-zinc-900 rounded-[3rem] overflow-hidden border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative flex flex-col"
-                    >
-                        <div ref={constraintsRef} className="absolute inset-0">
+                        <div ref={constraintsRef} className="absolute inset-0 bg-zinc-900">
                             {fileType === 'image' ? (
                                 <img src={previewUrl} className="w-full h-full object-cover" />
                             ) : (
                                 <video src={previewUrl} className="w-full h-full object-cover" autoPlay loop playsInline />
                             )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40 pointer-events-none" />
                         </div>
 
-                        <div className="relative z-10 p-6 flex justify-between items-center">
-                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setPreviewUrl(null); setTextOverlay(""); setSelectedMusic(null); }} className="bg-black/40 backdrop-blur-xl p-3 rounded-full border border-white/10"><ChevronLeft size={20} /></motion.button>
-                            <div className="flex gap-2">
-                                <button onClick={() => setShowMusicPicker(true)} className={`bg-black/40 backdrop-blur-xl p-3 rounded-full border transition-colors ${selectedMusic ? 'border-[#FBBF24] text-[#FBBF24]' : 'border-white/10 text-white'}`}><Music size={18} /></button>
-                                <button onClick={() => setShowTextEditor(true)} className="bg-black/40 backdrop-blur-xl p-3 rounded-full border border-white/10"><Type size={18} /></button>
-                                <button className="bg-black/40 backdrop-blur-xl p-3 rounded-full border border-white/10"><Smile size={18} /></button>
-                                <button className="bg-black/40 backdrop-blur-xl p-3 rounded-full border border-white/10 text-[#FBBF24]"><Sparkles size={18} /></button>
+                        {/* Top Tools Bar */}
+                        <div className="relative z-20 pt-6 px-4 flex justify-between items-start">
+                            <motion.button 
+                                whileTap={{ scale: 0.9 }} 
+                                onClick={() => { setPreviewUrl(null); setTextOverlay(prev => ({...prev, content: ""})); setSelectedMusic(null); }} 
+                                className="w-10 h-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white"
+                            >
+                                <ChevronLeft size={28} />
+                            </motion.button>
+                            
+                            <div className="flex gap-4">
+                                <button onClick={() => setShowTextEditor(true)} className="text-white drop-shadow-md hover:scale-110 transition-transform"><Type size={26} /></button>
+                                <button className="text-white drop-shadow-md hover:scale-110 transition-transform"><Sticker size={26} /></button>
+                                <button className="text-white drop-shadow-md hover:scale-110 transition-transform"><Sparkles size={26} /></button>
+                                <button onClick={() => setShowMusicPicker(true)} className={`drop-shadow-md hover:scale-110 transition-transform ${selectedMusic ? 'text-[#FBBF24]' : 'text-white'}`}><Music size={26} /></button>
+                                <button className="text-white drop-shadow-md hover:scale-110 transition-transform"><MoreHorizontal size={26} /></button>
                             </div>
                         </div>
 
-
-
+                        {/* Draggable Text Overlay */}
                         {textOverlay.content && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                                 <motion.div
                                     drag
                                     dragConstraints={constraintsRef}
                                     dragElastic={0.05}
-                                    className="relative pointer-events-auto"
-                                    style={{ width: textOverlay.width }}
+                                    className="relative pointer-events-auto cursor-move"
+                                    style={{ width: 'auto', minWidth: '100px' }}
                                 >
                                     <motion.p
                                         style={{
                                             fontSize: `${textOverlay.size}px`,
                                             fontWeight: textOverlay.weight,
                                             fontFamily: textOverlay.fontFamily === 'serif' ? 'serif' : textOverlay.fontFamily === 'mono' ? 'monospace' : 'inherit',
-                                            width: '100%',
                                             textAlign: 'center'
                                         }}
                                         className={`
-                                            text-white select-none shadow-2xl transition-all duration-300
-                                            ${textOverlay.style === 'classic' ? 'bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20' : ''}
+                                            text-white select-none shadow-2xl transition-all duration-300 whitespace-pre-wrap
+                                            ${textOverlay.style === 'classic' ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : ''}
                                             ${textOverlay.style === 'neon' ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] px-4' : ''}
-                                            ${textOverlay.style === 'strong' ? 'bg-[#FBBF24] text-black px-4 py-2 rounded-lg font-black italic' : ''}
-                                            ${textOverlay.style === 'typewriter' ? 'bg-white text-black px-4 py-1 border-l-4 border-black font-mono' : ''}
+                                            ${textOverlay.style === 'strong' ? 'bg-white text-black px-4 py-2 rounded-lg font-black' : ''}
+                                            ${textOverlay.style === 'typewriter' ? 'bg-black/50 backdrop-blur-sm text-white px-4 py-1 font-mono border border-white/20' : ''}
                                         `}
                                     >
                                         {textOverlay.content}
                                     </motion.p>
                                     <button
                                         onClick={() => setTextOverlay({ ...textOverlay, content: "" })}
-                                        className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                                        className="absolute -top-6 -right-6 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform backdrop-blur-sm"
                                     >
-                                        <X size={12} />
+                                        <X size={14} />
                                     </button>
                                 </motion.div>
                             </div>
                         )}
 
-                        <div className="relative z-10 mt-auto p-8 flex flex-col items-center gap-4">
+                        {/* Bottom Controls */}
+                        <div className="relative z-20 mt-auto p-4 flex flex-col gap-4 pb-8 md:pb-6">
                             <AnimatePresence>
                                 {selectedMusic && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 10 }}
-                                        className="mb-2 flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 w-fit"
+                                        className="self-center flex items-center gap-3 px-5 py-2.5 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10"
                                     >
-                                        <Music size={12} className="text-[#FBBF24] animate-pulse" />
-                                        <span className="text-[10px] font-black text-white/80 uppercase tracking-widest truncate max-w-[180px]">
-                                            {selectedMusic.title} • {selectedMusic.artist}
-                                        </span>
-                                        <button onClick={() => setSelectedMusic(null)} className="ml-1 text-white/30 hover:text-white transition-colors">
-                                            <X size={12} />
+                                        <div className="w-8 h-8 rounded-md bg-[#FBBF24] flex items-center justify-center">
+                                            <Music size={16} className="text-black animate-pulse" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-white leading-tight">{selectedMusic.title}</span>
+                                            <span className="text-[10px] text-white/70">{selectedMusic.artist}</span>
+                                        </div>
+                                        <button onClick={() => setSelectedMusic(null)} className="ml-2 text-white/50 hover:text-white transition-colors">
+                                            <X size={14} />
                                         </button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <div className="w-full flex justify-end">
+                            <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center gap-2">
+                                    <button className="flex flex-col items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+                                            <Download size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-medium">Save</span>
+                                    </button>
+                                    <button className="flex flex-col items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+                                            <StarIcon size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-medium">Close Friends</span>
+                                    </button>
+                                </div>
+
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -287,10 +332,10 @@ const StoryUpload = () => {
                                             selectedFile
                                         }
                                     })}
-                                    className="w-16 h-16 rounded-full bg-[#FBBF24] text-black border border-white/20 flex items-center justify-center shadow-[0_10px_30px_rgba(251,191,36,0.3)] relative overflow-hidden group"
+                                    className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:bg-gray-200 transition-colors"
                                 >
-                                    <ArrowRight size={24} />
-                                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500" />
+                                    <span>Your Story</span>
+                                    <ArrowRight size={18} />
                                 </motion.button>
                             </div>
                         </div>
@@ -298,21 +343,13 @@ const StoryUpload = () => {
                         <AnimatePresence>
                             {isUploading && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center">
-                                    <div className="relative w-24 h-24 mb-6">
-                                        <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-t-4 border-[#FBBF24]" />
-                                    </div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#FBBF24]">Neural Syncing</p>
+                                    <Loader2 className="w-12 h-12 text-white animate-spin mb-4" />
+                                    <p className="text-xs font-bold uppercase tracking-widest text-white">Posting...</p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </motion.div>
                 )}
-
-                <div className="absolute bottom-12 left-12 hidden lg:flex flex-col gap-2 opacity-20">
-                    <Smartphone size={20} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Mobile Studio Context</span>
-                </div>
             </main>
 
             {/* Music Picker Drawer */}
@@ -322,68 +359,66 @@ const StoryUpload = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[600] bg-black/80 backdrop-blur-md flex flex-col items-center justify-end"
+                        className="fixed inset-0 z-[600] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-end"
+                        onClick={() => setShowMusicPicker(false)}
                     >
                         <motion.div
                             initial={{ y: "100%" }}
                             animate={{ y: 0 }}
                             exit={{ y: "100%" }}
-                            className="w-full max-w-lg bg-zinc-900 rounded-t-[3rem] p-8 border-t border-white/10 flex flex-col gap-6"
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-lg bg-[#121212] rounded-t-[2rem] h-[70vh] flex flex-col overflow-hidden shadow-2xl border-t border-white/10"
                         >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-display font-bold">Add Soundtrack</h3>
-                                <button onClick={() => setShowMusicPicker(false)} className="p-2 bg-white/5 rounded-full"><X size={20} /></button>
+                            <div className="p-2 flex justify-center">
+                                <div className="w-12 h-1.5 bg-white/20 rounded-full" />
+                            </div>
+                            
+                            <div className="px-6 pt-2 pb-6 flex flex-col gap-4">
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search music"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-white/10 rounded-xl py-3 pl-12 pr-4 text-sm font-medium outline-none placeholder:text-white/40"
+                                    />
+                                </div>
                             </div>
 
-                            {/* Search bar */}
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search Pulse, Artists, or Spotify..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold outline-none focus:border-[#FBBF24]/40 transition-colors"
-                                />
-                            </div>
-
-                            {/* Options */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
                                 <button
                                     onClick={() => audioInputRef.current?.click()}
-                                    className="flex flex-col items-center gap-2 p-6 bg-[#FBBF24]/5 border border-[#FBBF24]/10 rounded-[2rem] hover:bg-[#FBBF24]/10 transition-colors group"
+                                    className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left group"
                                 >
-                                    <div className="p-3 bg-white/5 rounded-full group-hover:bg-[#FBBF24]/20 transition-colors"><Upload className="text-[#FBBF24]" size={20} /></div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Upload Local</span>
+                                    <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20">
+                                        <Upload size={20} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-sm">Upload Original Audio</p>
+                                        <p className="text-xs text-white/50">Import from device</p>
+                                    </div>
                                 </button>
-                                <button className="flex flex-col items-center gap-2 p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] opacity-50 cursor-not-allowed">
-                                    <div className="p-3 bg-white/5 rounded-full"><Plus className="text-emerald-500" size={20} /></div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Connect Spotify</span>
-                                </button>
-                            </div>
 
-                            {/* Recommended */}
-                            <div className="space-y-4">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Trending on Pulse</span>
-                                <div className="space-y-2">
-                                    {mockTracks.map(track => (
-                                        <div key={track.id} className="flex items-center justify-between p-3 rounded-2xl border border-white/5 hover:bg-white/5 transition-all group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-zinc-800 overflow-hidden relative">
-                                                    <img src={track.cover} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                                                    <Play className="absolute inset-0 m-auto text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all" size={16} fill="white" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold">{track.title}</span>
-                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{track.artist}</span>
-                                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">For You</p>
+                                    {mockTracks.map((track) => (
+                                        <div
+                                            key={track.id}
+                                            onClick={() => {
+                                                setSelectedMusic(track);
+                                                setShowMusicPicker(false);
+                                            }}
+                                            className="flex items-center gap-4 p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group"
+                                        >
+                                            <img src={track.cover} alt={track.title} className="w-14 h-14 rounded-lg object-cover" />
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-sm text-white truncate">{track.title}</h4>
+                                                <p className="text-xs text-white/60 truncate">{track.artist}</p>
                                             </div>
-                                            <button
-                                                onClick={() => { setSelectedMusic(track); setShowMusicPicker(false); }}
-                                                className="p-3 bg-white/5 rounded-full hover:bg-[#FBBF24] hover:text-black transition-all"
-                                            >
-                                                <Plus size={16} />
-                                            </button>
+                                            <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Play size={12} fill="white" />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -393,114 +428,54 @@ const StoryUpload = () => {
                 )}
             </AnimatePresence>
 
-            {/* Advanced Text Editor Context */}
+            {/* Text Editor Overlay */}
             <AnimatePresence>
                 {showTextEditor && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex flex-col p-8"
+                        className="fixed inset-0 z-[700] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center"
                     >
-                        {/* Editor Header */}
-                        <div className="flex justify-between items-center mb-12">
-                            <div className="flex gap-4 items-center">
-                                <button
-                                    onClick={() => setTextOverlay({ ...textOverlay, weight: textOverlay.weight === '900' ? '400' : '900' })}
-                                    className={`w-12 h-12 rounded-full border border-white/10 flex items-center justify-center font-bold transition-all ${textOverlay.weight === '900' ? 'bg-white text-black' : 'text-white'}`}
-                                >
-                                    B
-                                </button>
-                                <div className="flex bg-white/5 rounded-full p-1 border border-white/10">
-                                    {['font-sans', 'serif', 'mono'].map((f) => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setTextOverlay({ ...textOverlay, fontFamily: f })}
-                                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${textOverlay.fontFamily === f ? 'bg-white text-black' : 'text-white/40'}`}
-                                        >
-                                            {f.split('-')[1] || f}
-                                        </button>
-                                    ))}
-                                </div>
+                        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
+                            <button onClick={() => setShowTextEditor(false)} className="text-white font-bold text-lg">Cancel</button>
+                            <div className="flex gap-2">
+                                {['classic', 'strong', 'neon', 'typewriter'].map((style) => (
+                                    <button
+                                        key={style}
+                                        onClick={() => setTextOverlay(prev => ({ ...prev, style }))}
+                                        className={`w-6 h-6 rounded-full border border-white ${textOverlay.style === style ? 'bg-white' : 'bg-transparent'}`}
+                                    />
+                                ))}
                             </div>
-                            <button onClick={() => setShowTextEditor(false)} className="px-8 py-3 bg-[#FBBF24] text-black rounded-full font-black uppercase tracking-widest">Done</button>
+                            <button 
+                                onClick={() => setShowTextEditor(false)} 
+                                className="text-white font-bold text-lg"
+                                disabled={!textOverlay.content}
+                            >
+                                Done
+                            </button>
                         </div>
-
-                        {/* Editor Center */}
-                        <div className="flex-1 flex items-center justify-center gap-12 max-w-5xl mx-auto w-full">
-                            {/* Font Size Slider */}
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="h-64 w-1.5 bg-white/10 rounded-full relative overflow-hidden group">
-                                    <input
-                                        type="range"
-                                        min="12"
-                                        max="100"
-                                        value={textOverlay.size}
-                                        onChange={(e) => setTextOverlay({ ...textOverlay, size: parseInt(e.target.value) })}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer -rotate-180 [writing-mode:vertical-rl] z-10"
-                                    />
-                                    <div
-                                        style={{ height: `${(textOverlay.size - 12) / 88 * 100}%` }}
-                                        className="absolute bottom-0 w-full bg-[#FBBF24] rounded-full pointer-events-none transition-all"
-                                    />
-                                </div>
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Size</span>
-                            </div>
-
+                        
+                        <div className="w-full max-w-md px-8 relative z-10">
                             <textarea
                                 autoFocus
                                 value={textOverlay.content}
-                                onChange={(e) => setTextOverlay({ ...textOverlay, content: e.target.value })}
-                                placeholder="Speak..."
-                                style={{
-                                    fontSize: `${textOverlay.size}px`,
-                                    fontWeight: textOverlay.weight,
-                                    fontFamily: textOverlay.fontFamily === 'serif' ? 'serif' : textOverlay.fontFamily === 'mono' ? 'monospace' : 'inherit',
-                                    maxWidth: `${textOverlay.width}px`,
-                                    margin: '0 auto'
-                                }}
+                                onChange={(e) => setTextOverlay(prev => ({ ...prev, content: e.target.value }))}
+                                placeholder="Start typing..."
                                 className={`
-                                    flex-1 bg-transparent border-none outline-none text-center text-white placeholder:text-white/10 resize-none h-[400px] transition-all duration-300
-                                    ${textOverlay.style === 'neon' ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]' : ''}
-                                    ${textOverlay.style === 'strong' ? 'font-black italic' : ''}
-                                    ${textOverlay.style === 'typewriter' ? 'font-mono' : ''}
+                                    w-full bg-transparent outline-none text-center resize-none overflow-hidden placeholder:text-white/30
+                                    ${textOverlay.style === 'classic' ? 'text-white drop-shadow-md font-bold' : ''}
+                                    ${textOverlay.style === 'strong' ? 'bg-white text-black p-4 font-black uppercase' : ''}
+                                    ${textOverlay.style === 'neon' ? 'text-white font-light drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] border-2 border-white/50 p-4 rounded-xl' : ''}
+                                    ${textOverlay.style === 'typewriter' ? 'text-white font-mono bg-black/50 p-4' : ''}
                                 `}
+                                style={{ 
+                                    fontSize: '32px',
+                                    lineHeight: '1.2'
+                                }}
+                                rows={3}
                             />
-
-                            {/* Font Width/Crop Slider */}
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="h-64 w-1.5 bg-white/10 rounded-full relative overflow-hidden group">
-                                    <input
-                                        type="range"
-                                        min="100"
-                                        max="500"
-                                        value={textOverlay.width}
-                                        onChange={(e) => setTextOverlay({ ...textOverlay, width: parseInt(e.target.value) })}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer -rotate-180 [writing-mode:vertical-rl] z-10"
-                                    />
-                                    <div
-                                        style={{ height: `${(textOverlay.width - 100) / 400 * 100}%` }}
-                                        className="absolute bottom-0 w-full bg-emerald-500 rounded-full pointer-events-none transition-all"
-                                    />
-                                </div>
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Crop</span>
-                            </div>
-                        </div>
-
-                        {/* Style Presets */}
-                        <div className="flex justify-center gap-6 mt-12">
-                            {['classic', 'neon', 'strong', 'typewriter'].map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => setTextOverlay({ ...textOverlay, style: s })}
-                                    className={`
-                                        px-6 py-3 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all
-                                        ${textOverlay.style === s ? 'bg-[#FBBF24] text-black border-[#FBBF24]' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}
-                                    `}
-                                >
-                                    {s}
-                                </button>
-                            ))}
                         </div>
                     </motion.div>
                 )}
@@ -508,5 +483,22 @@ const StoryUpload = () => {
         </div>
     );
 };
+
+// Helper Icon
+const StarIcon = ({ size, className }: { size?: number, className?: string }) => (
+    <svg 
+        width={size || 24} 
+        height={size || 24} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className={className}
+    >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+);
 
 export default StoryUpload;

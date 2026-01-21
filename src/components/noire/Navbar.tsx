@@ -9,14 +9,16 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 import { Plus } from "lucide-react";
+import StoryTray from "./StoryTray";
 
 interface NavbarProps {
   onAuthClick?: (action: "login" | "signup") => void;
   adminMode?: boolean;
   logoOnly?: boolean;
+  showStories?: boolean;
 }
 
-const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
+const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -131,7 +133,19 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly }: NavbarProps) => {
         </div>
       </motion.div>
 
-
+      {/* Center Story Tray */}
+      {showStories && !logoOnly && (
+        <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-40 hidden md:block"
+        >
+            <div className="glass-noire rounded-full px-6 py-1 border border-border/30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+                <StoryTray />
+            </div>
+        </motion.div>
+      )}
 
       {/* Right-side Navigation */}
       {!logoOnly && (

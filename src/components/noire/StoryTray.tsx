@@ -59,28 +59,27 @@ const StoryTray = () => {
     if (activeStories.length === 0) return null;
 
     return (
-        <div className="w-full max-w-[380px] mb-8 overflow-hidden">
-            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-2">
-                {activeStories.map((group) => (
-                    <div key={group.userId} className="flex flex-col items-center gap-2 group cursor-pointer flex-shrink-0">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-2 max-w-[600px] mask-linear-fade">
+            {activeStories.map((group) => (
+                <div key={group.userId} className="flex flex-col items-center gap-1 group cursor-pointer flex-shrink-0">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
                                 if (group.username) {
-                                    navigate(`/stories/@${group.username}`);
+                                    navigate(`/view?type=story&username=@${group.username}`);
                                 } else {
                                     getDoc(doc(db, "users", group.userId)).then(snap => {
                                         if (snap.exists()) {
                                             const uData = snap.data();
-                                            navigate(`/stories/@${uData.username}`);
+                                            navigate(`/view?type=story&username=@${uData.username}`);
                                         }
                                     });
                                 }
                             }}
                             className="relative"
                         >
-                            <div className={`w-16 h-16 rounded-full p-[3px] transition-all duration-500 border border-white/10
+                            <div className={`w-12 h-12 rounded-full p-[2px] transition-all duration-500 border border-white/10
                                 ${group.hasUnseen
                                     ? 'bg-gradient-to-tr from-[#FBBF24] via-[#FBBF24] to-yellow-200 shadow-[0_0_15px_rgba(251,191,36,0.2)]'
                                     : 'bg-white/5 shadow-none'
@@ -97,14 +96,16 @@ const StoryTray = () => {
                                 </div>
                             </div>
                         </motion.button>
-                        <span className={`text-[10px] font-bold transition-colors truncate max-w-[64px] text-center
-                            ${group.hasUnseen ? 'text-white/60 group-hover:text-[#FBBF24]' : 'text-white/20'}`}
-                        >
-                            {group.userName?.split(' ')[0]}
+                        <span className="text-[9px] font-medium text-white/60 truncate max-w-[56px] text-center">
+                            {group.userName?.split(' ')[0] || "User"}
                         </span>
                     </div>
                 ))}
-            </div>
+            <style>{`
+                .mask-linear-fade {
+                    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+                }
+            `}</style>
         </div>
     );
 };

@@ -20,7 +20,6 @@ import { AdvancedImage } from '@cloudinary/react';
 import { cld } from "@/lib/cloudinary";
 import { auto } from '@cloudinary/url-gen/actions/resize';
 import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
-import StoryTray from "./StoryTray";
 
 interface Post {
     isVerified: any;
@@ -103,9 +102,7 @@ const DashboardFeed = () => {
 
     return (
         <div className="flex flex-col items-center py-6 px-4">
-            {/* Story Tray Section */}
-            <StoryTray />
-
+            
             {/* Posts Feed */}
             <div className="w-full max-w-[380px] space-y-8 pb-32">
                 <AnimatePresence>

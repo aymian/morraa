@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import StoryUpload from "./pages/StoryUpload";
 import StoryShare from "./pages/StoryShare";
 import StoryView from "./pages/StoryView";
+import View from "./pages/View";
 import VideoCallSetup from "./pages/VideoCallSetup";
 import CallPage from "./pages/Call";
 import Wallet from "./pages/Wallet";
@@ -52,6 +53,9 @@ const App = () => (
             <Route path="/email-phone" element={<EmailPhoneAuth />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/story-upload" element={<StoryUpload />} />
+            <Route path="/story-share" element={<StoryShare />} />
+            <Route path="/view" element={<View />} />
             {/* Protected / App Routes */}
             <Route element={<AppLayout />}>
               <Route path="/create" element={<Create />} />

@@ -72,7 +72,7 @@ const StoryShare = () => {
                 userAvatar: userData?.profileImage || null,
                 mediaUrl: finalMediaUrl,
                 mediaType: fileType,
-                textOverlay: textOverlay ? { content: textOverlay } : null,
+                textOverlay: textOverlay?.content ? textOverlay : null,
                 music: selectedMusic || null,
                 location: storyLocation || null,
                 audience: audience,
