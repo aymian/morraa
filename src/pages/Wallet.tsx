@@ -1,214 +1,17 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, updateDoc, query, where, getDocs, collection, runTransaction, Timestamp, onSnapshot, limit } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import {
     CreditCard, Send, ArrowDownLeft, ArrowUpRight,
     Wallet as WalletIcon, TrendingUp, MoreHorizontal,
-    DollarSign, Activity, Lock, Smartphone
+    DollarSign, Activity, Lock, Smartphone, ArrowDownCircle, ArrowUpCircle
 } from "lucide-react";
 import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import NoireLogo from "@/components/noire/NoireLogo";
-
-const Wallet = () => {
-    const [balanceHidden, setBalanceHidden] = useState(false);
-
-    const transactions = [
-        { id: 1, name: "Apple Music", date: "Today, 10:42 AM", amount: "-$12.99", type: "expense", icon: <MusicIcon /> },
-        { id: 2, name: "Freelance Payment", date: "Yesterday, 4:20 PM", amount: "+$2,450.00", type: "income", icon: <DollarSign size={18} /> },
-        { id: 3, name: "Uber Ride", date: "Jan 18, 9:15 PM", amount: "-$24.50", type: "expense", icon: <CarIcon /> },
-        { id: 4, name: "Coffee Shop", date: "Jan 18, 8:30 AM", amount: "-$6.40", type: "expense", icon: <CoffeeIcon /> },
-    ];
-
-    return (
-        <div className="container mx-auto px-6 pt-24 pb-20 max-w-6xl font-sans selection:bg-[#FBBF24] selection:text-black">
-
-            {/* Header Phase */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-12 flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
-                        My <span className="text-[#FBBF24]">Vault</span>
-                    </h1>
-                    <p className="text-zinc-500 font-medium">Manage your digital influence and assets.</p>
-                </div>
-            </motion.div>
-
-            <div className="grid lg:grid-cols-12 gap-8">
-
-                {/* LEFT COLUMN - CARDS & ACTIONS */}
-                <div className="lg:col-span-7 space-y-8">
-
-                    {/* MAIN CARD - PREMIUM MORRAA BLACK CARD */}
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                        className="relative w-full aspect-[1.586/1] rounded-3xl overflow-hidden shadow-2xl group cursor-pointer"
-                    >
-                        {/* Card Background - Dynamic Gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#1A1A1A] via-[#0D0D0D] to-black z-0" />
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay z-0" />
-
-                        {/* Gold Sheen Effect */}
-                        <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-[#FBBF24]/20 to-transparent rotate-45 translate-x-[-100%] animate-[shimmer_5s_infinite] pointer-events-none z-10" />
-
-                        <div className="absolute inset-0 p-8 flex flex-col justify-between z-20">
-                            <div className="flex justify-between items-start">
-                                <NoireLogo size={32} showText={true} />
-                                <div className="flex items-center gap-2">
-                                    <div className="w-10 h-6 rounded bg-[#FBBF24]/20 border border-[#FBBF24]/50 flex items-center justify-center">
-                                        <div className="w-[80%] h-[1px] bg-[#FBBF24]" />
-                                    </div>
-                                    <Activity className="text-[#FBBF24] animate-pulse" size={20} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-9 bg-[#FBBF24]/20 rounded-md border border-[#FBBF24]/30 flex items-center justify-center">
-                                        <div className="w-8 h-5 border border-[#FBBF24]/40 rounded-sm grid grid-cols-2 gap-[1px]">
-                                            <div className="bg-[#FBBF24]/30" />
-                                            <div className="bg-[#FBBF24]/10" />
-                                        </div>
-                                    </div>
-                                    <Activity size={24} className="text-zinc-600 rotate-90" />
-                                </div>
-                                <p className="text-[#FBBF24] font-mono text-xl tracking-[0.2em] drop-shadow-md">
-                                    {balanceHidden ? "•••• •••• •••• 4209" : "4920 1948 2910 4209"}
-                                </p>
-                            </div>
-
-                            <div className="flex justify-between items-end">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Card Holder</p>
-                                    <p className="text-white font-bold tracking-wide">YVES M.</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Expires</p>
-                                    <p className="text-white font-bold tracking-wide">09/28</p>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* QUICK ACTIONS */}
-                    <div className="grid grid-cols-4 gap-4">
-                        {[
-                            { label: "Send", icon: <Send size={24} className="-ml-1" />, color: "bg-[#FBBF24]", text: "text-black" },
-                            { label: "Receive", icon: <ArrowDownLeft size={24} />, color: "bg-white/5", text: "text-white" },
-                            { label: "Swap", icon: <TrendingUp size={24} />, color: "bg-white/5", text: "text-white" },
-                            { label: "More", icon: <MoreHorizontal size={24} />, color: "bg-white/5", text: "text-white" },
-                        ].map((action, i) => (
-                            <motion.button
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 + (i * 0.1) }}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-2xl ${action.color} ${action.text} font-bold shadow-lg transition-colors group`}
-                            >
-                                <div className={`p-3 rounded-xl ${action.label === 'Send' ? 'bg-black/10' : 'bg-white/10 group-hover:bg-[#FBBF24] group-hover:text-black transition-colors'}`}>
-                                    {action.icon}
-                                </div>
-                                <span className="text-sm">{action.label}</span>
-                            </motion.button>
-                        ))}
-                    </div>
-
-                </div>
-
-                {/* RIGHT COLUMN - BALANCE & HISTORY */}
-                <div className="lg:col-span-5 space-y-6">
-
-                    {/* TOTAL BALANCE DISPLAY */}
-                    <motion.div
-                        initial={{ x: 20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-[#111] border border-white/5 rounded-3xl p-8 relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 p-8 opacity-20 text-[#FBBF24]">
-                            <WalletIcon size={80} strokeWidth={1} />
-                        </div>
-
-                        <div className="relative z-10">
-                            <p className="text-zinc-400 font-bold text-sm uppercase tracking-widest mb-2">Total Balance</p>
-                            <div className="flex items-baseline gap-2 mb-6">
-                                <h2 className="text-5xl font-black text-white tracking-tight">
-                                    $24,582<span className="text-2xl text-zinc-500">.50</span>
-                                </h2>
-                                <button onClick={() => setBalanceHidden(!balanceHidden)} className="text-zinc-600 hover:text-white transition-colors">
-                                    <Lock size={16} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl w-fit">
-                                <TrendingUp size={16} className="text-green-500" />
-                                <span className="text-green-500 font-bold text-sm">+2.4% this week</span>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* RECENT TRANSACTIONS */}
-                    <motion.div
-                        initial={{ x: 20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-[#111] border border-white/5 rounded-3xl p-6"
-                    >
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold">Recent Activity</h3>
-                            <button className="text-sm text-[#FBBF24] font-bold hover:underline">View All</button>
-                        </div>
-
-                        <div className="space-y-4">
-                            {transactions.map((tx) => (
-                                <div key={tx.id} className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-3 rounded-xl transition-colors -mx-3">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-[#FBBF24] group-hover:bg-[#FBBF24] group-hover:text-black transition-colors">
-                                            {tx.icon}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white text-sm">{tx.name}</p>
-                                            <p className="text-xs text-zinc-500 font-medium">{tx.date}</p>
-                                        </div>
-                                    </div>
-                                    <span className={`font-bold font-mono text-sm ${tx.type === 'income' ? 'text-green-500' : 'text-white'}`}>
-                                        {tx.amount}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                    {/* UPGRADE PROMO */}
-                    <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="bg-gradient-to-r from-[#FBBF24] to-yellow-600 rounded-3xl p-6 relative overflow-hidden group cursor-pointer"
-                    >
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div>
-                                <h3 className="text-black font-black text-xl mb-1">Go Premium</h3>
-                                <p className="text-black/70 text-sm font-bold max-w-[150px]">Get exclusive black card & lower fees.</p>
-                            </div>
-                            <div className="w-12 h-12 bg-black/20 rounded-full flex items-center justify-center">
-                                <ArrowUpRight className="text-black" />
-                            </div>
-                        </div>
-                    </motion.div>
-
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // Simple Icons for demo
 const MusicIcon = () => (
@@ -220,5 +23,601 @@ const CarIcon = () => (
 const CoffeeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" /><line x1="6" x2="6" y1="2" y2="4" /><line x1="10" x2="10" y1="2" y2="4" /><line x1="14" x2="14" y1="2" y2="4" /></svg>
 );
+
+const Wallet = () => {
+    const navigate = useNavigate();
+    const [balanceHidden, setBalanceHidden] = useState(false);
+    const [user, setUser] = useState<any>(null);
+    const [userData, setUserData] = useState<any>(null);
+    const [morraCardNumber, setMorraCardNumber] = useState("");
+    const [sendModalOpen, setSendModalOpen] = useState(false);
+    const [recipientCardNumber, setRecipientCardNumber] = useState("");
+    const [sendAmount, setSendAmount] = useState("");
+    const [receiveModalOpen, setReceiveModalOpen] = useState(false);
+    const [transactions, setTransactions] = useState<any[]>([]);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const unsubDoc = onSnapshot(userDocRef, (snap) => {
+                    if (snap.exists()) {
+                        setUserData(snap.data());
+                    }
+                });
+
+                const txQuery = query(
+                    collection(db, "transactions"),
+                    where("userId", "==", currentUser.uid)
+                );
+                const unsubTx = onSnapshot(txQuery, (snap) => {
+                    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    const sorted = list.sort((a: any, b: any) => {
+                        const aMs = a?.createdAt?.toMillis?.() ?? a?.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+                        const bMs = b?.createdAt?.toMillis?.() ?? b?.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+                        return bMs - aMs;
+                    });
+                    setTransactions(sorted);
+                });
+
+                return () => {
+                    unsubDoc();
+                    unsubTx();
+                };
+            } else {
+                setUser(null);
+                setUserData(null);
+                setTransactions([]);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [db, auth]);
+
+    const handleRegisterMorraCard = async () => {
+        if (user && morraCardNumber.length === 10 && /^\d+$/.test(morraCardNumber)) {
+            const userDocRef = doc(db, "users", user.uid);
+            try {
+                // ensure card number is unique
+                const existing = await getDocs(query(collection(db, "users"), where("morraCardNumber", "==", morraCardNumber), limit(1)));
+                if (!existing.empty && existing.docs[0].id !== user.uid) {
+                    alert("This card number is already registered.");
+                    return;
+                }
+
+                const cardCreatedAt = Timestamp.now();
+                await updateDoc(userDocRef, {
+                    morraCardNumber: morraCardNumber,
+                    cardCreatedAt: cardCreatedAt
+                });
+                setMorraCardNumber("");
+                alert("Morra card registered successfully!");
+            } catch (error) {
+                console.error("Error updating document: ", error);
+                alert("Failed to register card. Please try again.");
+            }
+        } else {
+            alert("Please enter a valid 10-digit Morra card number.");
+        }
+    };
+
+    const formatCardNumber = (number: string) => {
+        if (!number) return "•••• •••• •••• ••••";
+        // Format as XXXX XXXX XXXX (10 digits = 3 groups of 4, then 2)
+        return number.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+    };
+
+    const getExpirationDate = () => {
+        if (!userData?.cardCreatedAt) return null;
+        let createdAt: Date;
+        if (userData.cardCreatedAt.toDate) {
+            // Firestore Timestamp
+            createdAt = userData.cardCreatedAt.toDate();
+        } else if (userData.cardCreatedAt instanceof Date) {
+            createdAt = userData.cardCreatedAt;
+        } else if (typeof userData.cardCreatedAt === 'number') {
+            createdAt = new Date(userData.cardCreatedAt);
+        } else if (userData.cardCreatedAt.seconds) {
+            // Firestore Timestamp object with seconds
+            createdAt = new Date(userData.cardCreatedAt.seconds * 1000);
+        } else {
+            createdAt = new Date(userData.cardCreatedAt);
+        }
+        const expirationDate = new Date(createdAt);
+        expirationDate.setHours(expirationDate.getHours() + 48);
+        return expirationDate;
+    };
+
+    const formatExpirationDate = () => {
+        const expDate = getExpirationDate();
+        if (!expDate) return "N/A";
+        const hoursLeft = Math.floor((expDate.getTime() - Date.now()) / (1000 * 60 * 60));
+        const minutesLeft = Math.floor(((expDate.getTime() - Date.now()) % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (hoursLeft <= 0 && minutesLeft <= 0) {
+            return "Expired";
+        }
+        
+        if (hoursLeft < 1) {
+            return `${minutesLeft}m left`;
+        }
+        return `${hoursLeft}h ${minutesLeft}m left`;
+    };
+
+    const isCardExpired = () => {
+        const expDate = getExpirationDate();
+        if (!expDate) return false;
+        return Date.now() > expDate.getTime();
+    };
+
+    const formatRwf = (val?: number) => {
+        const num = Number(val || 0);
+        return `RWF ${num.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
+    };
+
+    const handleSendMoney = async () => {
+        if (!recipientCardNumber || !sendAmount || !user) return;
+
+        const amount = parseFloat(sendAmount);
+        if (isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid amount.");
+            return;
+        }
+        const currentBalance = Number(userData?.balance || 0);
+        if (currentBalance < amount) {
+            alert("Insufficient balance.");
+            return;
+        }
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("morraCardNumber", "==", recipientCardNumber));
+        try {
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                alert("Recipient not found.");
+                return;
+            }
+            const recipientDoc = querySnapshot.docs[0];
+            const recipientId = recipientDoc.id;
+            if (recipientId === user.uid) {
+                alert("You cannot send money to yourself.");
+                return;
+            }
+            await runTransaction(db, async (transaction) => {
+                const senderDocRef = doc(db, "users", user.uid);
+                const recipientDocRef = doc(db, "users", recipientId);
+                const senderDoc = await transaction.get(senderDocRef);
+                const recipientSnap = await transaction.get(recipientDocRef);
+                if (!senderDoc.exists() || !recipientSnap.exists()) {
+                    throw "Document does not exist!";
+                }
+                const newSenderBalance = senderDoc.data().balance - amount;
+                const newRecipientBalance = recipientSnap.data().balance + amount;
+                transaction.update(senderDocRef, { balance: newSenderBalance });
+                transaction.update(recipientDocRef, { balance: newRecipientBalance });
+            });
+            alert("Money sent successfully!");
+            setSendModalOpen(false);
+            setRecipientCardNumber("");
+            setSendAmount("");
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                setUserData(userDoc.data());
+            }
+        } catch (error) {
+            console.error("Transaction failed: ", error);
+            alert("Transaction failed. Please try again.");
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
+            {user && <FloatingSidebar forceCollapsed />}
+            <Navbar />
+
+            <main className="container mx-auto px-6 pt-24 pb-20 max-w-7xl font-sans selection:bg-[#FBBF24] selection:text-black">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-8"
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-normal text-zinc-100 mb-2">Vault</h1>
+                            <p className="text-zinc-400 text-sm">Manage your funds and transactions</p>
+                        </div>
+                    </div>
+
+                    {/* Main Layout: Card Left, Vault Right */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Left: Morra Card Section */}
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="text-xl font-normal text-zinc-100 mb-1">Morra Card</h3>
+                                    <p className="text-zinc-400 text-sm">Your premium payment card</p>
+                                </div>
+                                <CreditCard size={24} className="text-[#FBBF24] opacity-50" />
+                            </div>
+
+                            {userData?.morraCardNumber ? (
+                                <div className="space-y-4">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.2 }}
+                                        className="relative"
+                                    >
+                                {/* Premium Credit Card */}
+                                <div className={`relative overflow-hidden rounded-[2.5rem] p-8 min-h-[280px] flex flex-col justify-between ${
+                                    isCardExpired() 
+                                        ? "bg-gradient-to-br from-zinc-800 to-zinc-900 border border-red-500/30" 
+                                        : "bg-gradient-to-br from-[#FBBF24]/20 via-[#FBBF24]/10 to-transparent border border-[#FBBF24]/30"
+                                } shadow-2xl`}>
+                                    {/* Animated Background Pattern */}
+                                    <div className="absolute inset-0 opacity-10">
+                                        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FBBF24] rounded-full blur-3xl"></div>
+                                        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#FBBF24] rounded-full blur-3xl"></div>
+                                    </div>
+
+                                    {/* Card Content */}
+                                    <div className="relative z-10">
+                                        {/* Top Row - Logo and Expiration */}
+                                        <div className="flex items-center justify-between mb-12">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-10 h-10">
+                                                    <NoireLogo size={40} showText={false} />
+                                                </div>
+                                                <span className="text-xl font-bold tracking-wider text-[#FBBF24]">MORRA</span>
+                                            </div>
+                                            {!isCardExpired() && (
+                                                <div className="text-right">
+                                                    <p className="text-zinc-400 text-xs mb-1">Expires in</p>
+                                                    <p className="text-white font-semibold text-sm">{formatExpirationDate()}</p>
+                                                </div>
+                                            )}
+                                            {isCardExpired() && (
+                                                <div className="text-right">
+                                                    <p className="text-red-400 font-semibold text-sm">Expired</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Card Number */}
+                                        <div className="mb-8">
+                                            <p className="text-zinc-400 text-xs mb-3 tracking-wider">CARD NUMBER</p>
+                                            <p className="text-white font-mono text-2xl tracking-wider select-all">
+                                                {formatCardNumber(userData.morraCardNumber)}
+                                            </p>
+                                        </div>
+
+                                        {/* Bottom Row - Balance and Cardholder */}
+                                        <div className="flex items-end justify-between">
+                                            <div>
+                                                <p className="text-zinc-400 text-xs mb-1 tracking-wider">BALANCE</p>
+                                                <p className="text-white text-3xl font-light">
+                                                    {balanceHidden ? "••••" : formatRwf(userData?.balance)}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-zinc-400 text-xs mb-1 tracking-wider">CARDHOLDER</p>
+                                                <p className="text-white text-sm font-medium">
+                                                    {userData?.username || userData?.fullName || "MORRA USER"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Shine Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                </div>
+
+                                {/* Expired Card Notice */}
+                                {isCardExpired() && (
+                                    <div className="mt-4 glass-noire border border-red-500/30 rounded-xl p-4 text-center">
+                                        <p className="text-red-400 text-sm">Your Morra card has expired. Register a new card to continue using it.</p>
+                                    </div>
+                                )}
+                                    </motion.div>
+
+                            {/* Deposit / Withdraw */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => navigate("/deposit")}
+                                    className="glass-noire border border-white/10 rounded-2xl px-5 py-4 hover:border-[#FBBF24]/50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <ArrowDownCircle size={18} className="text-[#FBBF24]" />
+                                    <span className="font-semibold">Deposit</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate("/withdraw")}
+                                    className="glass-noire border border-white/10 rounded-2xl px-5 py-4 hover:border-[#FBBF24]/50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <ArrowUpCircle size={18} className="text-[#FBBF24]" />
+                                    <span className="font-semibold">Withdraw</span>
+                                </button>
+                            </div>
+                                </div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="glass-noire rounded-[2rem] border border-white/5 p-8 shadow-2xl"
+                                >
+                                    <div className="text-center space-y-6">
+                                    <div className="flex justify-center">
+                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FBBF24]/20 to-[#FBBF24]/5 flex items-center justify-center border border-[#FBBF24]/30">
+                                            <CreditCard size={48} className="text-[#FBBF24]" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-normal text-zinc-100 mb-2">Get Your Morra Card</h4>
+                                        <p className="text-zinc-400 text-sm mb-6 max-w-md mx-auto">
+                                            Register your 10-digit card number to start sending and receiving money instantly. 
+                                            Your card will be valid for 48 hours.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-3 max-w-md mx-auto">
+                                        <input
+                                            type="text"
+                                            value={morraCardNumber}
+                                            onChange={(e) => setMorraCardNumber(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="1234567890"
+                                            maxLength={10}
+                                            className="flex-1 glass-noire border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-center font-mono text-lg tracking-wider"
+                                        />
+                                        <button
+                                            onClick={handleRegisterMorraCard}
+                                            disabled={morraCardNumber.length !== 10}
+                                            className="px-8 py-3 bg-gradient-to-r from-[#FBBF24]/20 to-[#FBBF24]/10 border border-[#FBBF24]/30 rounded-xl hover:bg-[#FBBF24]/20 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Register Card
+                                        </button>
+                                    </div>
+                                    <p className="text-zinc-500 text-xs">Enter a 10-digit number</p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </div>
+
+                        {/* Right: Vault Controls */}
+                        <div className="space-y-6">
+                            <div className="glass-noire rounded-[2rem] border border-white/5 p-8 shadow-2xl">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <p className="text-zinc-400 text-sm mb-2">Total Balance</p>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-4xl font-light text-white">
+                                                {balanceHidden ? "•••••" : formatRwf(userData?.balance)}
+                                            </h2>
+                                            <button
+                                                onClick={() => setBalanceHidden(!balanceHidden)}
+                                                className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                                            >
+                                                <Lock size={18} className={balanceHidden ? "text-zinc-600" : "text-zinc-400"} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <WalletIcon size={48} className="text-[#FBBF24] opacity-20" />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                    <button
+                                        onClick={() => setSendModalOpen(true)}
+                                        className="glass-noire border border-white/10 rounded-2xl px-6 py-4 hover:border-[#FBBF24]/50 transition-all flex items-center justify-center gap-2 group"
+                                    >
+                                        <Send size={20} className="text-[#FBBF24] group-hover:scale-110 transition-transform" />
+                                        <span className="font-semibold">Send</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setReceiveModalOpen(true)}
+                                        className="glass-noire border border-white/10 rounded-2xl px-6 py-4 hover:border-[#FBBF24]/50 transition-all flex items-center justify-center gap-2 group"
+                                    >
+                                        <ArrowDownLeft size={20} className="text-[#FBBF24] group-hover:scale-110 transition-transform" />
+                                        <span className="font-semibold">Receive</span>
+                                    </button>
+                                </div>
+
+                                <div className="mt-6 flex items-center justify-between text-xs text-zinc-500">
+                                    <span>Instant transfers • Firestore-backed</span>
+                                    <span className="text-zinc-400">{userData?.morraCardNumber ? "Card linked" : "No card linked"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Recent Transactions */}
+                    <div className="glass-noire rounded-[2rem] border border-white/5 p-8 shadow-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xl font-normal text-zinc-100 mb-1">Recent Activity</h3>
+                                <p className="text-zinc-400 text-sm">Your transaction history</p>
+                            </div>
+                            <Activity size={24} className="text-[#FBBF24] opacity-50" />
+                        </div>
+
+                        {transactions.length > 0 ? (
+                            <div className="space-y-4">
+                                {transactions.map((tx) => {
+                                    const isIncome = tx.type === "deposit" || tx.type === "income";
+                                    return (
+                                        <div
+                                            key={tx.id}
+                                            className="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                                    isIncome ? "bg-green-500/10" : "bg-red-500/10"
+                                                }`}>
+                                                    {isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-medium">
+                                                        {tx.type === "deposit" ? "Deposit" : (tx.note || "Transaction")}
+                                                    </p>
+                                                    <p className="text-zinc-400 text-sm">
+                                                        {tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString() : ""}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className={`font-semibold ${isIncome ? "text-green-400" : "text-red-400"}`}>
+                                                {isIncome ? "+" : "-"}{formatRwf(tx.amount)}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <TrendingUp size={48} className="text-zinc-600 mx-auto mb-4" />
+                                <p className="text-zinc-400">No transactions yet</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Send Money Modal */}
+                {sendModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="glass-noire rounded-[2rem] border border-white/10 p-8 max-w-md w-full mx-4"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-normal">Send Money</h3>
+                                <button
+                                    onClick={() => setSendModalOpen(false)}
+                                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                                >
+                                    <MoreHorizontal size={20} />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-zinc-400 text-sm mb-2 block">Recipient Card Number</label>
+                                    <input
+                                        type="text"
+                                        value={recipientCardNumber}
+                                        onChange={(e) => setRecipientCardNumber(e.target.value)}
+                                        placeholder="Enter 10-digit card number"
+                                        maxLength={10}
+                                        className="w-full glass-noire border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#FBBF24]/50 transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-zinc-400 text-sm mb-2 block">Amount</label>
+                                    <input
+                                        type="number"
+                                        value={sendAmount}
+                                        onChange={(e) => setSendAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        className="w-full glass-noire border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#FBBF24]/50 transition-colors"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleSendMoney}
+                                    className="w-full bg-[#FBBF24]/10 border border-[#FBBF24]/30 rounded-xl px-6 py-4 hover:bg-[#FBBF24]/20 transition-colors font-medium"
+                                >
+                                    Send Money
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Receive Money Modal */}
+                {receiveModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="glass-noire rounded-[2rem] border border-white/10 p-8 max-w-md w-full mx-4"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-normal">Receive Money</h3>
+                                <button
+                                    onClick={() => setReceiveModalOpen(false)}
+                                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                                >
+                                    <MoreHorizontal size={20} />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                {userData?.morraCardNumber ? (
+                                    <div className="text-center space-y-6">
+                                        {/* Mini Card Preview */}
+                                        <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#FBBF24]/20 via-[#FBBF24]/10 to-transparent border border-[#FBBF24]/30">
+                                            <div className="absolute inset-0 opacity-10">
+                                                <div className="absolute top-0 right-0 w-40 h-40 bg-[#FBBF24] rounded-full blur-2xl"></div>
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center justify-center gap-2 mb-6">
+                                                    <div className="w-8 h-8">
+                                                        <NoireLogo size={32} showText={false} />
+                                                    </div>
+                                                    <span className="text-sm font-bold tracking-wider text-[#FBBF24]">MORRA</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-zinc-400 text-xs mb-2 tracking-wider">CARD NUMBER</p>
+                                                    <p className="text-white font-mono text-xl tracking-wider select-all">
+                                                        {formatCardNumber(userData.morraCardNumber)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <p className="text-zinc-400 text-sm mb-2">Share this card number to receive money</p>
+                                            {isCardExpired() && (
+                                                <p className="text-red-400 text-xs mb-2">⚠️ Card expired - Register a new card</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(userData.morraCardNumber);
+                                                alert("Card number copied to clipboard!");
+                                            }}
+                                            className="w-full bg-[#FBBF24]/10 border border-[#FBBF24]/30 rounded-xl px-6 py-3 hover:bg-[#FBBF24]/20 transition-colors font-medium text-sm"
+                                        >
+                                            Copy Card Number
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-zinc-400 mb-4">Register a Morra card number first</p>
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="text"
+                                                value={morraCardNumber}
+                                                onChange={(e) => setMorraCardNumber(e.target.value.replace(/\D/g, ''))}
+                                                placeholder="1234567890"
+                                                maxLength={10}
+                                                className="flex-1 glass-noire border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-center font-mono"
+                                            />
+                                            <button
+                                                onClick={handleRegisterMorraCard}
+                                                disabled={morraCardNumber.length !== 10}
+                                                className="px-6 py-3 bg-[#FBBF24]/10 border border-[#FBBF24]/30 rounded-xl hover:bg-[#FBBF24]/20 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Register
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+};
 
 export default Wallet;

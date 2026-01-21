@@ -27,6 +27,9 @@ import StoryView from "./pages/StoryView";
 import VideoCallSetup from "./pages/VideoCallSetup";
 import CallPage from "./pages/Call";
 import Wallet from "./pages/Wallet";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import Manager from "./pages/Manager";
 import { CallProvider } from "./components/calling/CallProvider";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 
@@ -61,6 +64,9 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/messages/:userId" element={<Messages />} />
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/deposit" element={<Deposit />} />
+              <Route path="/withdraw" element={<Withdraw />} />
+              <Route path="/manager" element={<Manager />} />
 
               {/* Identity Routes (must be below specific segment routes) */}
               <Route path="/:username" element={<UserDetails />} />

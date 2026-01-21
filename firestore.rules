@@ -54,6 +54,16 @@ service cloud.firestore {
       );
     }
 
+    // 💳 DEPOSITS: Pending approvals
+    match /depositRequests/{requestId} {
+      allow read, create, update: if request.auth != null;
+    }
+
+    // 💸 TRANSACTIONS: Wallet activity
+    match /transactions/{txId} {
+      allow read, create, update: if request.auth != null;
+    }
+
     // 💬 MESSAGING: High-security communication layer
     match /conversations/{chatId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.participants;

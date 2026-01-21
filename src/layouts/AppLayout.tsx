@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useEffect, useState } from "react";
@@ -7,6 +7,8 @@ import { onAuthStateChanged } from "firebase/auth";
 
 const AppLayout = () => {
     const [user, setUser] = useState<any>(null);
+    const location = useLocation();
+    const isMessagesPage = location.pathname.startsWith('/messages');
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
@@ -16,7 +18,7 @@ const AppLayout = () => {
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
             {user && <FloatingSidebar />}
-            <Navbar />
+            <Navbar logoOnly={isMessagesPage} />
             <Outlet />
         </div>
     );

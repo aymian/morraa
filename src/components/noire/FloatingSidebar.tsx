@@ -30,7 +30,11 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
  * MORRA Core Navigation Strategy - Creator Tier
  */
 
-const FloatingSidebar = () => {
+type FloatingSidebarProps = {
+    forceCollapsed?: boolean;
+};
+
+const FloatingSidebar = ({ forceCollapsed = false }: FloatingSidebarProps) => {
     const [isCollapsed, setIsCollapsed] = useState(() => {
         return localStorage.getItem('morraa-sidebar-collapsed') === 'true';
     });
@@ -43,6 +47,12 @@ const FloatingSidebar = () => {
     // Sync state with local storage and events
     useEffect(() => {
         const handleToggle = () => {
+            if (forceCollapsed) {
+                localStorage.setItem('morraa-sidebar-collapsed', 'true');
+                setIsCollapsed(true);
+                document.body.classList.add('sidebar-collapsed');
+                return;
+            }
             const storedState = localStorage.getItem('morraa-sidebar-collapsed') === 'true';
             setIsCollapsed(storedState);
             if (storedState) {
@@ -55,18 +65,15 @@ const FloatingSidebar = () => {
         handleToggle();
         window.addEventListener('morraa:toggleSidebar', handleToggle);
         return () => window.removeEventListener('morraa:toggleSidebar', handleToggle);
-    }, []);
+    }, [forceCollapsed]);
 
     const toggleSidebar = () => {
+        if (forceCollapsed) return;
         const newState = !isCollapsed;
         localStorage.setItem('morraa-sidebar-collapsed', String(newState));
         window.dispatchEvent(new Event('morraa:toggleSidebar'));
     };
-};
 
-window.addEventListener('morraa:toggleSidebar', handleToggle);
-return () => window.removeEventListener('morraa:toggleSidebar', handleToggle);
-}, []);
 
 // Dynamically update the global sidebar width for the content-shift utility
 useEffect(() => {
@@ -149,8 +156,9 @@ return (
                 <motion.button
                     whileHover={{ scale: 1.1, color: "#FBBF24" }}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => window.dispatchEvent(new CustomEvent('morraa:toggleSidebar'))}
-                    className="p-2 hover:bg-white/5 rounded-xl transition-colors text-white/20"
+                    onClick={toggleSidebar}
+                    disabled={forceCollapsed}
+                    className="p-2 hover:bg-white/5 rounded-xl transition-colors text-white/20 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     <PanelLeft size={isCollapsed ? 20 : 16} className={`transition-transform duration-500 ${isCollapsed ? 'rotate-180' : 'rotate-0'}`} />
                 </motion.button>
@@ -212,7 +220,7 @@ return (
                                             <motion.div
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    window.dispatchEvent(new CustomEvent('morraa:toggleSidebar'));
+                                                    toggleSidebar();
                                                 }}
                                                 whileHover={{ scale: 1.2, color: "#FBBF24" }}
                                                 className="p-1.5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-white/20"

@@ -16,11 +16,12 @@ import {
     TrendingUp,
     DollarSign,
     Briefcase,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from "lucide-react";
 import NoireLogo from "@/components/noire/NoireLogo";
 import { auth, db } from "@/lib/firebase";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, getDocs, limit, serverTimestamp, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 type OnboardingStep =
@@ -54,6 +55,10 @@ const Onboarding = () => {
         photo: null as string | null,
     });
     const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const [usernameError, setUsernameError] = useState<string | null>(null);
+    const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+    const [suggestedLoading, setSuggestedLoading] = useState(false);
 
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -85,6 +90,92 @@ const Onboarding = () => {
             await updateDoc(userRef, data);
         }
     };
+
+    const saveAllProfileData = async (complete: boolean = false) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+            birthday: userData.birthday,
+            phone: userData.phone,
+            username: userData.username,
+            gender: userData.gender,
+            bio: userData.bio,
+            photo: userData.photo,
+            onboardingComplete: complete ? true : undefined,
+            onboardingCompletedAt: complete ? serverTimestamp() : undefined,
+        });
+    };
+
+    // Load real users for follows step
+    useEffect(() => {
+        const loadUsers = async () => {
+            if (step !== 'follows') return;
+            setSuggestedLoading(true);
+            try {
+                const userCol = collection(db, "users");
+                const q = query(userCol, limit(6));
+                const snap = await getDocs(q);
+                const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) }));
+                setSuggestedUsers(list.filter(u => u.id !== auth.currentUser?.uid));
+            } catch (e) {
+                setSuggestedUsers([]);
+            } finally {
+                setSuggestedLoading(false);
+            }
+        };
+        loadUsers();
+    }, [step]);
+
+    // Check username availability
+    useEffect(() => {
+        const checkAvailability = async () => {
+            if (step !== 'username') return;
+
+            if (!userData.username || userData.username.length < 3) {
+                setIsUsernameAvailable(false);
+                setUsernameError(null);
+                return;
+            }
+
+            setIsCheckingUsername(true);
+            setUsernameError(null);
+            setIsUsernameAvailable(false);
+
+            try {
+                // Ensure only alphanumeric + underscore
+                if (!/^[a-z0-9_]+$/.test(userData.username)) {
+                    setUsernameError("Only letters, numbers, and underscores allowed");
+                    setIsUsernameAvailable(false);
+                    setIsCheckingUsername(false);
+                    return;
+                }
+
+                const q = query(collection(db, "users"), where("username", "==", userData.username));
+                const snapshot = await getDocs(q);
+
+                if (!snapshot.empty) {
+                    const isSelf = snapshot.docs[0].id === auth.currentUser?.uid;
+                    if (isSelf) {
+                        setIsUsernameAvailable(true);
+                    } else {
+                        setUsernameError("Username is already taken");
+                        setIsUsernameAvailable(false);
+                    }
+                } else {
+                    setIsUsernameAvailable(true);
+                }
+            } catch (err) {
+                console.error("Error checking username:", err);
+                setUsernameError("Error checking availability");
+            } finally {
+                setIsCheckingUsername(false);
+            }
+        };
+
+        const timeoutId = setTimeout(checkAvailability, 500);
+        return () => clearTimeout(timeoutId);
+    }, [userData.username, step]);
 
     const nextStep = () => {
         const currentIndex = stepsList.indexOf(step);
@@ -328,14 +419,21 @@ const Onboarding = () => {
                         value={userData.username}
                         onChange={(e) => {
                             setUserData({ ...userData, username: e.target.value.toLowerCase() });
-                            setIsUsernameAvailable(e.target.value.length > 3);
                         }}
-                        className="w-full pl-10 pr-12 py-4 bg-muted/10 border border-white/5 rounded-2xl focus:border-primary/50 outline-none transition-all text-lg font-bold"
+                        className={`w-full pl-10 pr-12 py-4 bg-muted/10 border rounded-2xl outline-none transition-all text-lg font-bold ${
+                            usernameError ? 'border-red-500/50 focus:border-red-500' : 'border-white/5 focus:border-primary/50'
+                        }`}
                     />
-                    {isUsernameAvailable && (
+                    {isCheckingUsername ? (
+                        <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 animate-spin" />
+                    ) : isUsernameAvailable ? (
                         <CheckCircle2 className="absolute right-5 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" />
-                    )}
+                    ) : null}
                 </div>
+
+                {usernameError && (
+                    <p className="text-xs text-red-500 font-bold px-4">{usernameError}</p>
+                )}
 
                 <div className="flex flex-wrap gap-2">
                     {['.eth', '_creator', '.official', '.morra'].map(suf => (
@@ -358,14 +456,14 @@ const Onboarding = () => {
             </div>
 
             <button
-                disabled={!userData.username || !isUsernameAvailable}
+                disabled={!userData.username || !isUsernameAvailable || isCheckingUsername}
                 onClick={async () => {
                     await updateProfileInFirebase({ username: userData.username });
                     nextStep();
                 }}
-                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl disabled:opacity-50"
+                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Continue
+                {isCheckingUsername ? 'Checking...' : 'Continue'}
             </button>
         </div>
     );
@@ -458,7 +556,7 @@ const Onboarding = () => {
                 </div>
                 <button
                     className="absolute bottom-2 right-2 p-3 bg-primary text-primary-foreground rounded-full shadow-lg"
-                    onClick={() => setUserData({ ...userData, photo: 'https://i.pravatar.cc/300?u=current' })}
+                    onClick={() => setUserData({ ...userData, photo: `https://api.dicebear.com/7.x/identicon/svg?seed=${userData.username || 'morra'}` })}
                 >
                     <Sparkles className="w-5 h-5" />
                 </button>
@@ -468,6 +566,21 @@ const Onboarding = () => {
                 {userData.photo && (
                     <p className="text-center text-green-500 font-bold text-sm">✔ Looking good!</p>
                 )}
+                <label className="w-full py-3 glass-noire border border-dashed border-white/10 rounded-2xl text-center cursor-pointer hover:border-primary/50">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => setUserData({ ...userData, photo: reader.result as string });
+                            reader.readAsDataURL(file);
+                        }}
+                    />
+                    <span className="text-sm text-muted-foreground">Upload from device</span>
+                </label>
                 <button
                     disabled={!userData.photo}
                     onClick={nextStep}
@@ -554,19 +667,19 @@ const Onboarding = () => {
             </div>
 
             <div className="w-full space-y-3">
-                {[
-                    { name: "Alex Rivers", handle: "@arivers", followers: "124k" },
-                    { name: "Sarah Chen", handle: "@sarah.studio", followers: "89k" },
-                    { name: "The Nexus", handle: "@nexus", followers: "2M" }
-                ].map((user) => (
-                    <div key={user.handle} className="flex items-center justify-between p-4 glass-noire border border-white/5 rounded-2xl">
+                {suggestedLoading && <p className="text-center text-muted-foreground text-sm">Loading real users…</p>}
+                {!suggestedLoading && suggestedUsers.length === 0 && (
+                    <p className="text-center text-muted-foreground text-sm">No users yet. You can skip.</p>
+                )}
+                {suggestedUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 glass-noire border border-white/5 rounded-2xl">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/5 overflow-hidden">
-                                <img src={`https://i.pravatar.cc/100?u=${user.handle}`} />
+                                <img src={user.photo || `https://i.pravatar.cc/100?u=${user.username || user.id}`} />
                             </div>
                             <div className="text-left">
-                                <p className="text-sm font-bold">{user.name}</p>
-                                <p className="text-[10px] text-muted-foreground">{user.followers} followers</p>
+                                <p className="text-sm font-bold">{user.username || user.fullName || "Morra User"}</p>
+                                <p className="text-[10px] text-muted-foreground">{user.bio ? user.bio.slice(0, 40) : "New to Morra"}</p>
                             </div>
                         </div>
                         <button className="px-5 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
@@ -683,7 +796,7 @@ const Onboarding = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={async () => {
-                        await updateProfileInFirebase({ onboardingComplete: true });
+                        await saveAllProfileData(true);
                         navigate('/');
                     }}
                     className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl shadow-glow-gold"

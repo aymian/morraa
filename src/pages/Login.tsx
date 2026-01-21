@@ -15,7 +15,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -72,14 +72,21 @@ const Login = () => {
       const result = await signInWithPopup(auth, authProvider);
       const user = result.user;
 
-      await setDoc(doc(db, "users", user.uid), {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      const isExisting = snap.exists();
+
+      await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
         fullName: user.displayName || "",
-        createdAt: serverTimestamp(),
+        onboardingComplete: snap.data()?.onboardingComplete ?? false,
+        createdAt: isExisting ? snap.data()?.createdAt ?? serverTimestamp() : serverTimestamp(),
       }, { merge: true });
 
-      navigate("/");
+      const updated = await getDoc(userRef);
+      const done = updated.exists() && updated.data()?.onboardingComplete;
+      navigate(done ? "/" : "/onboarding");
     } catch (error: any) {
       toast({ title: "Social Auth Error", description: error.message, variant: "destructive" });
     }
