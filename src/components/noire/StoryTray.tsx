@@ -103,7 +103,7 @@ const StoryTray = () => {
                             >
                                 <div className="w-full h-full rounded-full bg-black border-[2px] border-black overflow-hidden relative">
                                     {group.userAvatar ? (
-                                        <img src={group.userAvatar} className="w-full h-full object-cover" />
+                                        <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-[10px] font-black uppercase text-white/40">
                                             {group.userName?.[0]}

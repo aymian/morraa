@@ -256,8 +256,13 @@ const DashboardFeed = () => {
                                         <div className="w-9 h-9 rounded-full border border-[#FBBF24]/20 p-0.5 bg-gradient-to-br from-white/10 to-transparent">
                                             <div className="w-full h-full rounded-full bg-[#111] overflow-hidden flex items-center justify-center">
                                                 {post.userAvatar ? (
-                                                    <img src={post.userAvatar} className="w-full h-full object-cover" alt="User" />
-                                                ) : (
+                                            <img 
+                                                src={post.userAvatar} 
+                                                className="w-full h-full object-cover" 
+                                                alt="User" 
+                                                loading="lazy"
+                                            />
+                                        ) : (
                                                     <UserIcon size={14} className="text-muted-foreground" />
                                                 )}
                                             </div>
@@ -278,7 +283,7 @@ const DashboardFeed = () => {
                                                 (() => {
                                                     const url = post.mediaUrl;
                                                     const uploadIndex = url.indexOf('/upload/');
-                                                    if (uploadIndex === -1) return <img src={url} className="w-full h-full object-cover shadow-2xl" />;
+                                                    if (uploadIndex === -1) return <img src={url} className="w-full h-full object-cover shadow-2xl" loading="lazy" />;
 
                                                     const stringAfterUpload = url.substring(uploadIndex + 8);
                                                     const parts = stringAfterUpload.split('/');
@@ -289,12 +294,20 @@ const DashboardFeed = () => {
                                                     const img = cld.image(publicId)
                                                         .format('auto')
                                                         .quality('auto')
-                                                        .resize(auto().gravity(autoGravity()).width(1000).height(1000));
+                                                        .resize(auto().gravity(autoGravity()).width(600));
 
                                                     return <AdvancedImage cldImg={img} className="w-full h-full object-cover" />;
                                                 })()
                                             ) : (
-                                                <video src={post.mediaUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                                                <video 
+                                                    src={post.mediaUrl} 
+                                                    className="w-full h-full object-cover" 
+                                                    muted 
+                                                    loop 
+                                                    autoPlay 
+                                                    playsInline 
+                                                    preload="metadata"
+                                                />
                                             )}
                                             {/* Text Overlay on Media */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />

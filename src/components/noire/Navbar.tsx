@@ -270,7 +270,7 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
                       onClick={() => navigate(`/stories/@${group.username}`)}
                     >
                       {group.userAvatar ? (
-                        <img src={group.userAvatar} className="w-full h-full object-cover" />
+                        <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-white/40">
                           {group.userName?.[0]}
