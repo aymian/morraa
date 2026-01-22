@@ -126,7 +126,7 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="pointer-events-auto"
+          className="pointer-events-auto z-20"
         >
           <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group flex-shrink-0 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
             <button onClick={() => navigate("/")} className="flex items-center">
@@ -135,13 +135,13 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
           </div>
         </motion.div>
 
-        {/* Center Story Tray */}
+        {/* Center Story Tray - Absolutely Positioned for True Centering */}
         {showStories && !logoOnly && (
           <motion.div
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-auto"
+              className="pointer-events-auto absolute left-1/2 transform -translate-x-1/2 z-10"
           >
               <div className="glass-noire rounded-full px-6 py-1 border border-border/30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
                   <StoryTray />
@@ -155,7 +155,7 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-auto"
+            className="pointer-events-auto z-20"
           >
             <div className="glass-noire rounded-full px-2 py-2 flex items-center gap-1 border border-border/30 relative">
               {!adminMode && guestNavItems.map((item, index) => (

@@ -5,19 +5,21 @@ import {
     User, Mail, Phone, Calendar, Music, Heart,
     MapPin, Edit3, Share2, Shield, Settings,
     ArrowLeft, CheckCircle, Sparkles, Search, X, UserMinus, UserPlus,
-    Bookmark
+    Bookmark, Trash2, MoreVertical
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, deleteDoc } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * PRO Profile Page - Immersive, Cinematic, Unique
  */
 
 const Profile = () => {
+    const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
@@ -35,6 +37,11 @@ const Profile = () => {
     const [followersCount, setFollowersCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
 
+    // Edit/Delete State
+    const [editingPost, setEditingPost] = useState<any>(null);
+    const [editContent, setEditContent] = useState("");
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -47,16 +54,36 @@ const Profile = () => {
                         setIsPrivate(data.isPrivate || false);
 
                         try {
+                            console.log("Fetching posts for user:", user.uid);
+                            // DEBUG: Try fetching without ordering first to check if posts exist
                             const postsQuery = query(
                                 collection(db, "posts"),
                                 where("userId", "==", user.uid),
                                 orderBy("createdAt", "desc")
                             );
                             const postsSnap = await getDocs(postsQuery);
+                            console.log("Posts found:", postsSnap.size);
+                            
                             const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             setUserPosts(posts);
                         } catch (postError) {
-                            console.error("Post fetch error:", postError);
+                            console.error("Post fetch error details:", postError);
+                            // Fallback: Try without ordering if index is missing or field is missing
+                            try {
+                                console.log("Retrying fetch without sort...");
+                                const fallbackQuery = query(
+                                    collection(db, "posts"),
+                                    where("userId", "==", user.uid)
+                                );
+                                const fallbackSnap = await getDocs(fallbackQuery);
+                                console.log("Fallback posts found:", fallbackSnap.size);
+                                const posts = fallbackSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                // Sort manually if needed
+                                posts.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                                setUserPosts(posts);
+                            } catch (fallbackError) {
+                                console.error("Fallback fetch failed:", fallbackError);
+                            }
                         }
 
                         // Fetch real counts
@@ -126,6 +153,47 @@ const Profile = () => {
             });
         } catch (error) {
             console.error("Error updating privacy:", error);
+        }
+    };
+
+    const handleDeletePost = async (postId: string) => {
+        if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) return;
+        
+        setIsDeleting(postId);
+        try {
+            await deleteDoc(doc(db, "posts", postId));
+            setUserPosts(prev => prev.filter(p => p.id !== postId));
+            toast({ title: "Post Deleted", description: "Your post has been permanently removed." });
+        } catch (error) {
+            console.error("Error deleting post:", error);
+            toast({ title: "Error", description: "Failed to delete post.", variant: "destructive" });
+        } finally {
+            setIsDeleting(null);
+        }
+    };
+
+    const openEditModal = (post: any) => {
+        setEditingPost(post);
+        setEditContent(post.content || "");
+    };
+
+    const saveEdit = async () => {
+        if (!editingPost) return;
+        
+        try {
+            await updateDoc(doc(db, "posts", editingPost.id), {
+                content: editContent
+            });
+            
+            setUserPosts(prev => prev.map(p => 
+                p.id === editingPost.id ? { ...p, content: editContent } : p
+            ));
+            
+            setEditingPost(null);
+            toast({ title: "Post Updated", description: "Your changes have been saved." });
+        } catch (error) {
+            console.error("Error updating post:", error);
+            toast({ title: "Error", description: "Failed to update post.", variant: "destructive" });
         }
     };
 
@@ -320,14 +388,41 @@ const Profile = () => {
                                 ) : (
                                     <img src={post.mediaUrl} alt="Post" className="w-full h-full object-cover" />
                                 )}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                                    <div className="flex items-center gap-1.5 text-white">
-                                        <Heart className="w-6 h-6 fill-white" />
-                                        <span className="font-bold">{post.likes || 0}</span>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4">
+                                    <div className="flex items-center gap-6">
+                                        <div className="flex items-center gap-1.5 text-white">
+                                            <Heart className="w-6 h-6 fill-white" />
+                                            <span className="font-bold">{post.likes || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-white">
+                                            <Music className="w-6 h-6 fill-white" />
+                                            <span className="font-bold">{post.comments || 0}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-white">
-                                        <Music className="w-6 h-6 fill-white" />
-                                        <span className="font-bold">{post.comments || 0}</span>
+                                    
+                                    {/* Edit/Delete Actions */}
+                                    <div className="flex gap-3 mt-2">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openEditModal(post);
+                                            }}
+                                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                                            title="Edit Post"
+                                        >
+                                            <Edit3 size={18} />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeletePost(post.id);
+                                            }}
+                                            className="p-2 bg-red-500/20 hover:bg-red-500/40 rounded-full text-red-400 hover:text-red-200 transition-colors"
+                                            title="Delete Post"
+                                            disabled={isDeleting === post.id}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -383,6 +478,57 @@ const Profile = () => {
                                         ))}
                                     </div>
                                 )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* Edit Post Modal */}
+            <AnimatePresence>
+                {editingPost && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[#262626] w-full max-w-lg rounded-[12px] overflow-hidden shadow-2xl border border-zinc-800"
+                        >
+                            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                                <h3 className="font-bold text-center flex-1 text-zinc-100">Edit Info</h3>
+                                <button onClick={() => setEditingPost(null)}><X size={20} className="text-zinc-100" /></button>
+                            </div>
+                            
+                            <div className="p-4 flex flex-col md:flex-row gap-4">
+                                <div className="w-full md:w-1/3 aspect-square bg-black rounded-lg overflow-hidden">
+                                    {editingPost.mediaType === 'video' ? (
+                                        <video src={editingPost.mediaUrl} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <img src={editingPost.mediaUrl} alt="Post" className="w-full h-full object-cover" />
+                                    )}
+                                </div>
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-zinc-400 uppercase">Caption</label>
+                                    <textarea
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        className="w-full h-32 bg-[#1A1A1A] text-zinc-100 p-3 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                                        placeholder="Write a caption..."
+                                    />
+                                    <div className="flex justify-end gap-2 mt-4">
+                                        <button 
+                                            onClick={() => setEditingPost(null)}
+                                            className="px-4 py-2 text-sm font-bold text-zinc-400 hover:text-white transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            onClick={saveEdit}
+                                            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors"
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
