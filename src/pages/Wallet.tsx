@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, query, where, getDocs, collection, runTransaction, Timestamp, onSnapshot, limit } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, query, where, getDocs, collection, runTransaction, Timestamp, onSnapshot, limit, addDoc, serverTimestamp, or } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import {
     CreditCard, Send, ArrowDownLeft, ArrowUpRight,
@@ -50,7 +50,10 @@ const Wallet = () => {
 
                 const txQuery = query(
                     collection(db, "transactions"),
-                    where("userId", "==", currentUser.uid)
+                    or(
+                        where("userId", "==", currentUser.uid),
+                        where("toUserId", "==", currentUser.uid)
+                    )
                 );
                 const unsubTx = onSnapshot(txQuery, (snap) => {
                     const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -175,15 +178,17 @@ const Wallet = () => {
         try {
             const querySnapshot = await getDocs(q);
             if (querySnapshot.empty) {
-                alert("Recipient not found.");
+                alert("Recipient not found. Please check the card number.");
                 return;
             }
             const recipientDoc = querySnapshot.docs[0];
             const recipientId = recipientDoc.id;
+            const recipientData = recipientDoc.data();
             if (recipientId === user.uid) {
                 alert("You cannot send money to yourself.");
                 return;
             }
+
             await runTransaction(db, async (transaction) => {
                 const senderDocRef = doc(db, "users", user.uid);
                 const recipientDocRef = doc(db, "users", recipientId);
@@ -192,19 +197,42 @@ const Wallet = () => {
                 if (!senderDoc.exists() || !recipientSnap.exists()) {
                     throw "Document does not exist!";
                 }
-                const newSenderBalance = senderDoc.data().balance - amount;
-                const newRecipientBalance = recipientSnap.data().balance + amount;
+                const newSenderBalance = Number(senderDoc.data().balance || 0) - amount;
+                const newRecipientBalance = Number(recipientSnap.data().balance || 0) + amount;
                 transaction.update(senderDocRef, { balance: newSenderBalance });
                 transaction.update(recipientDocRef, { balance: newRecipientBalance });
             });
+
+            // Create transaction record for sender (outgoing)
+            await addDoc(collection(db, "transactions"), {
+                userId: user.uid,
+                toUserId: recipientId,
+                toUserName: recipientData.fullName || recipientData.username || "User",
+                toCardNumber: recipientCardNumber,
+                amount: amount,
+                currency: "RWF",
+                type: "send",
+                note: `Sent to ${recipientData.fullName || recipientData.username || recipientCardNumber}`,
+                createdAt: serverTimestamp()
+            });
+
+            // Create transaction record for receiver (incoming)
+            await addDoc(collection(db, "transactions"), {
+                userId: recipientId,
+                fromUserId: user.uid,
+                fromUserName: userData?.fullName || userData?.username || "User",
+                fromCardNumber: userData?.morraCardNumber || "",
+                amount: amount,
+                currency: "RWF",
+                type: "receive",
+                note: `Received from ${userData?.fullName || userData?.username || "User"}`,
+                createdAt: serverTimestamp()
+            });
+
             alert("Money sent successfully!");
             setSendModalOpen(false);
             setRecipientCardNumber("");
             setSendAmount("");
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                setUserData(userDoc.data());
-            }
         } catch (error) {
             console.error("Transaction failed: ", error);
             alert("Transaction failed. Please try again.");
@@ -445,7 +473,8 @@ const Wallet = () => {
                         {transactions.length > 0 ? (
                             <div className="space-y-4">
                                 {transactions.map((tx) => {
-                                    const isIncome = tx.type === "deposit" || tx.type === "income";
+                                    const isIncome = tx.type === "deposit" || tx.type === "receive" || tx.type === "income";
+                                    const isSend = tx.type === "send";
                                     return (
                                         <div
                                             key={tx.id}
@@ -455,11 +484,14 @@ const Wallet = () => {
                                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                                     isIncome ? "bg-green-500/10" : "bg-red-500/10"
                                                 }`}>
-                                                    {isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                                                    {isIncome ? <ArrowDownLeft size={18} className="text-green-400" /> : <ArrowUpRight size={18} className="text-red-400" />}
                                                 </div>
                                                 <div>
                                                     <p className="text-white font-medium">
-                                                        {tx.type === "deposit" ? "Deposit" : (tx.note || "Transaction")}
+                                                        {tx.type === "deposit" ? "Deposit" : 
+                                                         tx.type === "receive" ? `From ${tx.fromUserName || tx.fromCardNumber || "User"}` :
+                                                         tx.type === "send" ? `To ${tx.toUserName || tx.toCardNumber || "User"}` :
+                                                         (tx.note || "Transaction")}
                                                     </p>
                                                     <p className="text-zinc-400 text-sm">
                                                         {tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString() : ""}
