@@ -684,34 +684,34 @@ const Messages = () => {
                     {selectedChat ? (
                         <>
                             {/* Chat Header */}
-                            <header className="h-[88px] border-b border-white/5 flex items-center justify-between px-6 lg:px-10 glass-noire sticky top-0 z-20">
-                                <div className="flex items-center gap-6">
+                            <header className="h-[72px] sm:h-[88px] border-b border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-10 glass-noire sticky top-0 z-20">
+                                <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
                                     {isMobileView && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => navigate('/messages')}
-                                            className="hover:bg-white/5 rounded-2xl"
+                                            className="hover:bg-white/5 rounded-xl w-9 h-9 shrink-0"
                                         >
                                             <ArrowLeft className="w-5 h-5 text-white" />
                                         </Button>
                                     )}
-                                    <div className="flex items-center gap-5">
+                                    <div className="flex items-center gap-3 sm:gap-5 min-w-0 flex-1">
                                         <motion.div
                                             layoutId={`avatar-${selectedChat.id}`}
                                             className="relative shrink-0"
                                         >
-                                            <Avatar className="w-12 h-12 rounded-2xl border border-white/10 shrink-0">
+                                            <Avatar className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
                                                 <AvatarImage src={selectedChat.user.avatar} className="object-cover" />
-                                                <AvatarFallback className="bg-muted font-bold">{selectedChat.user.name.charAt(0)}</AvatarFallback>
+                                                <AvatarFallback className="bg-muted font-bold text-sm">{selectedChat.user.name.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                             {(Date.now() - (selectedChat.user.lastActive?.toMillis?.() || 0)) < 60000 && (
-                                                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-[3px] border-noire-deep shadow-glow-green" />
+                                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full border-2 sm:border-[3px] border-noire-deep shadow-glow-green" />
                                             )}
                                         </motion.div>
-                                        <div className="flex flex-col">
-                                            <h2 className="font-bold text-lg text-white leading-none tracking-tight">{selectedChat.user.name}</h2>
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.1em] mt-1.5 flex items-center gap-1.5 overflow-hidden h-4">
+                                        <div className="flex flex-col min-w-0">
+                                            <h2 className="font-bold text-base sm:text-lg text-white leading-none tracking-tight truncate">{selectedChat.user.name}</h2>
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] mt-1 sm:mt-1.5 flex items-center gap-1.5 overflow-hidden h-4">
                                                 <AnimatePresence mode="wait">
                                                     {isPartnerTyping ? (
                                                         <motion.span
@@ -733,7 +733,7 @@ const Messages = () => {
                                                             initial={{ y: 10, opacity: 0 }}
                                                             animate={{ y: 0, opacity: 1 }}
                                                             exit={{ y: -10, opacity: 0 }}
-                                                            className="text-muted-foreground"
+                                                            className="text-muted-foreground truncate"
                                                         >
                                                             {formatPresence(selectedChat.user.lastActive)}
                                                         </motion.span>
@@ -745,7 +745,8 @@ const Messages = () => {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <div className="hidden sm:flex items-center gap-2 mr-4 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
+                                    {/* Call buttons - visible on all screens */}
+                                    <div className="flex items-center gap-1 sm:gap-2 sm:mr-4 px-2 sm:px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
@@ -777,18 +778,18 @@ const Messages = () => {
                                         </TooltipProvider>
                                     </div>
 
-                                    <Button variant="ghost" size="icon" className="w-11 h-11 rounded-2xl hover:bg-white/10 text-muted-foreground">
+                                    <Button variant="ghost" size="icon" className="hidden sm:flex w-11 h-11 rounded-2xl hover:bg-white/10 text-muted-foreground">
                                         <Search className="w-5 h-5" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="w-11 h-11 rounded-2xl hover:bg-white/10 text-muted-foreground">
+                                    <Button variant="ghost" size="icon" className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl hover:bg-white/10 text-muted-foreground">
                                         <MoreVertical className="w-5 h-5" />
                                     </Button>
                                 </div>
                             </header>
 
                             {/* Messages Container */}
-                            <ScrollArea className="flex-1 px-6 lg:px-10 py-2" ref={scrollRef}>
-                                <div className="max-w-xl mx-auto flex flex-col gap-6">
+                            <ScrollArea className="flex-1 px-3 sm:px-6 lg:px-10 py-2" ref={scrollRef}>
+                                <div className="max-w-xl mx-auto flex flex-col gap-4 sm:gap-6">
                                     <div className="flex justify-center my-4">
                                         <div className="px-5 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl shadow-noire relative group">
                                             <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
@@ -819,7 +820,7 @@ const Messages = () => {
                                                     <div className={`flex flex-col group relative ${isMe ? "items-end" : "items-start hover:translate-x-1"} transition-transform duration-300`}>
                                                         {msg.type === "text" ? (
                                                             <div className={`
-                                 px-5 py-3.5 rounded-[1.8rem] text-[14px] leading-relaxed relative
+                                 px-4 py-3 sm:px-5 sm:py-3.5 rounded-[1.5rem] sm:rounded-[1.8rem] text-[13px] sm:text-[14px] leading-relaxed relative max-w-[85vw] sm:max-w-none
                                  ${isMe
                                                                     ? "bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-black font-semibold rounded-br-[0.5rem] shadow-[0_10px_30px_rgba(251,191,36,0.2)]"
                                                                     : "bg-white/5 text-white/90 rounded-bl-[0.5rem] border border-white/5 backdrop-blur-xl group-hover:bg-white/[0.08] transition-colors"}
@@ -990,7 +991,7 @@ const Messages = () => {
                             </ScrollArea>
 
                             {/* Message Input Container */}
-                            <footer className="px-6 pb-6 lg:px-10 lg:pb-8 pt-0 bg-transparent z-10">
+                            <footer className="px-3 pb-4 sm:px-6 sm:pb-6 lg:px-10 lg:pb-8 pt-0 bg-transparent z-10">
                                 <div className="max-w-2xl mx-auto">
                                     {/* Reply / Edit Preview */}
                                     <AnimatePresence>
@@ -1031,7 +1032,7 @@ const Messages = () => {
                                         {/* Glowing border effect */}
                                         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 via-transparent to-primary/50 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-20 transition duration-1000 group-focus-within:duration-200" />
 
-                                        <div className="relative flex items-end gap-3 bg-white/10 border border-white/20 glass-noire rounded-[2.5rem] p-3 transition-all duration-500 focus-within:border-primary/30 focus-within:bg-white/15 shadow-noire-elevated overflow-hidden">
+                                        <div className="relative flex items-end gap-2 sm:gap-3 bg-white/10 border border-white/20 glass-noire rounded-[2rem] sm:rounded-[2.5rem] p-2 sm:p-3 transition-all duration-500 focus-within:border-primary/30 focus-within:bg-white/15 shadow-noire-elevated overflow-hidden">
                                             {/* Unified Progress Overlay */}
                                             <AnimatePresence>
                                                 {uploadProgress !== null && (
@@ -1058,7 +1059,7 @@ const Messages = () => {
                                                 )}
                                             </AnimatePresence>
 
-                                            <div className="flex items-center self-center pl-2">
+                                            <div className="flex items-center self-center pl-1 sm:pl-2">
                                                 <input
                                                     type="file"
                                                     ref={fileInputRef}
@@ -1074,11 +1075,11 @@ const Messages = () => {
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
-                                                            <Button variant="ghost" size="icon" className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all shadow-inner relative">
+                                                            <Button variant="ghost" size="icon" className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all shadow-inner relative">
                                                                 {uploadProgress !== null ? (
-                                                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                                                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-primary" />
                                                                 ) : (
-                                                                    <Plus className="w-5 h-5" />
+                                                                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                                                                 )}
                                                             </Button>
                                                         </motion.div>
@@ -1106,11 +1107,11 @@ const Messages = () => {
                                                 </DropdownMenu>
                                             </div>
 
-                                            <div className="flex-1 flex flex-col min-w-0 py-1">
+                                            <div className="flex-1 flex flex-col min-w-0 py-0.5 sm:py-1">
                                                 <textarea
                                                     placeholder={`Message ${selectedChat.user.name.split(' ')[0]}...`}
                                                     rows={1}
-                                                    className="w-full bg-transparent border-none focus:ring-0 text-base py-3 px-2 resize-none text-white placeholder:text-muted-foreground/50 max-h-40 overflow-y-auto"
+                                                    className="w-full bg-transparent border-none focus:ring-0 text-sm sm:text-base py-2 sm:py-3 px-1 sm:px-2 resize-none text-white placeholder:text-muted-foreground/50 max-h-32 sm:max-h-40 overflow-y-auto"
                                                     value={messageText}
                                                     onChange={(e) => {
                                                         setMessageText(e.target.value);
@@ -1127,7 +1128,7 @@ const Messages = () => {
                                                 />
                                             </div>
 
-                                            <div className="flex items-center gap-2 pr-2 self-center relative" ref={emojiPickerRef}>
+                                            <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2 self-center relative" ref={emojiPickerRef}>
                                                 <div className="absolute bottom-full right-0 mb-4 z-50">
                                                     <AnimatePresence>
                                                         {showEmojiPicker && (
@@ -1141,8 +1142,8 @@ const Messages = () => {
                                                                     theme={Theme.DARK}
                                                                     onEmojiClick={onEmojiClick}
                                                                     autoFocusSearch={false}
-                                                                    width={320}
-                                                                    height={400}
+                                                                    width={isMobileView ? 280 : 320}
+                                                                    height={isMobileView ? 350 : 400}
                                                                     lazyLoadEmojis={true}
                                                                     skinTonesDisabled={true}
                                                                     searchPlaceHolder="Search vibes..."
@@ -1154,10 +1155,10 @@ const Messages = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className={`w-10 h-10 rounded-xl transition-colors ${showEmojiPicker ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-primary'}`}
+                                                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl transition-colors ${showEmojiPicker ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-primary'}`}
                                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                                 >
-                                                    <Smile className="w-5 h-5" />
+                                                    <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </Button>
                                                 <motion.div
                                                     initial={false}
@@ -1166,9 +1167,9 @@ const Messages = () => {
                                                     <Button
                                                         onClick={handleSendMessage}
                                                         disabled={!messageText.trim()}
-                                                        className="w-11 h-11 bg-primary hover:bg-primary/90 text-black rounded-2xl p-0 shadow-glow-gold overflow-hidden relative group/btn transition-all duration-300"
+                                                        className="w-9 h-9 sm:w-11 sm:h-11 bg-primary hover:bg-primary/90 text-black rounded-xl sm:rounded-2xl p-0 shadow-glow-gold overflow-hidden relative group/btn transition-all duration-300"
                                                     >
-                                                        <Send className="w-5 h-5 relative z-10 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                                                        <Send className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                                                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                                                     </Button>
                                                 </motion.div>
@@ -1176,7 +1177,7 @@ const Messages = () => {
                                         </div>
                                     </motion.div>
 
-                                    <div className="flex items-center justify-between px-6 mt-4 opacity-30">
+                                    <div className="hidden sm:flex items-center justify-between px-6 mt-4 opacity-30">
                                         <div className="flex gap-4">
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white">Quantum Encrypted</span>
                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white">P2P Node: Alpha</span>
