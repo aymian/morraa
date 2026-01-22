@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/noire/Navbar";
 import { useCall } from "@/components/calling/CallProvider";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { onAuthStateChanged } from "firebase/auth";
 
 const VideoCallSetup = () => {
     const [searchParams] = useSearchParams();
@@ -19,7 +20,22 @@ const VideoCallSetup = () => {
     const [isInitializing, setIsInitializing] = useState(false);
     const [targetUser, setTargetUser] = useState<any>(null);
     const [isPermissionsGranted, setIsPermissionsGranted] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const unsub = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+            if (!user) {
+                toast({
+                    title: "Authentication Required",
+                    description: "Please log in to make calls.",
+                    variant: "destructive"
+                });
+            }
+        });
+        return () => unsub();
+    }, []);
 
     useEffect(() => {
         if (userId) {
@@ -31,10 +47,12 @@ const VideoCallSetup = () => {
 
     const requestPermissions = async () => {
         try {
-            await navigator.mediaDevices.getUserMedia({
+            const stream = await navigator.mediaDevices.getUserMedia({
                 video: type === 'video',
                 audio: true
             });
+            // Stop the test stream to release the camera/mic
+            stream.getTracks().forEach(track => track.stop());
             setIsPermissionsGranted(true);
         } catch (err) {
             console.error("Permission denied:", err);
@@ -47,6 +65,15 @@ const VideoCallSetup = () => {
     };
 
     const handleStartCall = async () => {
+        if (!isAuthenticated) {
+            toast({
+                title: "Authentication Required",
+                description: "Please log in to make calls.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         if (userId) {
             setIsInitializing(true);
             try {
@@ -54,10 +81,12 @@ const VideoCallSetup = () => {
             } catch (error: any) {
                 console.error("Call initiation error:", error);
                 
-                let errorMessage = "The encrypted channel could not be verified. Please try again.";
+                let errorMessage = error.message || "The encrypted channel could not be verified. Please try again.";
                 
                 if (error.message?.includes("Not authenticated")) {
                     errorMessage = "You must be logged in to make calls.";
+                } else if (error.code === "permission-denied") {
+                    errorMessage = "Permission denied. Please check Firestore rules.";
                 }
 
                 toast({
