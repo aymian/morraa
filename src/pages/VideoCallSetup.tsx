@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Video, Mic, ShieldCheck, ArrowRight, X, Phone } from "lucide-react";
+import { Video, ShieldCheck, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/noire/Navbar";
 import { useCall } from "@/components/calling/CallProvider";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 const VideoCallSetup = () => {
     const [searchParams] = useSearchParams();
@@ -57,9 +56,8 @@ const VideoCallSetup = () => {
                 
                 let errorMessage = "The encrypted channel could not be verified. Please try again.";
                 
-                // Specific check for Stream's "user does not exist" error
-                if (error.message?.includes("users") && error.message?.includes("don't exist")) {
-                    errorMessage = "Target occupant has not yet mirrored their identity to this frequency. They must log in at least once to be reachable.";
+                if (error.message?.includes("Not authenticated")) {
+                    errorMessage = "You must be logged in to make calls.";
                 }
 
                 toast({

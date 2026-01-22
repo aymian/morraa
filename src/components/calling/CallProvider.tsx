@@ -1,151 +1,324 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import {
-    StreamVideo,
-    StreamVideoClient,
-    User,
-    Call,
-    StreamCall,
-} from '@stream-io/video-react-sdk';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, getDoc } from 'firebase/firestore';
-import { apiKey, generateStreamToken } from '@/lib/stream';
+import { doc, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Video, X } from 'lucide-react';
+import { Phone, PhoneOff, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// STUN/TURN servers for NAT traversal
+const iceServers = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+    ]
+};
+
 interface CallContextType {
-    client: StreamVideoClient | null;
-    activeCall: Call | null;
+    localStream: MediaStream | null;
+    remoteStream: MediaStream | null;
     initiateCall: (targetUid: string, type: 'video' | 'audio') => Promise<void>;
+    answerCall: (callId: string) => Promise<void>;
+    endCall: () => Promise<void>;
+    isInCall: boolean;
+    callType: 'video' | 'audio' | null;
+    callId: string | null;
 }
 
 const CallContext = createContext<CallContextType | undefined>(undefined);
 
 export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [client, setClient] = useState<StreamVideoClient | null>(null);
-    const [activeCall, setActiveCall] = useState<Call | null>(null);
-    const [incomingCall, setIncomingCall] = useState<Call | null>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [isInCall, setIsInCall] = useState(false);
+    const [callType, setCallType] = useState<'video' | 'audio' | null>(null);
+    const [callId, setCallId] = useState<string | null>(null);
+    const [incomingCall, setIncomingCall] = useState<any>(null);
     const [callerData, setCallerData] = useState<any>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    const peerConnection = useRef<RTCPeerConnection | null>(null);
     const navigate = useNavigate();
 
+    // Listen for auth state and incoming calls
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
-                const streamUser: User = {
-                    id: user.uid,
-                    name: user.displayName || user.email?.split('@')[0] || 'Aura Member',
-                    image: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-                };
-
-                try {
-                    const token = await generateStreamToken(user.uid);
-                    const videoClient = new StreamVideoClient({
-                        apiKey,
-                        user: streamUser,
-                        token: token,
-                    });
-                    setClient(videoClient);
-
-                    // Listen for incoming calls
-                    const unsubscribeIncoming = videoClient.on('call.created', (event) => {
-                        const call = videoClient.call(event.call.type, event.call.id);
-                        setIncomingCall(call);
-
-                        // Fetch caller data from Firestore
-                        const callerId = event.call.created_by.id;
-                        onSnapshot(doc(db, "users", callerId), (snap) => {
-                            if (snap.exists()) setCallerData(snap.data());
-                        });
-                    });
-
-                    return () => {
-                        unsubscribeIncoming();
-                        videoClient.disconnectUser();
-                    };
-                } catch (error) {
-                    console.error("Stream initialization error:", error);
-                }
+                setCurrentUserId(user.uid);
             } else {
-                setClient(null);
+                setCurrentUserId(null);
             }
         });
 
-        return () => unsubscribe();
+        return () => unsubAuth();
     }, []);
 
+    // Listen for incoming calls
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        const callsRef = collection(db, 'calls');
+        const q = query(callsRef, where('targetUid', '==', currentUserId), where('status', '==', 'ringing'));
+
+        const unsubCalls = onSnapshot(q, async (snapshot) => {
+            snapshot.docChanges().forEach(async (change) => {
+                if (change.type === 'added') {
+                    const callData = change.doc.data();
+                    setIncomingCall({ id: change.doc.id, ...callData });
+
+                    // Fetch caller info
+                    const callerSnap = await getDoc(doc(db, 'users', callData.callerUid));
+                    if (callerSnap.exists()) {
+                        setCallerData(callerSnap.data());
+                    }
+                }
+            });
+        });
+
+        return () => unsubCalls();
+    }, [currentUserId]);
+
+    const setupMediaStream = async (type: 'video' | 'audio') => {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: type === 'video',
+            audio: true
+        });
+        setLocalStream(stream);
+        return stream;
+    };
+
+    const createPeerConnection = (callDocId: string) => {
+        const pc = new RTCPeerConnection(iceServers);
+
+        // Create remote stream
+        const remote = new MediaStream();
+        setRemoteStream(remote);
+
+        // Handle remote tracks
+        pc.ontrack = (event) => {
+            event.streams[0].getTracks().forEach(track => {
+                remote.addTrack(track);
+            });
+        };
+
+        // Handle ICE candidates
+        pc.onicecandidate = async (event) => {
+            if (event.candidate) {
+                const candidatesRef = collection(db, 'calls', callDocId, 'candidates');
+                await setDoc(doc(candidatesRef), {
+                    ...event.candidate.toJSON(),
+                    from: currentUserId
+                });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                endCall();
+            }
+        };
+
+        peerConnection.current = pc;
+        return pc;
+    };
 
     const initiateCall = async (targetUid: string, type: 'video' | 'audio') => {
-        if (!client) {
-            throw new Error("Stream frequency not yet synchronized. Please wait a moment.");
-        }
+        if (!currentUserId) throw new Error('Not authenticated');
 
-        try {
-            const callId = `call_${Date.now()}`;
-            const call = client.call('default', callId);
+        const stream = await setupMediaStream(type);
+        const callDocId = `call_${Date.now()}_${currentUserId}`;
 
-            await call.getOrCreate({
-                data: {
-                    members: [{ user_id: auth.currentUser?.uid! }, { user_id: targetUid }],
-                    custom: { type }
-                },
-            });
+        // Create call document
+        await setDoc(doc(db, 'calls', callDocId), {
+            callerUid: currentUserId,
+            targetUid,
+            type,
+            status: 'ringing',
+            createdAt: Date.now()
+        });
 
-            // Auto hang up if not accepted within 60 seconds
-            const timeoutId = setTimeout(async () => {
-                try {
-                    const state = call.state;
-                    // If the call hasn't moved beyond 'joining' or 'calling' phase 
-                    // or if there are no other participants after 60s
-                    if (state.participantCount <= 1) {
-                        console.log("Call timed out - no response within 60s");
-                        await call.leave();
-                        setActiveCall(null);
-                        navigate('/messages');
+        const pc = createPeerConnection(callDocId);
+
+        // Add local tracks to peer connection
+        stream.getTracks().forEach(track => {
+            pc.addTrack(track, stream);
+        });
+
+        // Create and set offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        await updateDoc(doc(db, 'calls', callDocId), {
+            offer: {
+                type: offer.type,
+                sdp: offer.sdp
+            }
+        });
+
+        setCallId(callDocId);
+        setCallType(type);
+        setIsInCall(true);
+
+        // Listen for answer
+        const unsubAnswer = onSnapshot(doc(db, 'calls', callDocId), async (snapshot) => {
+            const data = snapshot.data();
+            if (data?.answer && pc.currentRemoteDescription === null) {
+                const answerDesc = new RTCSessionDescription(data.answer);
+                await pc.setRemoteDescription(answerDesc);
+            }
+            if (data?.status === 'ended') {
+                endCall();
+            }
+        });
+
+        // Listen for remote ICE candidates
+        const candidatesRef = collection(db, 'calls', callDocId, 'candidates');
+        const unsubCandidates = onSnapshot(candidatesRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    if (data.from !== currentUserId) {
+                        pc.addIceCandidate(new RTCIceCandidate(data));
                     }
-                } catch (e) {
-                    console.error("Timeout cleanup error:", e);
                 }
-            }, 60000);
-
-            // Clear timeout if someone joins
-            const unsubscribe = call.on('call.session_participant_joined', () => {
-                console.log("Participant joined - clearing timeout");
-                clearTimeout(timeoutId);
-                unsubscribe();
             });
+        });
 
-            setActiveCall(call);
-            navigate(`/call?id=${callId}&type=${type}`);
-        } catch (error) {
-            console.error("Failed to initiate call:", error);
-            throw error;
+        // Auto-end call after 60s if not answered
+        setTimeout(async () => {
+            const callSnap = await getDoc(doc(db, 'calls', callDocId));
+            if (callSnap.exists() && callSnap.data().status === 'ringing') {
+                await endCall();
+            }
+        }, 60000);
+
+        navigate(`/call?id=${callDocId}&type=${type}`);
+    };
+
+    const answerCall = async (incomingCallId: string) => {
+        if (!currentUserId) throw new Error('Not authenticated');
+
+        const callSnap = await getDoc(doc(db, 'calls', incomingCallId));
+        if (!callSnap.exists()) throw new Error('Call not found');
+
+        const callData = callSnap.data();
+        const type = callData.type as 'video' | 'audio';
+
+        const stream = await setupMediaStream(type);
+        const pc = createPeerConnection(incomingCallId);
+
+        // Add local tracks
+        stream.getTracks().forEach(track => {
+            pc.addTrack(track, stream);
+        });
+
+        // Set remote description from offer
+        const offerDesc = new RTCSessionDescription(callData.offer);
+        await pc.setRemoteDescription(offerDesc);
+
+        // Create and set answer
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        await updateDoc(doc(db, 'calls', incomingCallId), {
+            answer: {
+                type: answer.type,
+                sdp: answer.sdp
+            },
+            status: 'connected'
+        });
+
+        setCallId(incomingCallId);
+        setCallType(type);
+        setIsInCall(true);
+        setIncomingCall(null);
+
+        // Listen for remote ICE candidates
+        const candidatesRef = collection(db, 'calls', incomingCallId, 'candidates');
+        onSnapshot(candidatesRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    if (data.from !== currentUserId) {
+                        pc.addIceCandidate(new RTCIceCandidate(data));
+                    }
+                }
+            });
+        });
+
+        // Listen for call end
+        onSnapshot(doc(db, 'calls', incomingCallId), (snapshot) => {
+            const data = snapshot.data();
+            if (data?.status === 'ended') {
+                endCall();
+            }
+        });
+
+        navigate(`/call?id=${incomingCallId}&type=${type}`);
+    };
+
+    const endCall = useCallback(async () => {
+        // Stop all local tracks
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            setLocalStream(null);
+        }
+
+        // Close peer connection
+        if (peerConnection.current) {
+            peerConnection.current.close();
+            peerConnection.current = null;
+        }
+
+        // Update call status in Firestore
+        if (callId) {
+            try {
+                await updateDoc(doc(db, 'calls', callId), {
+                    status: 'ended',
+                    endedAt: Date.now()
+                });
+            } catch (err) {
+                console.error('Failed to update call status:', err);
+            }
+        }
+
+        setRemoteStream(null);
+        setIsInCall(false);
+        setCallType(null);
+        setCallId(null);
+    }, [localStream, callId]);
+
+    const handleAnswerIncoming = () => {
+        if (incomingCall) {
+            answerCall(incomingCall.id);
         }
     };
 
-    const handleAnswer = () => {
+    const handleRejectIncoming = async () => {
         if (incomingCall) {
-            setActiveCall(incomingCall);
-            const type = incomingCall.state.custom?.type || 'video';
-            navigate(`/call?id=${incomingCall.id}&type=${type}`);
+            await updateDoc(doc(db, 'calls', incomingCall.id), {
+                status: 'rejected'
+            });
             setIncomingCall(null);
-        }
-    };
-
-    const handleReject = () => {
-        if (incomingCall) {
-            incomingCall.leave();
-            setIncomingCall(null);
+            setCallerData(null);
         }
     };
 
     return (
-        <CallContext.Provider value={{ client, activeCall, initiateCall }}>
-            {client && <StreamVideo client={client}>{children}</StreamVideo>}
-            {!client && children}
+        <CallContext.Provider value={{
+            localStream,
+            remoteStream,
+            initiateCall,
+            answerCall,
+            endCall,
+            isInCall,
+            callType,
+            callId
+        }}>
+            {children}
 
-            {/* Incoming Call Overlay - Instagram Style */}
+            {/* Incoming Call Overlay */}
             <AnimatePresence>
                 {incomingCall && (
                     <motion.div
@@ -159,7 +332,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                 <div className="relative">
                                     <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/20">
                                         <img
-                                            src={callerData?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${incomingCall.id}`}
+                                            src={callerData?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${incomingCall.callerUid}`}
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
@@ -172,14 +345,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                 <div>
                                     <h4 className="text-sm font-black text-white">{callerData?.fullName || "Incoming Call"}</h4>
                                     <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">
-                                        {incomingCall.state.custom?.type === 'audio' ? 'Audio Session' : 'Visual Presence'}
+                                        {incomingCall.type === 'audio' ? 'Audio Session' : 'Visual Presence'}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-3">
                                 <Button
-                                    onClick={handleReject}
+                                    onClick={handleRejectIncoming}
                                     variant="ghost"
                                     size="icon"
                                     className="w-11 h-11 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
@@ -187,11 +360,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     <PhoneOff size={18} />
                                 </Button>
                                 <Button
-                                    onClick={handleAnswer}
+                                    onClick={handleAnswerIncoming}
                                     size="icon"
                                     className="w-11 h-11 rounded-full bg-green-500 text-white shadow-lg shadow-green-500/20 hover:scale-110 transition-transform"
                                 >
-                                    {incomingCall.state.custom?.type === 'audio' ? <Phone size={18} /> : <Video size={18} />}
+                                    {incomingCall.type === 'audio' ? <Phone size={18} /> : <Video size={18} />}
                                 </Button>
                             </div>
                         </div>

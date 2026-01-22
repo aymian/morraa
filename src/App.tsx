@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Suspense, lazy } from "react";
-import "@stream-io/video-react-sdk/dist/css/styles.css";
 
 // Lazy Load Pages
 const Index = lazy(() => import("./pages/Index"));
@@ -66,6 +65,8 @@ const App = () => (
               <Route path="/story-share" element={<StoryShare />} />
               <Route path="/view" element={<View />} />
               <Route path="/feed-preview" element={<FeedPreview />} />
+              <Route path="/video-call-setup" element={<VideoCallSetup />} />
+              <Route path="/call" element={<CallPage />} />
               {/* Protected / App Routes */}
               <Route element={<AppLayout />}>
                 <Route path="/create" element={<Create />} />
