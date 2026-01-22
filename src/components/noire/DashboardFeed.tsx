@@ -157,6 +157,11 @@ const DashboardFeed = () => {
             });
         } catch (error) {
             console.error("Error toggling like:", error);
+            toast({ 
+                title: "Error", 
+                description: "Failed to update like. Please check your connection or permissions.",
+                variant: "destructive"
+            });
         }
     };
 
