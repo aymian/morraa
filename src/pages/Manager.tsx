@@ -85,20 +85,30 @@ const Manager = () => {
       let requestData: any = null;
 
       await runTransaction(db, async (tx) => {
+        // 1. All Reads First
         const reqRef = doc(db, "depositRequests", id);
         const snap = await tx.get(reqRef);
+        
         if (!snap.exists()) throw new Error("Request not found.");
         const data = snap.data();
         if (data.status !== "pending") throw new Error("Already processed.");
         requestData = data;
 
+        // If approved, we need to read user data too
+        let currentBalance = 0;
+        let userRef = null;
+        
+        if (status === "approved") {
+          userRef = doc(db, "users", data.userId);
+          const userSnap = await tx.get(userRef);
+          currentBalance = userSnap.exists() ? Number((userSnap.data() as any).balance || 0) : 0;
+        }
+
+        // 2. All Writes Second
         tx.update(reqRef, { status, processedAt: serverTimestamp() });
 
-        if (status === "approved") {
-          const userRef = doc(db, "users", data.userId);
-          const userSnap = await tx.get(userRef);
-          const current = userSnap.exists() ? Number(userSnap.data().balance || 0) : 0;
-          tx.update(userRef, { balance: current + Number(data.amountRwf || 0) });
+        if (status === "approved" && userRef) {
+          tx.update(userRef, { balance: currentBalance + Number(data.amountRwf || 0) });
         }
       });
 

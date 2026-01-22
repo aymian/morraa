@@ -538,6 +538,7 @@ const UserDetails = () => {
                                 {userPosts.map((post) => (
                                     <motion.div
                                         key={post.id}
+                                        onClick={() => navigate(`/view?type=post&id=${post.id}`)}
                                         className="aspect-square relative group cursor-pointer bg-zinc-900"
                                     >
                                         {post.mediaType === 'video' ? (

@@ -144,6 +144,7 @@ const secondaryItems = [
     { icon: Bookmark, label: "Collection", path: "/saved" },
     { icon: Wallet, label: "Vault", path: "/wallet", hasDot: true },
     { icon: ShieldCheck, label: "Verification", path: "/verification" },
+    { icon: Sparkles, label: "Feed Preview", path: "/feed-preview" },
     { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

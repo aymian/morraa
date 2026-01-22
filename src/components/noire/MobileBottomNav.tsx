@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Home, Info, MessageSquare, UserPlus, LogIn, Sparkles } from "lucide-react";
+import { Home, Search, Plus, Play, User, Sparkles, LogIn, MessageSquare, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 /**
  * MORRA Mobile Bottom Navigation
- * Premium UI for unauthenticated users
+ * Premium UI for both authenticated and unauthenticated users
  */
 
 interface MobileBottomNavProps {
@@ -36,70 +36,116 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navItems = [
+  // Authenticated User Navigation (Instagram-like but better)
+  const authNavItems = [
+    { icon: Home, label: "Home", path: "/" },
+    { icon: Search, label: "Explore", path: "/library" },
+    { icon: Plus, label: "Create", path: "/create", isAction: true },
+    { icon: Play, label: "Moods", path: "/moods" },
+    { icon: User, label: "Profile", path: "/profile" },
+  ];
+
+  // Guest Navigation
+  const guestNavItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Info, label: "About", path: "/about" },
     { icon: MessageSquare, label: "Contact", path: "/contact" },
   ];
-
-  if (user) return null; // We are building this specifically for unauthenticated as requested
 
   return (
     <motion.nav
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-6 inset-x-0 mx-auto z-50 md:hidden w-[90%] max-w-sm"
+      className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pb-4 pt-2 px-4 bg-gradient-to-t from-black via-black/90 to-transparent"
     >
-      <div className="glass-noire rounded-[2rem] px-4 py-3 border border-white/10 shadow-2xl flex items-center justify-between gap-2">
-        {/* Navigation Links */}
-        <div className="flex items-center gap-1">
-          {navItems.map((item) => {
+      <div className="glass-noire rounded-[2.5rem] px-6 py-4 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between backdrop-blur-2xl bg-[#0A0A0A]/80">
+        
+        {user ? (
+          // Authenticated State
+          authNavItems.map((item) => {
             const active = isActive(item.path);
+            
+            if (item.isAction) {
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.path)}
+                  className="relative group -mt-6"
+                >
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#FBBF24] to-[#d97706] flex items-center justify-center shadow-[0_8px_20px_rgba(251,191,36,0.4)] border-[3px] border-black transition-transform duration-300 group-active:scale-90">
+                    <Plus className="w-7 h-7 text-black stroke-[3]" />
+                  </div>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
-                className="relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 group"
+                className="relative flex flex-col items-center justify-center w-10 h-10 transition-all duration-300"
               >
                 {active && (
                   <motion.div
-                    layoutId="mobile-nav-active"
-                    className="absolute inset-0 bg-primary/20 rounded-2xl -z-10 border border-primary/30"
+                    layoutId="mobile-nav-dot"
+                    className="absolute -bottom-2 w-1 h-1 bg-[#FBBF24] rounded-full shadow-[0_0_10px_#FBBF24]"
                   />
                 )}
                 <item.icon
-                  className={`w-5 h-5 transition-all duration-300 ${active ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"
-                    }`}
+                  className={`w-6 h-6 transition-all duration-300 ${
+                    active 
+                      ? "text-[#FBBF24] fill-[#FBBF24]/10 stroke-[2.5]" 
+                      : "text-zinc-500 stroke-[1.5]"
+                  }`}
                 />
               </button>
             );
-          })}
-        </div>
+          })
+        ) : (
+          // Guest State
+          <>
+            <div className="flex items-center gap-6">
+              {guestNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.path)}
+                    className="relative flex flex-col items-center justify-center transition-all duration-300"
+                  >
+                    <item.icon
+                      className={`w-6 h-6 transition-all duration-300 ${
+                        active ? "text-[#FBBF24]" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Separator */}
-        <div className="w-px h-8 bg-white/10 mx-1" />
+            <div className="w-px h-8 bg-white/10 mx-2" />
 
-        {/* Primary Action */}
-        <div className="flex items-center gap-2 flex-1">
-          <motion.button
-            onClick={() => handleAuthClick("signup")}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-2xl font-body font-bold text-xs shadow-glow-gold overflow-hidden relative group"
-            whileTap={{ scale: 0.95 }}
-          >
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            <span>Join Morra</span>
-            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-          </motion.button>
-
-          <motion.button
-            onClick={() => handleAuthClick("login")}
-            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted/30 border border-white/5 text-foreground transition-colors"
-            whileTap={{ scale: 0.95 }}
-          >
-            <LogIn className="w-4 h-4" />
-          </motion.button>
-        </div>
+            <div className="flex items-center gap-3">
+               <motion.button
+                onClick={() => handleAuthClick("signup")}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#FBBF24] text-black rounded-xl font-bold text-xs shadow-glow-gold"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Join</span>
+              </motion.button>
+              
+              <motion.button
+                onClick={() => handleAuthClick("login")}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-white"
+                whileTap={{ scale: 0.95 }}
+              >
+                <LogIn className="w-4 h-4" />
+              </motion.button>
+            </div>
+          </>
+        )}
       </div>
     </motion.nav>
   );

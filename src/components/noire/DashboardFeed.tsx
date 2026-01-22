@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
     Heart,
     MessageCircle,
@@ -52,6 +53,29 @@ const DashboardFeed = () => {
     const [postComments, setPostComments] = useState<any[]>([]);
     const [mutedStates, setMutedStates] = useState<Record<string, boolean>>({});
     const { toast } = useToast();
+    const [playingPostId, setPlayingPostId] = useState<string | null>(null);
+    const navigate = useNavigate();
+
+    // Intersection Observer for Auto-Play
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const videoId = entry.target.getAttribute('data-post-id');
+                        if (videoId) setPlayingPostId(videoId);
+                    }
+                });
+            },
+            { threshold: 0.7 } // 70% of video must be visible
+        );
+
+        // Attach observer to all video containers
+        const videoElements = document.querySelectorAll('.post-video-container');
+        videoElements.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
+    }, [posts]);
 
     useEffect(() => {
         let unsubscribePosts: () => void;
@@ -145,7 +169,8 @@ const DashboardFeed = () => {
         );
     }
 
-    const handleLike = async (post: Post) => {
+    const handleLike = async (e: React.MouseEvent, post: Post) => {
+        e.stopPropagation();
         if (!user) return;
         const isLiked = post.likedIds?.includes(user.uid);
         const postRef = doc(db, "posts", post.id);
@@ -165,7 +190,8 @@ const DashboardFeed = () => {
         }
     };
 
-    const handleShare = async (post: Post) => {
+    const handleShare = async (e: React.MouseEvent, post: Post) => {
+        e.stopPropagation();
         try {
             await updateDoc(doc(db, "posts", post.id), {
                 shares: increment(1)
@@ -177,7 +203,8 @@ const DashboardFeed = () => {
         }
     };
 
-    const handleDownload = async (post: Post) => {
+    const handleDownload = async (e: React.MouseEvent, post: Post) => {
+        e.stopPropagation();
         if (!post.mediaUrl) return;
         try {
             const response = await fetch(post.mediaUrl);
@@ -204,7 +231,8 @@ const DashboardFeed = () => {
         }));
     };
 
-    const toggleComments = (postId: string) => {
+    const toggleComments = (e: React.MouseEvent, postId: string) => {
+        e.stopPropagation();
         if (activeCommentId === postId) {
             setActiveCommentId(null);
         } else {
@@ -215,7 +243,7 @@ const DashboardFeed = () => {
     const submitComment = async (postId: string) => {
         if (!commentText.trim() || !user) return;
         
-        const textToSubmit = commentText;
+        const textToSubmit = commentText.trim();
         setCommentText(""); // Optimistic clear
 
         try {
@@ -258,15 +286,16 @@ const DashboardFeed = () => {
                     ) : (
                         posts.map((post, idx) => (
                             <motion.article
-                                key={post.id}
-                                initial={{ opacity: 0, scale: 0.98, y: 20 }}
-                                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                                className="relative bg-[#0A0A0A] rounded-[2.5rem] overflow-hidden border border-white/[0.03] shadow-[0_40px_80px_rgba(0,0,0,0.4)] group"
-                            >
-                                {/* Card Header - Compact */}
-                                <div className="p-3 flex items-center justify-between relative z-10">
+                                    key={post.id}
+                                    initial={{ opacity: 0, scale: 0.98, y: 20 }}
+                                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-100px" }}
+                                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                                    onClick={() => navigate(`/view?type=post&id=${post.id}`)}
+                                    className="relative bg-[#0A0A0A] rounded-[2.5rem] overflow-hidden border border-white/[0.03] shadow-[0_40px_80px_rgba(0,0,0,0.4)] group cursor-pointer"
+                                >
+                                    {/* Card Header - Compact */}
+                                    <div className="p-3 flex items-center justify-between relative z-10" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-full border border-[#FBBF24]/20 p-0.5 bg-gradient-to-br from-white/10 to-transparent">
                                             <div className="w-full h-full rounded-full bg-[#111] overflow-hidden flex items-center justify-center">
@@ -314,15 +343,26 @@ const DashboardFeed = () => {
                                                     return <AdvancedImage cldImg={img} className="w-full h-full object-cover" />;
                                                 })()
                                             ) : (
-                                                <div className="relative w-full h-full">
+                                                <div 
+                                                    className="relative w-full h-full post-video-container"
+                                                    data-post-id={post.id}
+                                                >
                                                     <video 
                                                         src={post.mediaUrl} 
                                                         className="w-full h-full object-cover" 
                                                         muted={mutedStates[post.id] ?? true}
                                                         loop 
-                                                        autoPlay 
                                                         playsInline 
                                                         preload="metadata"
+                                                        ref={(el) => {
+                                                            if (el) {
+                                                                if (playingPostId === post.id) {
+                                                                    el.play().catch(() => {});
+                                                                } else {
+                                                                    el.pause();
+                                                                }
+                                                            }
+                                                        }}
                                                     />
                                                     <button
                                                         onClick={(e) => {
@@ -361,25 +401,25 @@ const DashboardFeed = () => {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-5">
                                             <button 
-                                                onClick={() => handleLike(post)}
+                                                onClick={(e) => handleLike(e, post)}
                                                 className={`transition-colors ${post.likedIds?.includes(user?.uid) ? "text-red-500" : "text-white/60 hover:text-[#FBBF24]"}`}
                                             >
                                                 <Heart size={20} strokeWidth={2} className={post.likedIds?.includes(user?.uid) ? "fill-current" : ""} />
                                             </button>
                                             <button 
-                                                onClick={() => toggleComments(post.id)}
+                                                onClick={(e) => toggleComments(e, post.id)}
                                                 className="text-white/60 hover:text-white transition-colors"
                                             >
                                                 <MessageCircle size={20} strokeWidth={2} />
                                             </button>
                                             <button 
-                                                onClick={() => handleShare(post)}
+                                                onClick={(e) => handleShare(e, post)}
                                                 className="text-white/60 hover:text-white transition-colors"
                                             >
                                                 <Share2 size={20} strokeWidth={2} />
                                             </button>
                                             <button 
-                                                onClick={() => handleDownload(post)}
+                                                onClick={(e) => handleDownload(e, post)}
                                                 className="text-white/60 hover:text-white transition-colors"
                                             >
                                                 <Download size={20} strokeWidth={2} />
@@ -404,7 +444,7 @@ const DashboardFeed = () => {
                                                 exit={{ height: 0, opacity: 0 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="pt-2 border-t border-white/5 space-y-2">
+                                                <div className="pt-2 border-t border-white/5 space-y-2" onClick={(e) => e.stopPropagation()}>
                                                     <div className="max-h-32 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                                                         {postComments.map((comment) => (
                                                             <div key={comment.id} className="flex gap-2">

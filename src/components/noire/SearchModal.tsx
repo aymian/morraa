@@ -249,8 +249,12 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                                         >
                                             <div className="flex items-center gap-4 text-left">
                                                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/10 p-0.5 bg-gradient-to-br from-white/10 to-transparent">
-                                                    {user.profileImage ? (
-                                                        <img src={user.profileImage} alt={user.username} className="w-full h-full object-cover rounded-[0.9rem]" />
+                                                    {user.profileImage || user.avatarUrl || user.photoURL ? (
+                                                        <img 
+                                                            src={user.profileImage || user.avatarUrl || user.photoURL} 
+                                                            alt={user.username} 
+                                                            className="w-full h-full object-cover rounded-[0.9rem]" 
+                                                        />
                                                     ) : (
                                                         <div className="w-full h-full bg-white/5 flex items-center justify-center text-xl font-bold">
                                                             {user.username?.[0]?.toUpperCase()}

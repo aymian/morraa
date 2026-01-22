@@ -14,6 +14,8 @@ import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useToast } from "@/hooks/use-toast";
 
+import EditProfileModal from "@/components/noire/EditProfileModal";
+
 /**
  * PRO Profile Page - Immersive, Cinematic, Unique
  */
@@ -23,6 +25,7 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
+    const [showEditProfile, setShowEditProfile] = useState(false);
     const navigate = useNavigate();
 
     const [userPosts, setUserPosts] = useState<any[]>([]);
@@ -255,7 +258,10 @@ const Profile = () => {
                                 {userData?.isVerified && <CheckCircle size={16} className="text-blue-500 fill-blue-500/10" />}
                             </h1>
                             <div className="flex items-center gap-2">
-                                <button className="md:hidden px-4 py-1.5 bg-[#363636] rounded-lg text-sm font-semibold text-white">
+                                <button 
+                                    onClick={() => setShowEditProfile(true)}
+                                    className="md:hidden px-4 py-1.5 bg-[#363636] rounded-lg text-sm font-semibold text-white"
+                                >
                                     Edit Profile
                                 </button>
                                 <button className="md:hidden p-1.5 bg-[#363636] rounded-lg text-white">
@@ -316,13 +322,37 @@ const Profile = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-10 px-4 md:px-0">
-                    <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-lg transition-colors">
-                        Edit Profile
+                    <button 
+                        onClick={() => setShowEditProfile(true)}
+                        className="flex-1 group relative overflow-hidden bg-[#363636] hover:bg-[#262626] rounded-xl transition-all duration-300 p-0.5"
+                    >
+                        <div className="relative bg-[#1A1A1A] rounded-[10px] px-4 py-3 flex items-center justify-center gap-2 group-hover:bg-[#202020] transition-colors">
+                            <Edit3 size={16} className="text-zinc-400 group-hover:text-white transition-colors" />
+                            <span className="text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">Edit Profile</span>
+                        </div>
                     </button>
-                    <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-lg transition-colors">
+                    
+                    <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-xl transition-colors">
                         View archive
                     </button>
                 </div>
+
+                <EditProfileModal 
+                    isOpen={showEditProfile} 
+                    onClose={() => setShowEditProfile(false)}
+                    userData={userData}
+                    userId={firebaseUser?.uid}
+                    onUpdate={() => {
+                        // Refresh user data logic here if needed, or rely on existing listeners if they are real-time.
+                        // Since Profile uses onAuthStateChanged -> getDoc once, we might want to manually re-fetch or use onSnapshot.
+                        // For now, let's just let the user know it's updated. 
+                        // Actually, let's update local state to reflect changes immediately if modal doesn't do it.
+                        // The modal updates Firestore, but Profile.tsx fetches once.
+                        // We should probably convert Profile.tsx to use onSnapshot for userData or reload window.
+                        // Simple fix: reload or re-fetch.
+                        window.location.reload(); 
+                    }}
+                />
 
                 {/* Highlights Section */}
                 <div className="flex gap-6 overflow-x-auto no-scrollbar mb-12 px-4 md:px-0 pb-2">
@@ -381,6 +411,7 @@ const Profile = () => {
                         {userPosts.map((post) => (
                             <motion.div
                                 key={post.id}
+                                onClick={() => navigate(`/view?type=post&id=${post.id}`)}
                                 className="aspect-square relative group cursor-pointer bg-zinc-900"
                             >
                                 {post.mediaType === 'video' ? (

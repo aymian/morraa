@@ -260,29 +260,6 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
             <NoireLogo size={26} showText={!logoOnly} />
           </button>
 
-          {user && !logoOnly && (
-            <div className="flex-1 flex justify-center px-4 overflow-x-auto no-scrollbar">
-              <div className="flex items-center gap-2">
-                {activeStories.slice(0, 5).map((group) => (
-                  <div key={group.userId} className={`w-9 h-9 rounded-full p-[1.5px] ${group.hasUnseen ? 'bg-[#FBBF24]' : 'bg-white/10'}`}>
-                    <div
-                      className="w-full h-full rounded-full bg-black overflow-hidden cursor-pointer"
-                      onClick={() => navigate(`/stories/@${group.username}`)}
-                    >
-                      {group.userAvatar ? (
-                        <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-white/40">
-                          {group.userName?.[0]}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {!logoOnly && (
             <div className="flex items-center gap-1">
               <motion.button

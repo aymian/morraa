@@ -31,7 +31,12 @@ const Index = () => {
       {user && <FloatingSidebar />}
 
       {user ? (
-        <div className="pt-24 pb-12 flex flex-col items-center">
+        <div className="pt-20 pb-24 flex flex-col items-center w-full">
+          {/* Mobile Story Tray */}
+          <div className="w-full md:hidden mb-2 pl-2">
+            <StoryTray />
+          </div>
+          
           <DashboardFeed />
         </div>
       ) : (
