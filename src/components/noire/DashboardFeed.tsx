@@ -14,7 +14,9 @@ import {
     Bookmark,
     Download,
     Send,
-    X
+    X,
+    Volume2,
+    VolumeX
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment } from "firebase/firestore";
@@ -48,6 +50,7 @@ const DashboardFeed = () => {
     const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
     const [commentText, setCommentText] = useState("");
     const [postComments, setPostComments] = useState<any[]>([]);
+    const [mutedStates, setMutedStates] = useState<Record<string, boolean>>({});
     const { toast } = useToast();
 
     useEffect(() => {
@@ -189,6 +192,13 @@ const DashboardFeed = () => {
         }
     };
 
+    const toggleMute = (postId: string) => {
+        setMutedStates(prev => ({
+            ...prev,
+            [postId]: !(prev[postId] ?? true)
+        }));
+    };
+
     const toggleComments = (postId: string) => {
         if (activeCommentId === postId) {
             setActiveCommentId(null);
@@ -299,15 +309,30 @@ const DashboardFeed = () => {
                                                     return <AdvancedImage cldImg={img} className="w-full h-full object-cover" />;
                                                 })()
                                             ) : (
-                                                <video 
-                                                    src={post.mediaUrl} 
-                                                    className="w-full h-full object-cover" 
-                                                    muted 
-                                                    loop 
-                                                    autoPlay 
-                                                    playsInline 
-                                                    preload="metadata"
-                                                />
+                                                <div className="relative w-full h-full">
+                                                    <video 
+                                                        src={post.mediaUrl} 
+                                                        className="w-full h-full object-cover" 
+                                                        muted={mutedStates[post.id] ?? true}
+                                                        loop 
+                                                        autoPlay 
+                                                        playsInline 
+                                                        preload="metadata"
+                                                    />
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleMute(post.id);
+                                                        }}
+                                                        className="absolute bottom-3 right-3 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white/80 hover:text-white transition-all backdrop-blur-sm z-20"
+                                                    >
+                                                        {mutedStates[post.id] === false ? (
+                                                            <Volume2 size={16} />
+                                                        ) : (
+                                                            <VolumeX size={16} />
+                                                        )}
+                                                    </button>
+                                                </div>
                                             )}
                                             {/* Text Overlay on Media */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
