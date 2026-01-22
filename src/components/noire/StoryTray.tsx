@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, onSnapshot, limit, getDoc, doc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 const StoryTray = () => {
     const [activeStories, setActiveStories] = useState<any[]>([]);
     const [user, setUser] = useState<any>(null);
+    const [page, setPage] = useState(0);
+    const STORIES_PER_PAGE = 5;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -58,9 +61,22 @@ const StoryTray = () => {
 
     if (activeStories.length === 0) return null;
 
+    const displayedStories = activeStories.slice(page * STORIES_PER_PAGE, (page + 1) * STORIES_PER_PAGE);
+    const hasNextPage = activeStories.length > (page + 1) * STORIES_PER_PAGE;
+    const hasPrevPage = page > 0;
+
     return (
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-2 max-w-[600px] mask-linear-fade">
-            {activeStories.map((group) => (
+        <div className="flex items-center gap-3 py-2">
+            {hasPrevPage && (
+                <button 
+                    onClick={() => setPage(p => p - 1)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                    <ChevronLeft className="w-5 h-5 text-white/70" />
+                </button>
+            )}
+
+            {displayedStories.map((group) => (
                 <div key={group.userId} className="flex flex-col items-center gap-1 group cursor-pointer flex-shrink-0">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -101,11 +117,15 @@ const StoryTray = () => {
                         </span>
                     </div>
                 ))}
-            <style>{`
-                .mask-linear-fade {
-                    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-                }
-            `}</style>
+
+            {hasNextPage && (
+                <button 
+                    onClick={() => setPage(p => p + 1)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                    <ChevronRight className="w-5 h-5 text-white/70" />
+                </button>
+            )}
         </div>
     );
 };

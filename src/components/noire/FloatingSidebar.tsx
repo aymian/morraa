@@ -24,7 +24,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, collection, query, where } from "firebase/firestore";
 
 /**
  * MORRA Core Navigation Strategy - Creator Tier
@@ -41,6 +41,7 @@ const FloatingSidebar = ({ forceCollapsed = false }: FloatingSidebarProps) => {
     const [showMore, setShowMore] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
+    const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -93,27 +94,50 @@ useEffect(() => {
 }, [location.pathname]);
 
 useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
-        if (currentUser) {
-            // Real-time user data sync
-            const unsubDoc = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
-                if (docSnap.exists()) setUserData(docSnap.data());
-            });
-            return () => unsubDoc();
-        } else {
-            setUserData(null);
-        }
-    });
-    return () => unsubscribeAuth();
-}, []);
+        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                // Real-time user data sync
+                const unsubDoc = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+                    if (docSnap.exists()) setUserData(docSnap.data());
+                });
+                return () => unsubDoc();
+            } else {
+                setUserData(null);
+            }
+        });
+        return () => unsubscribeAuth();
+    }, []);
 
-const primaryItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: Compass, label: "Explore", path: "/moods" },
-    { icon: MessageCircle, label: "Messages", path: "/messages", hasNotification: true },
-    { icon: UserIcon, label: "Profile", path: "/profile", isVerified: userData?.isVerified },
-];
+    // Listen for unread messages
+    useEffect(() => {
+        if (!user) return;
+        
+        const q = query(
+            collection(db, "conversations"),
+            where("participants", "array-contains", user.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            let total = 0;
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                if (data.unreadCounts && data.unreadCounts[user.uid]) {
+                    total += data.unreadCounts[user.uid];
+                }
+            });
+            setUnreadCount(total);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const primaryItems = [
+        { icon: Home, label: "Home", path: "/" },
+        { icon: Compass, label: "Explore", path: "/moods" },
+        { icon: MessageCircle, label: "Messages", path: "/messages", hasNotification: unreadCount > 0 },
+        { icon: UserIcon, label: "Profile", path: "/profile", isVerified: userData?.isVerified },
+    ];
 
 const secondaryItems = [
     { icon: Bell, label: "Activity", path: "/notifications" },
@@ -205,9 +229,16 @@ return (
                             >
                                 <div className="relative">
                                     <item.icon size={22} className={`flex-shrink-0 transition-colors ${active ? "text-[#FBBF24]" : ""}`} />
-                                    {item.hasNotification && (
+                                    {/* Unread Count Badge */}
+                                    {item.label === "Messages" && unreadCount > 0 && !location.pathname.startsWith("/messages") ? (
+                                        <div className="absolute -top-2 -right-2 min-w-[18px] h-[18px] bg-red-500 rounded-full border-2 border-[#0D0D0D] flex items-center justify-center px-1">
+                                            <span className="text-[9px] font-bold text-white leading-none">
+                                                {unreadCount > 99 ? "99+" : unreadCount}
+                                            </span>
+                                        </div>
+                                    ) : item.hasNotification ? (
                                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse" />
-                                    )}
+                                    ) : null}
                                 </div>
                                 {!isCollapsed && (
                                     <div className="flex flex-1 items-center justify-between">

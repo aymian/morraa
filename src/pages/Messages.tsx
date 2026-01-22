@@ -215,7 +215,7 @@ const Messages = () => {
                         lastMessage: data.lastMessage || "Start a session...",
                         time: data.lastMessageTime ? new Date(data.lastMessageTime.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "New",
                         otherUid: otherUid,
-                        unread: 0,
+                        unread: data.unreadCounts?.[user.uid] || 0,
                     };
                 } catch (err) {
                     console.error("Node mapping error:", err);
@@ -313,6 +313,13 @@ const Messages = () => {
         if (!selectedChat) {
             setMessages([]);
             return;
+        }
+
+        // Reset unread count when entering chat
+        if (user && selectedChat.unread > 0) {
+             updateDoc(doc(db, "conversations", selectedChat.id), {
+                 [`unreadCounts.${user.uid}`]: 0
+             }).catch(e => console.error("Failed to reset unread count:", e));
         }
 
         const q = query(
@@ -445,9 +452,13 @@ const Messages = () => {
 
             await addDoc(collection(db, "conversations", selectedChat.id, "messages"), messageData);
 
+            // Calculate unread count update for recipient
+            const recipientId = selectedChat.participants.find((p: string) => p !== user.uid);
+            
             await updateDoc(doc(db, "conversations", selectedChat.id), {
                 lastMessage: text,
-                lastMessageTime: serverTimestamp()
+                lastMessageTime: serverTimestamp(),
+                ...(recipientId ? { [`unreadCounts.${recipientId}`]: increment(1) } : {})
             });
         } catch (error) {
             console.error("Message delivery failed:", error);
@@ -490,9 +501,12 @@ const Messages = () => {
 
             await addDoc(collection(db, "conversations", selectedChat.id, "messages"), messageData);
 
+            const recipientId = selectedChat.participants.find((p: string) => p !== user.uid);
+
             await updateDoc(doc(db, "conversations", selectedChat.id), {
                 lastMessage: studioMode === 'post' ? '📮 Shared Post' : '⚡ Shared Story',
-                lastMessageTime: serverTimestamp()
+                lastMessageTime: serverTimestamp(),
+                ...(recipientId ? { [`unreadCounts.${recipientId}`]: increment(1) } : {})
             });
 
             // Reset studio
@@ -531,9 +545,12 @@ const Messages = () => {
 
             await addDoc(collection(db, "conversations", selectedChat.id, "messages"), messageData);
 
+            const recipientId = selectedChat.participants.find((p: string) => p !== user.uid);
+
             await updateDoc(doc(db, "conversations", selectedChat.id), {
                 lastMessage: type === 'image' ? '📷 Photo' : type === 'video' ? '🎬 Video' : '📁 File',
-                lastMessageTime: serverTimestamp()
+                lastMessageTime: serverTimestamp(),
+                ...(recipientId ? { [`unreadCounts.${recipientId}`]: increment(1) } : {})
             });
 
             setUploadProgress(null);

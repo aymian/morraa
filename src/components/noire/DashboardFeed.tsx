@@ -11,15 +11,19 @@ import {
     Play,
     User as UserIcon,
     Plus,
-    Bookmark
+    Bookmark,
+    Download,
+    Send,
+    X
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { AdvancedImage } from '@cloudinary/react';
 import { cld } from "@/lib/cloudinary";
 import { auto } from '@cloudinary/url-gen/actions/resize';
 import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
+import { useToast } from "@/hooks/use-toast";
 
 interface Post {
     isVerified: any;
@@ -32,13 +36,19 @@ interface Post {
     mediaType: 'image' | 'video';
     createdAt: any;
     likes: number;
+    likedIds: string[];
     comments: number;
 }
 
 const DashboardFeed = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [userData, setUserData] = useState<any>(null);
+    const [user, setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+    const [commentText, setCommentText] = useState("");
+    const [postComments, setPostComments] = useState<any[]>([]);
+    const { toast } = useToast();
 
     useEffect(() => {
         let unsubscribePosts: () => void;
@@ -78,8 +88,10 @@ const DashboardFeed = () => {
 
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
+                setUser(currentUser);
                 setupListeners(currentUser);
             } else {
+                setUser(null);
                 setUserData(null);
                 setPosts([]);
                 setIsLoading(false);
@@ -99,6 +111,121 @@ const DashboardFeed = () => {
             </div>
         );
     }
+
+    useEffect(() => {
+        let unsubscribe: () => void;
+
+        if (activeCommentId) {
+            // Clear text when opening a new comment section
+            setCommentText("");
+            
+            const q = query(
+                collection(db, "posts", activeCommentId, "comments"), 
+                orderBy("createdAt", "asc")
+            );
+            
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                const comments = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setPostComments(comments);
+            }, (error) => {
+                console.error("Error fetching comments:", error);
+            });
+        } else {
+            setPostComments([]);
+        }
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [activeCommentId]);
+
+    const handleLike = async (post: Post) => {
+        if (!user) return;
+        const isLiked = post.likedIds?.includes(user.uid);
+        const postRef = doc(db, "posts", post.id);
+
+        try {
+            await updateDoc(postRef, {
+                likedIds: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+                likes: isLiked ? increment(-1) : increment(1)
+            });
+        } catch (error) {
+            console.error("Error toggling like:", error);
+        }
+    };
+
+    const handleShare = async (post: Post) => {
+        try {
+            await updateDoc(doc(db, "posts", post.id), {
+                shares: increment(1)
+            });
+             navigator.clipboard.writeText(post.mediaUrl || window.location.href);
+             toast({ title: "Shared", description: "Link copied to clipboard." });
+        } catch (error) {
+             console.error("Error sharing:", error);
+        }
+    };
+
+    const handleDownload = async (post: Post) => {
+        if (!post.mediaUrl) return;
+        try {
+            const response = await fetch(post.mediaUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `morraa-post-${post.id}.${post.mediaType === 'video' ? 'mp4' : 'jpg'}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast({ title: "Downloaded", description: "Media saved to device." });
+        } catch (error) {
+            console.error("Download failed:", error);
+            window.open(post.mediaUrl, '_blank');
+        }
+    };
+
+    const toggleComments = (postId: string) => {
+        if (activeCommentId === postId) {
+            setActiveCommentId(null);
+        } else {
+            setActiveCommentId(postId);
+        }
+    };
+
+    const submitComment = async (postId: string) => {
+        if (!commentText.trim() || !user) return;
+        
+        const textToSubmit = commentText;
+        setCommentText(""); // Optimistic clear
+
+        try {
+            await addDoc(collection(db, "posts", postId, "comments"), {
+                text: textToSubmit,
+                userId: user.uid,
+                userName: userData?.username || user.displayName || "User",
+                userAvatar: userData?.profileImage || user.photoURL,
+                createdAt: serverTimestamp()
+            });
+            
+            await updateDoc(doc(db, "posts", postId), {
+                comments: increment(1)
+            });
+            
+        } catch (error) {
+            console.error("Error commenting:", error);
+            setCommentText(textToSubmit); // Restore text on error
+            toast({ 
+                title: "Error", 
+                description: "Failed to post comment. Please try again.",
+                variant: "destructive"
+            });
+        }
+    };
 
     return (
         <div className="flex flex-col items-center py-6 px-4">
@@ -190,9 +317,30 @@ const DashboardFeed = () => {
                                 <div className="p-4 pt-2 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-5">
-                                            <button className="text-white/60 hover:text-[#FBBF24] transition-colors"><Heart size={20} strokeWidth={2} /></button>
-                                            <button className="text-white/60 hover:text-white transition-colors"><MessageCircle size={20} strokeWidth={2} /></button>
-                                            <button className="text-white/60 hover:text-white transition-colors"><Share2 size={20} strokeWidth={2} /></button>
+                                            <button 
+                                                onClick={() => handleLike(post)}
+                                                className={`transition-colors ${post.likedIds?.includes(user?.uid) ? "text-red-500" : "text-white/60 hover:text-[#FBBF24]"}`}
+                                            >
+                                                <Heart size={20} strokeWidth={2} className={post.likedIds?.includes(user?.uid) ? "fill-current" : ""} />
+                                            </button>
+                                            <button 
+                                                onClick={() => toggleComments(post.id)}
+                                                className="text-white/60 hover:text-white transition-colors"
+                                            >
+                                                <MessageCircle size={20} strokeWidth={2} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleShare(post)}
+                                                className="text-white/60 hover:text-white transition-colors"
+                                            >
+                                                <Share2 size={20} strokeWidth={2} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDownload(post)}
+                                                className="text-white/60 hover:text-white transition-colors"
+                                            >
+                                                <Download size={20} strokeWidth={2} />
+                                            </button>
                                         </div>
                                     </div>
 
@@ -203,6 +351,49 @@ const DashboardFeed = () => {
                                             {post.content.slice(0, 60)}...
                                         </p>
                                     </div>
+
+                                    {/* Comments Section */}
+                                    <AnimatePresence>
+                                        {activeCommentId === post.id && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="pt-2 border-t border-white/5 space-y-2">
+                                                    <div className="max-h-32 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                                        {postComments.map((comment) => (
+                                                            <div key={comment.id} className="flex gap-2">
+                                                                <span className="text-[10px] font-bold text-white">{comment.userName}:</span>
+                                                                <span className="text-[10px] text-white/70">{comment.text}</span>
+                                                            </div>
+                                                        ))}
+                                                        {postComments.length === 0 && (
+                                                            <p className="text-[10px] text-white/30 italic">No comments yet.</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={commentText}
+                                                            onChange={(e) => setCommentText(e.target.value)}
+                                                            placeholder="Add a comment..."
+                                                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] text-white focus:outline-none focus:border-[#FBBF24]/50"
+                                                            onKeyDown={(e) => e.key === 'Enter' && submitComment(post.id)}
+                                                        />
+                                                        <button 
+                                                            onClick={() => submitComment(post.id)}
+                                                            disabled={!commentText.trim()}
+                                                            className="text-[#FBBF24] disabled:opacity-50"
+                                                        >
+                                                            <Send size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </motion.article>
                         ))

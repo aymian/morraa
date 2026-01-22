@@ -5,7 +5,7 @@ import {
     User, Mail, Phone, Calendar, Music, Heart,
     MapPin, Share2, Shield, Settings,
     ArrowLeft, CheckCircle, Sparkles, MessageCircle, UserPlus, Check,
-    Volume2, UserMinus, MoreVertical, X, Bell, Search
+    Volume2, UserMinus, MoreVertical, X, Bell, Search, Trash2
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -182,6 +182,20 @@ const UserDetails = () => {
         fetchCounts();
     }, [targetUid]);
 
+
+    const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to remove this post?")) return;
+
+        try {
+            await deleteDoc(doc(db, "posts", postId));
+            setUserPosts(prev => prev.filter(p => p.id !== postId));
+            toast.success("Post removed.");
+        } catch (error) {
+            console.error("Error removing post:", error);
+            toast.error("Failed to remove post.");
+        }
+    };
 
     const handleFollowAction = async () => {
         console.log("Follow action triggered for target:", targetUid);
@@ -531,15 +545,26 @@ const UserDetails = () => {
                                         ) : (
                                             <img src={post.mediaUrl} alt="Post" className="w-full h-full object-cover" />
                                         )}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                                            <div className="flex items-center gap-1.5 text-white">
-                                                <Heart className="w-6 h-6 fill-white" />
-                                                <span className="font-bold">{post.likes || 0}</span>
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4">
+                                            <div className="flex items-center gap-6">
+                                                <div className="flex items-center gap-1.5 text-white">
+                                                    <Heart className="w-6 h-6 fill-white" />
+                                                    <span className="font-bold">{post.likes || 0}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-white">
+                                                    <MessageCircle className="w-6 h-6 fill-white" />
+                                                    <span className="font-bold">{post.comments || 0}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-white">
-                                                <Music className="w-6 h-6 fill-white" />
-                                                <span className="font-bold">{post.comments || 0}</span>
-                                            </div>
+                                            {currentUser?.uid === targetUid && (
+                                                <button 
+                                                    onClick={(e) => handleDeletePost(post.id, e)}
+                                                    className="bg-red-500/80 p-2 rounded-full text-white hover:bg-red-500 transition-colors mt-2"
+                                                    title="Remove Post"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}

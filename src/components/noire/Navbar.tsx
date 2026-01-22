@@ -119,131 +119,134 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
 
   return (
     <>
-      {/* Primary Logo Section - Detached Bubble */}
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-6 left-6 z-50 hidden md:flex"
-      >
-        <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group flex-shrink-0 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-          <button onClick={() => navigate("/")} className="flex items-center">
-            <NoireLogo size={28} showText={!logoOnly} />
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Center Story Tray */}
-      {showStories && !logoOnly && (
+      {/* Desktop Navigation Container */}
+      <div className="fixed top-6 left-0 right-0 z-50 hidden md:flex items-start justify-between px-6 pointer-events-none">
+        {/* Primary Logo Section - Detached Bubble */}
         <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-40 hidden md:block"
-        >
-            <div className="glass-noire rounded-full px-6 py-1 border border-border/30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-                <StoryTray />
-            </div>
-        </motion.div>
-      )}
-
-      {/* Right-side Navigation */}
-      {!logoOnly && (
-        <motion.nav
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed top-6 right-6 z-50 hidden md:flex"
+          className="pointer-events-auto"
         >
-          <div className="glass-noire rounded-full px-2 py-2 flex items-center gap-1 border border-border/30 relative">
-            {!adminMode && guestNavItems.map((item, index) => (
-              <motion.a
-                key={item.label}
-                href={item.href}
-                onMouseEnter={() => setHoveredItem(item.label)}
-                onMouseLeave={() => setHoveredItem(null)}
-                onClick={(e) => {
-                  if (item.href.startsWith("/")) {
-                    e.preventDefault();
-                    navigate(item.href);
-                  }
-                }}
-                className="relative px-5 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors duration-300 rounded-full cursor-pointer z-10"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index, duration: 0.5 }}
-              >
-                {hoveredItem === item.label && (
-                  <motion.div
-                    layoutId="nav-glow"
-                    className="absolute inset-0 bg-primary/10 rounded-full -z-10 border border-primary/20"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
-                  />
-                )}
-                {item.label}
-              </motion.a>
-            ))}
-
-            {!adminMode && (
-              <div className="flex items-center gap-0.5">
-                <motion.button
-                  onClick={() => setIsSearchOpen(true)}
-                  className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Search className="w-4 h-4" />
-                </motion.button>
-
-                <motion.button
-                  onClick={() => navigate("/notifications")}
-                  className="p-3 text-muted-foreground hover:text-white transition-colors rounded-full hover:bg-white/10 relative"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Bell className="w-5 h-5" />
-                  {notificationCount > 0 && (
-                    <div className="absolute -top-3 -right-5 flex items-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
-                      <User className="w-4 h-4 text-white fill-white" />
-                      <span className="text-sm font-black text-white leading-none">
-                        {notificationCount}
-                      </span>
-                    </div>
-                  )}
-                </motion.button>
-              </div>
-            )}
-
-            <div className="w-px h-6 bg-border/50" />
-
-            <div className="flex items-center gap-2">
-              {adminMode ? (
-                <UserDropdown user={adminUser as any} userData={adminData} />
-              ) : user ? (
-                <UserDropdown user={user} userData={userData} />
-              ) : (
-                <>
-                  <button
-                    onClick={() => handleAuthClick("login")}
-                    className="px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    onClick={() => handleAuthClick("signup")}
-                    className="px-5 py-2 text-sm font-body font-medium bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/20"
-                  >
-                    Get Started
-                  </button>
-                </>
-              )}
-            </div>
+          <div className="glass-noire rounded-full px-4 py-2 border border-border/30 hover:border-primary/50 transition-colors group flex-shrink-0 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+            <button onClick={() => navigate("/")} className="flex items-center">
+              <NoireLogo size={28} showText={!logoOnly} />
+            </button>
           </div>
-        </motion.nav>
-      )}
+        </motion.div>
+
+        {/* Center Story Tray */}
+        {showStories && !logoOnly && (
+          <motion.div
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-auto"
+          >
+              <div className="glass-noire rounded-full px-6 py-1 border border-border/30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+                  <StoryTray />
+              </div>
+          </motion.div>
+        )}
+
+        {/* Right-side Navigation */}
+        {!logoOnly && (
+          <motion.nav
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-auto"
+          >
+            <div className="glass-noire rounded-full px-2 py-2 flex items-center gap-1 border border-border/30 relative">
+              {!adminMode && guestNavItems.map((item, index) => (
+                <motion.a
+                  key={item.label}
+                  href={item.href}
+                  onMouseEnter={() => setHoveredItem(item.label)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  onClick={(e) => {
+                    if (item.href.startsWith("/")) {
+                      e.preventDefault();
+                      navigate(item.href);
+                    }
+                  }}
+                  className="relative px-5 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors duration-300 rounded-full cursor-pointer z-10"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.5 }}
+                >
+                  {hoveredItem === item.label && (
+                    <motion.div
+                      layoutId="nav-glow"
+                      className="absolute inset-0 bg-primary/10 rounded-full -z-10 border border-primary/20"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                    />
+                  )}
+                  {item.label}
+                </motion.a>
+              ))}
+
+              {!adminMode && (
+                <div className="flex items-center gap-0.5">
+                  <motion.button
+                    onClick={() => setIsSearchOpen(true)}
+                    className="p-2.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/30"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Search className="w-4 h-4" />
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => navigate("/notifications")}
+                    className="p-3 text-muted-foreground hover:text-white transition-colors rounded-full hover:bg-white/10 relative"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Bell className="w-5 h-5" />
+                    {notificationCount > 0 && (
+                      <div className="absolute -top-3 -right-5 flex items-center gap-1.5 bg-[#FF3B30] px-3.5 py-1.5 rounded-full rounded-bl-sm shadow-[0_0_20px_rgba(255,59,48,0.4)] border border-white/20 animate-in zoom-in duration-300 z-50">
+                        <User className="w-4 h-4 text-white fill-white" />
+                        <span className="text-sm font-black text-white leading-none">
+                          {notificationCount}
+                        </span>
+                      </div>
+                    )}
+                  </motion.button>
+                </div>
+              )}
+
+              <div className="w-px h-6 bg-border/50" />
+
+              <div className="flex items-center gap-2">
+                {adminMode ? (
+                  <UserDropdown user={adminUser as any} userData={adminData} />
+                ) : user ? (
+                  <UserDropdown user={user} userData={userData} />
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleAuthClick("login")}
+                      className="px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      onClick={() => handleAuthClick("signup")}
+                      className="px-5 py-2 text-sm font-body font-medium bg-primary text-primary-foreground rounded-full shadow-lg shadow-primary/20"
+                    >
+                      Get Started
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.nav>
+        )}
+      </div>
 
       {/* Mobile Top Navbar */}
       <motion.nav
@@ -315,4 +318,15 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
 };
 
 export default Navbar;
+function unsubscribe() {
+  throw new Error("Function not implemented.");
+}
+
+function unsubNotifs() {
+  throw new Error("Function not implemented.");
+}
+
+function unsubStories() {
+  throw new Error("Function not implemented.");
+}
 

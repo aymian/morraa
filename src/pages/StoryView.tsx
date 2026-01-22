@@ -25,7 +25,8 @@ import {
     limit,
     setDoc,
     addDoc,
-    serverTimestamp
+    serverTimestamp,
+    increment
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -318,7 +319,8 @@ const StoryView = () => {
                 participants: [user.uid, recipientId],
                 lastMessage: message,
                 lastMessageTime: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                [`unreadCounts.${recipientId}`]: increment(1)
             }, { merge: true });
 
             // 2. Add Message
