@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, onSnapshot, limit, getDoc, doc } from "firebase/firestore";
+import { collection, query, onSnapshot, limit, getDoc, doc, where, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 
@@ -14,50 +14,73 @@ const StoryTray = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        let unsubStories: (() => void) | undefined;
+
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
-        });
+            
+            if (currentUser) {
+                // 1. Get following list
+                const followingRef = collection(db, "users", currentUser.uid, "following");
+                const followingSnap = await getDocs(followingRef);
+                const followingIds = followingSnap.docs.map(doc => doc.id);
+                
+                // Always include self
+                const relevantUserIds = [...followingIds, currentUser.uid];
+                
+                // Firestore 'in' query limit is 30. We take the first 30 for now.
+                // In a real app, you might want to paginate or fetch differently.
+                const queryIds = relevantUserIds.slice(0, 30);
 
-        const storiesQuery = query(
-            collection(db, "stories"),
-            limit(50)
-        );
+                if (queryIds.length > 0) {
+                    const storiesQuery = query(
+                        collection(db, "stories"),
+                        where("userId", "in", queryIds),
+                        limit(50)
+                    );
 
-        const unsubStories = onSnapshot(storiesQuery, (snapshot) => {
-            const stories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-            const now = Date.now();
+                    unsubStories = onSnapshot(storiesQuery, (snapshot) => {
+                        const stories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+                        const now = Date.now();
 
-            const grouped = stories.reduce((acc: any[], story: any) => {
-                const expiry = story.expiresAt?.toDate?.()?.getTime() || story.expiresAt?.seconds * 1000 || 0;
-                if (expiry <= now) return acc;
+                        const grouped = stories.reduce((acc: any[], story: any) => {
+                            const expiry = story.expiresAt?.toDate?.()?.getTime() || story.expiresAt?.seconds * 1000 || 0;
+                            if (expiry <= now) return acc;
 
-                const existingUser = acc.find(u => u.userId === story.userId);
-                if (!existingUser) {
-                    acc.push({
-                        userId: story.userId,
-                        userName: story.userName,
-                        username: story.username,
-                        userAvatar: story.userAvatar,
-                        stories: [story],
-                        hasUnseen: story.seenIds ? !story.seenIds.includes(user?.uid) : true
+                            const existingUser = acc.find(u => u.userId === story.userId);
+                            if (!existingUser) {
+                                acc.push({
+                                    userId: story.userId,
+                                    userName: story.userName,
+                                    username: story.username,
+                                    userAvatar: story.userAvatar,
+                                    stories: [story],
+                                    hasUnseen: story.seenIds ? !story.seenIds.includes(currentUser.uid) : true
+                                });
+                            } else {
+                                existingUser.stories.push(story);
+                                if (story.seenIds && !story.seenIds.includes(currentUser.uid)) {
+                                    existingUser.hasUnseen = true;
+                                }
+                            }
+                            return acc;
+                        }, []);
+
+                        setActiveStories(grouped);
                     });
                 } else {
-                    existingUser.stories.push(story);
-                    if (story.seenIds && !story.seenIds.includes(user?.uid)) {
-                        existingUser.hasUnseen = true;
-                    }
+                    setActiveStories([]);
                 }
-                return acc;
-            }, []);
-
-            setActiveStories(grouped);
+            } else {
+                setActiveStories([]);
+            }
         });
 
         return () => {
             unsubscribe();
-            unsubStories();
+            if (unsubStories) unsubStories();
         };
-    }, [user?.uid]);
+    }, []);
 
     if (activeStories.length === 0) return null;
 
