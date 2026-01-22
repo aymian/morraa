@@ -14,6 +14,7 @@ import {
     setDoc
 } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
+import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { toast } from "sonner";
 
@@ -245,6 +246,7 @@ const Notifications = () => {
                     )}
                 </div>
             </main>
+            <MobileBottomNav />
         </div>
     );
 };

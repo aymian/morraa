@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Home, Search, Plus, Play, User, Sparkles, LogIn, MessageSquare, Info } from "lucide-react";
+import { Home, Search, Plus, Play, User, Sparkles, LogIn, MessageSquare, Info, Wallet } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -39,9 +39,9 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
   // Authenticated User Navigation (Instagram-like but better)
   const authNavItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: Search, label: "Explore", path: "/library" },
+    { icon: Search, label: "Search", path: "/library" },
     { icon: Plus, label: "Create", path: "/create", isAction: true },
-    { icon: Play, label: "Moods", path: "/moods" },
+    { icon: Wallet, label: "Wallet", path: "/wallet" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 

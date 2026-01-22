@@ -10,6 +10,7 @@ import {
     DollarSign, Activity, Lock, Smartphone, ArrowDownCircle, ArrowUpCircle
 } from "lucide-react";
 import Navbar from "@/components/noire/Navbar";
+import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import NoireLogo from "@/components/noire/NoireLogo";
 
@@ -616,6 +617,7 @@ const Wallet = () => {
                     </div>
                 )}
             </main>
+            <MobileBottomNav />
         </div>
     );
 };

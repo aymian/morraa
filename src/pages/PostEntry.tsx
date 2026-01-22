@@ -22,6 +22,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/fires
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/noire/Navbar";
+import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 
 const PostEntry = () => {
@@ -293,6 +294,7 @@ const PostEntry = () => {
                     </div>
                 </div>
             </main>
+            <MobileBottomNav />
         </div>
     );
 };

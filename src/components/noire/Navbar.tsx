@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon, Bell, Heart, User, PanelLeft } from "lucide-react";
+import { Search, Menu, X, Home, Compass, Music2, Library as LibraryIcon, Bell, Heart, User, PanelLeft, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NoireLogo from "./NoireLogo";
@@ -263,11 +263,11 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
           {!logoOnly && (
             <div className="flex items-center gap-1">
               <motion.button
-                onClick={() => setIsSearchOpen(true)}
+                onClick={() => navigate("/messages")}
                 className="p-2 text-foreground rounded-full hover:bg-muted/30"
                 whileTap={{ scale: 0.9 }}
               >
-                <Search className="w-5 h-5" />
+                <MessageCircle className="w-5 h-5" />
               </motion.button>
 
               <motion.button

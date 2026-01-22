@@ -13,6 +13,7 @@ import {
     Volume2,
     VolumeX
 } from "lucide-react";
+import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import { db, auth } from "@/lib/firebase";
 import {
     getDoc,
@@ -356,6 +357,7 @@ const PostView = () => {
                     </div>
                 </div>
             </div>
+            <MobileBottomNav />
         </div>
     );
 };

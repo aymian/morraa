@@ -11,6 +11,7 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs, orderBy, setDoc, deleteDoc, limit, serverTimestamp, addDoc } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
+import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { toast } from "sonner";
 
@@ -581,6 +582,7 @@ const UserDetails = () => {
                     </>
                 )}
             </main>
+            <MobileBottomNav />
 
             {/* Connections Modal */}
             <AnimatePresence>
