@@ -40,6 +40,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
@@ -146,7 +151,6 @@ const Messages = () => {
 
     const [resolvedUid, setResolvedUid] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const emojiPickerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
         if (!user) return;
@@ -167,19 +171,6 @@ const Messages = () => {
         });
         return () => unsubscribe();
     }, []);
-
-    // Close emoji picker on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
-                setShowEmojiPicker(false);
-            }
-        };
-        if (showEmojiPicker) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [showEmojiPicker]);
 
     // Resolve userId param to a real UID if it's a username
     useEffect(() => {
@@ -432,14 +423,17 @@ const Messages = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    const lastMsgCount = useRef(0);
     useEffect(() => {
         if (scrollRef.current) {
+            const shouldSmooth = lastMsgCount.current > 0 && messages.length > lastMsgCount.current;
             setTimeout(() => {
                 scrollRef.current?.scrollTo({
                     top: scrollRef.current.scrollHeight,
-                    behavior: 'smooth'
+                    behavior: shouldSmooth ? 'smooth' : 'auto'
                 });
             }, 100);
+            lastMsgCount.current = messages.length;
         }
     }, [messages]);
 
@@ -860,7 +854,7 @@ const Messages = () => {
                             </header>
 
                             {/* Messages Container */}
-                            <ScrollArea className="flex-1 px-3 sm:px-6 lg:px-10 py-2" ref={scrollRef}>
+                            <ScrollArea className="flex-1 px-3 sm:px-6 lg:px-10 py-2" viewportRef={scrollRef}>
                                 <div className="max-w-xl mx-auto flex flex-col gap-4 sm:gap-6">
                                     <div className="flex justify-center my-4">
                                         <div className="px-5 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl shadow-noire relative group">
@@ -998,13 +992,13 @@ const Messages = () => {
                                                                         {/* Reaction Row */}
                                                                         <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/5 mb-1.5">
                                                                             {['❤️', '🔥', '😂', '😮', '👍'].map(emoji => (
-                                                                                <button
+                                                                                <DropdownMenuItem
                                                                                     key={emoji}
                                                                                     onClick={() => handleReact(msg.id, emoji)}
-                                                                                    className="text-lg hover:scale-125 transition-transform duration-200"
+                                                                                    className="text-lg hover:scale-125 transition-transform duration-200 justify-center p-0 w-8 h-8 rounded-full cursor-pointer"
                                                                                 >
                                                                                     {emoji}
-                                                                                </button>
+                                                                                </DropdownMenuItem>
                                                                             ))}
                                                                         </div>
 
@@ -1200,38 +1194,45 @@ const Messages = () => {
                                                 />
                                             </div>
 
-                                            <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2 self-center relative" ref={emojiPickerRef}>
-                                                <div className="absolute bottom-full right-0 mb-4 z-50">
-                                                    <AnimatePresence>
-                                                        {showEmojiPicker && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                                                className="shadow-2xl rounded-3xl overflow-hidden border border-white/10"
-                                                            >
-                                                                <EmojiPicker
-                                                                    theme={Theme.DARK}
-                                                                    onEmojiClick={onEmojiClick}
-                                                                    autoFocusSearch={false}
-                                                                    width={isMobileView ? 280 : 320}
-                                                                    height={isMobileView ? 350 : 400}
-                                                                    lazyLoadEmojis={true}
-                                                                    skinTonesDisabled={true}
-                                                                    searchPlaceHolder="Search vibes..."
-                                                                />
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
+                                            <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2 self-center relative">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl transition-colors ${showEmojiPicker ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-primary'}`}
-                                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-muted-foreground hover:bg-white/5 hover:text-primary transition-colors"
+                                                    onClick={() => console.log("Audio recording not implemented")}
                                                 >
-                                                    <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                    <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </Button>
+
+                                                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl transition-colors ${showEmojiPicker ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-primary'}`}
+                                                        >
+                                                            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align="end" sideOffset={10}>
+                                                        <div className="shadow-2xl rounded-3xl overflow-hidden border border-white/10">
+                                                            <EmojiPicker
+                                                                theme={Theme.DARK}
+                                                                onEmojiClick={(data) => {
+                                                                    onEmojiClick(data);
+                                                                    setShowEmojiPicker(false);
+                                                                }}
+                                                                autoFocusSearch={false}
+                                                                width={isMobileView ? 280 : 320}
+                                                                height={isMobileView ? 350 : 400}
+                                                                lazyLoadEmojis={true}
+                                                                skinTonesDisabled={true}
+                                                                searchPlaceHolder="Search vibes..."
+                                                            />
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
+
                                                 <motion.div
                                                     initial={false}
                                                     animate={{ scale: messageText.trim() ? 1 : 0.9, opacity: messageText.trim() ? 1 : 0.5 }}
