@@ -30,6 +30,7 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { getOptimizedUrl, getVideoPoster } from "@/lib/cloudinary-helper";
 
 /**
  * STORY VIEW - "The Carousel"
@@ -455,19 +456,46 @@ const StoryView = () => {
                     {/* Media Display */}
                     <div className="absolute inset-0 bg-zinc-900">
                         {activeStory.mediaType === 'image' ? (
-                            <img src={activeStory.mediaUrl} className="w-full h-full object-cover" />
+                            <img 
+                                src={getOptimizedUrl(activeStory.mediaUrl, 'image')} 
+                                className="w-full h-full object-cover" 
+                                alt="Story"
+                                loading="eager"
+                            />
                         ) : (
                             <video
                                 ref={videoRef}
-                                src={activeStory.mediaUrl}
+                                src={getOptimizedUrl(activeStory.mediaUrl, 'video')}
                                 className="w-full h-full object-cover"
                                 autoPlay
                                 playsInline
+                                preload="auto"
                                 onPlay={() => setIsPaused(false)}
                                 onPause={() => setIsPaused(true)}
                                 onLoadedMetadata={(e) => setRealDuration(e.currentTarget.duration)}
                             />
                         )}
+
+                        {/* Preload Next Story Media */}
+                        <div className="hidden">
+                            {(() => {
+                                let nextMedia = null;
+                                if (currentStoryIndex < activeGroup.stories.length - 1) {
+                                    nextMedia = activeGroup.stories[currentStoryIndex + 1];
+                                } else if (currentGroupIndex < allStoryGroups.length - 1) {
+                                    nextMedia = allStoryGroups[currentGroupIndex + 1].stories[0];
+                                }
+
+                                if (nextMedia) {
+                                    if (nextMedia.mediaType === 'image') {
+                                        return <img src={getOptimizedUrl(nextMedia.mediaUrl, 'image')} />;
+                                    } else {
+                                        return <video src={getOptimizedUrl(nextMedia.mediaUrl, 'video')} preload="auto" />;
+                                    }
+                                }
+                                return null;
+                            })()}
+                        </div>
 
                          {/* Text Overlay */}
                          {activeStory.textOverlay && (

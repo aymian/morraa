@@ -20,13 +20,15 @@ import {
     VolumeX
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment, limit, startAfter } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { AdvancedImage } from '@cloudinary/react';
 import { cld } from "@/lib/cloudinary";
 import { auto } from '@cloudinary/url-gen/actions/resize';
 import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
 import { useToast } from "@/hooks/use-toast";
+import { getOptimizedUrl, getVideoPoster } from "@/lib/cloudinary-helper";
+import { Loader2 } from "lucide-react";
 
 interface Post {
     isVerified: any;
@@ -56,6 +58,12 @@ const DashboardFeed = () => {
     const [playingPostId, setPlayingPostId] = useState<string | null>(null);
     const navigate = useNavigate();
 
+    // Pagination state
+    const [lastVisible, setLastVisible] = useState<any>(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const observerTarget = useRef<HTMLDivElement>(null);
+
     // Intersection Observer for Auto-Play
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -67,56 +75,104 @@ const DashboardFeed = () => {
                     }
                 });
             },
-            { threshold: 0.7 } // 70% of video must be visible
+            { threshold: 0.6 } 
         );
 
-        // Attach observer to all video containers
         const videoElements = document.querySelectorAll('.post-video-container');
         videoElements.forEach((el) => observer.observe(el));
 
         return () => observer.disconnect();
     }, [posts]);
 
+    // Infinite Scroll Observer
     useEffect(() => {
-        let unsubscribePosts: () => void;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+                    fetchMorePosts();
+                }
+            },
+            { threshold: 0.1 }
+        );
 
-        const setupListeners = async (currentUser: any) => {
-            if (!currentUser) return;
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
 
-            try {
-                // 1. Fetch/Stream User Data
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if (userDoc.exists()) setUserData(userDoc.data());
+        return () => observer.disconnect();
+    }, [hasMore, isFetchingMore, isLoading, lastVisible]);
 
-                // 2. Real-time Global Pulse Stream
-                const q = query(
-                    collection(db, "posts"),
-                    orderBy("createdAt", "desc")
-                );
+    const fetchPosts = async (currentUser: any) => {
+        try {
+            const q = query(
+                collection(db, "posts"),
+                orderBy("createdAt", "desc"),
+                limit(5)
+            );
 
-                unsubscribePosts = onSnapshot(q, async (snapshot) => {
-                    const fetchedPosts = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })) as Post[];
+            const documentSnapshots = await getDocs(q);
+            
+            const fetchedPosts = documentSnapshots.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Post[];
 
-                    setPosts(fetchedPosts);
-                    setIsLoading(false);
-                }, (error) => {
-                    console.error("Pulse stream error:", error);
-                    setIsLoading(false);
-                });
+            setPosts(fetchedPosts);
+            setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
+            setHasMore(documentSnapshots.docs.length === 5);
+            setIsLoading(false);
 
-            } catch (error) {
-                console.error("Error setting up dashboard listeners:", error);
-                setIsLoading(false);
+        } catch (error) {
+            console.error("Error fetching posts:", error);
+            setIsLoading(false);
+        }
+    };
+
+    const fetchMorePosts = async () => {
+        if (!lastVisible) return;
+        setIsFetchingMore(true);
+
+        try {
+            const q = query(
+                collection(db, "posts"),
+                orderBy("createdAt", "desc"),
+                startAfter(lastVisible),
+                limit(5)
+            );
+
+            const documentSnapshots = await getDocs(q);
+            
+            if (documentSnapshots.docs.length === 0) {
+                setHasMore(false);
+                setIsFetchingMore(false);
+                return;
             }
-        };
 
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+            const newPosts = documentSnapshots.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Post[];
+
+            setPosts(prev => [...prev, ...newPosts]);
+            setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
+            setIsFetchingMore(false);
+
+        } catch (error) {
+            console.error("Error fetching more posts:", error);
+            setIsFetchingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                setupListeners(currentUser);
+                // Fetch user data
+                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+                if (userDoc.exists()) setUserData(userDoc.data());
+                
+                // Fetch initial posts
+                fetchPosts(currentUser);
             } else {
                 setUser(null);
                 setUserData(null);
@@ -125,10 +181,7 @@ const DashboardFeed = () => {
             }
         });
 
-        return () => {
-            unsubscribeAuth();
-            if (unsubscribePosts) unsubscribePosts();
-        };
+        return () => unsubscribeAuth();
     }, []);
 
     useEffect(() => {
@@ -301,7 +354,7 @@ const DashboardFeed = () => {
                                             <div className="w-full h-full rounded-full bg-[#111] overflow-hidden flex items-center justify-center">
                                                 {post.userAvatar ? (
                                             <img 
-                                                src={post.userAvatar} 
+                                                src={getOptimizedUrl(post.userAvatar, 'image', { width: 100 })} 
                                                 className="w-full h-full object-cover" 
                                                 alt="User" 
                                                 loading="lazy"
@@ -324,40 +377,35 @@ const DashboardFeed = () => {
                                     {post.mediaUrl ? (
                                         <>
                                             {post.mediaType === 'image' ? (
-                                                (() => {
-                                                    const url = post.mediaUrl;
-                                                    const uploadIndex = url.indexOf('/upload/');
-                                                    if (uploadIndex === -1) return <img src={url} className="w-full h-full object-cover shadow-2xl" loading="lazy" />;
-
-                                                    const stringAfterUpload = url.substring(uploadIndex + 8);
-                                                    const parts = stringAfterUpload.split('/');
-                                                    const startIndex = parts[0].startsWith('v') ? 1 : 0;
-                                                    const pathWithExt = parts.slice(startIndex).join('/');
-                                                    const publicId = pathWithExt.substring(0, pathWithExt.lastIndexOf('.'));
-
-                                                    const img = cld.image(publicId)
-                                                        .format('auto')
-                                                        .quality('auto')
-                                                        .resize(auto().gravity(autoGravity()).width(600));
-
-                                                    return <AdvancedImage cldImg={img} className="w-full h-full object-cover" />;
-                                                })()
+                                                <img 
+                                                    src={getOptimizedUrl(post.mediaUrl, 'image', { width: 600 })} 
+                                                    className="w-full h-full object-cover shadow-2xl" 
+                                                    loading="lazy" 
+                                                    alt="Post content"
+                                                />
                                             ) : (
                                                 <div 
                                                     className="relative w-full h-full post-video-container"
                                                     data-post-id={post.id}
                                                 >
                                                     <video 
-                                                        src={post.mediaUrl} 
+                                                        src={getOptimizedUrl(post.mediaUrl, 'video')} 
                                                         className="w-full h-full object-cover" 
                                                         muted={mutedStates[post.id] ?? true}
                                                         loop 
                                                         playsInline 
                                                         preload="metadata"
+                                                        poster={getVideoPoster(post.mediaUrl)}
                                                         ref={(el) => {
                                                             if (el) {
                                                                 if (playingPostId === post.id) {
-                                                                    el.play().catch(() => {});
+                                                                    // Only play if it's the active video
+                                                                    const playPromise = el.play();
+                                                                    if (playPromise !== undefined) {
+                                                                        playPromise.catch(() => {
+                                                                            // Auto-play was prevented
+                                                                        });
+                                                                    }
                                                                 } else {
                                                                     el.pause();
                                                                 }
@@ -482,6 +530,11 @@ const DashboardFeed = () => {
                         ))
                     )}
                 </AnimatePresence>
+                
+                {/* Infinite Scroll Loader / Observer Target */}
+                <div ref={observerTarget} className="py-8 flex justify-center w-full min-h-[50px]">
+                    {isFetchingMore && <Loader2 className="animate-spin text-[#FBBF24]" size={24} />}
+                </div>
             </div>
         </div>
     );

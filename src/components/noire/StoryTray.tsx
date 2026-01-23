@@ -5,6 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, query, onSnapshot, limit, getDoc, doc, where, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { getOptimizedUrl } from "@/lib/cloudinary-helper";
 
 const StoryTray = () => {
     const [activeStories, setActiveStories] = useState<any[]>([]);
@@ -126,7 +127,12 @@ const StoryTray = () => {
                             >
                                 <div className="w-full h-full rounded-full bg-black border-[2px] border-black overflow-hidden relative">
                                     {group.userAvatar ? (
-                                        <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
+                                        <img 
+                                            src={getOptimizedUrl(group.userAvatar, 'image', { width: 100 })} 
+                                            className="w-full h-full object-cover" 
+                                            loading="lazy" 
+                                            alt={group.userName}
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-[10px] font-black uppercase text-white/40">
                                             {group.userName?.[0]}
