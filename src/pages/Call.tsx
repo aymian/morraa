@@ -4,7 +4,7 @@ import { useCall } from "@/components/calling/CallProvider";
 import { Loader2, ShieldCheck, Mic, MicOff, Video, VideoOff, PhoneOff, RotateCcw, Maximize2, Minimize2, Wifi, WifiOff, Signal } from "lucide-react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 
 const CallPage = () => {
@@ -92,14 +92,36 @@ const CallPage = () => {
 
     // Call duration timer
     useEffect(() => {
-        if (!isInCall) return;
+        if (!isInCall || !callId) return;
 
-        const interval = setInterval(() => {
-            setCallDuration(prev => prev + 1);
-        }, 1000);
+        let interval: NodeJS.Timeout;
 
-        return () => clearInterval(interval);
-    }, [isInCall]);
+        const updateTimer = async () => {
+             const callSnap = await getDoc(doc(db, 'calls', callId));
+             if (callSnap.exists()) {
+                 const data = callSnap.data();
+                 if (data.connectedAt) {
+                     const start = data.connectedAt;
+                     setCallDuration(Math.floor((Date.now() - start) / 1000));
+                     
+                     interval = setInterval(() => {
+                         setCallDuration(Math.floor((Date.now() - start) / 1000));
+                     }, 1000);
+                 } else {
+                     // Fallback if connectedAt is not yet set
+                      interval = setInterval(() => {
+                        setCallDuration(prev => prev + 1);
+                    }, 1000);
+                 }
+             }
+        };
+
+        updateTimer();
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isInCall, callId]);
 
     // Fetch remote user data from call document
     useEffect(() => {
@@ -243,8 +265,11 @@ const CallPage = () => {
                             <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                                 {remoteUserData?.fullName || 'Connecting...'}
                             </h3>
-                            <p className="text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest">
-                                {type === 'audio' ? 'Audio Session Active' : 'Video paused'}
+                            <p id="remote-video-paused" className="text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest">
+                                {type === 'audio' 
+                                    ? 'Audio Session Active' 
+                                    : (!mainVideoStream ? 'Waiting for video...' : 'Video paused')
+                                }
                             </p>
                         </div>
                     </div>

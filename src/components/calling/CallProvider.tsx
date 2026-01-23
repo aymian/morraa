@@ -262,16 +262,19 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pc.ontrack = (event) => {
             console.log('Received remote track:', event.track.kind, event.streams[0]?.id);
             const stream = event.streams[0] || new MediaStream([event.track]);
-            setRemoteStream(prevStream => {
-                // If we already have a stream and it's the same one, just force update if needed
-                // But better to just use the one from event
+            setRemoteStream(prev => {
+                // If we already have a stream, we might want to keep it if it's the same
+                // But generally trusting the event stream is better
                 return stream;
             });
             
-            // Force re-render of tracks
+            // Ensure we update if tracks are added later to this stream
             stream.onaddtrack = () => {
-                console.log('Track added to remote stream');
                 setRemoteStream(new MediaStream(stream.getTracks()));
+            };
+            
+            event.track.onunmute = () => {
+                 setRemoteStream(new MediaStream(stream.getTracks()));
             };
         };
 
