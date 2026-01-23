@@ -65,6 +65,31 @@ const CallPage = () => {
         }
     }, [remoteStream]);
 
+    // Force update when tracks change
+    const [, forceUpdate] = useState({});
+
+    useEffect(() => {
+        if (remoteStream) {
+            const handleTrackChange = () => {
+                console.log('Remote stream tracks changed:', remoteStream.getTracks().length);
+                forceUpdate({});
+            };
+            
+            remoteStream.addEventListener('addtrack', handleTrackChange);
+            remoteStream.addEventListener('removetrack', handleTrackChange);
+            
+            // Check if we need to force update immediately (in case tracks were added before listener)
+            if (remoteStream.getVideoTracks().length > 0) {
+                forceUpdate({});
+            }
+
+            return () => {
+                remoteStream.removeEventListener('addtrack', handleTrackChange);
+                remoteStream.removeEventListener('removetrack', handleTrackChange);
+            };
+        }
+    }, [remoteStream]);
+
     // Call duration timer
     useEffect(() => {
         if (!isInCall) return;

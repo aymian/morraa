@@ -258,15 +258,21 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const createPeerConnection = (callDocId: string) => {
         const pc = new RTCPeerConnection(iceServers);
 
-        // Create remote stream
-        const remote = new MediaStream();
-        setRemoteStream(remote);
-
         // Handle remote tracks
         pc.ontrack = (event) => {
-            event.streams[0].getTracks().forEach(track => {
-                remote.addTrack(track);
+            console.log('Received remote track:', event.track.kind, event.streams[0]?.id);
+            const stream = event.streams[0] || new MediaStream([event.track]);
+            setRemoteStream(prevStream => {
+                // If we already have a stream and it's the same one, just force update if needed
+                // But better to just use the one from event
+                return stream;
             });
+            
+            // Force re-render of tracks
+            stream.onaddtrack = () => {
+                console.log('Track added to remote stream');
+                setRemoteStream(new MediaStream(stream.getTracks()));
+            };
         };
 
         // Handle ICE candidates with batching for better performance
