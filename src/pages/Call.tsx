@@ -174,7 +174,6 @@ const CallPage = () => {
 
     const handleEndCall = async () => {
         await endCall();
-        navigate('/messages');
     };
 
     const toggleFullscreen = useCallback(async () => {

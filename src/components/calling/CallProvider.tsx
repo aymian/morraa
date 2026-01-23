@@ -32,7 +32,7 @@ const iceServers: RTCConfiguration = {
 };
 
 // Optimized video constraints for mobile and low bandwidth
-const getMediaConstraints = (type: 'video' | 'audio', quality: 'low' | 'medium' | 'high' = 'medium') => {
+const getMediaConstraints = (type: 'video' | 'audio', quality: 'low' | 'medium' | 'high' | 'ultra' = 'high') => {
     const videoConstraints: Record<string, MediaTrackConstraints> = {
         low: {
             width: { ideal: 320, max: 480 },
@@ -50,6 +50,12 @@ const getMediaConstraints = (type: 'video' | 'audio', quality: 'low' | 'medium' 
             width: { ideal: 1280, max: 1920 },
             height: { ideal: 720, max: 1080 },
             frameRate: { ideal: 30, max: 60 },
+            facingMode: 'user'
+        },
+        ultra: {
+            width: { ideal: 3840, max: 3840 },
+            height: { ideal: 2160, max: 2160 },
+            frameRate: { ideal: 60 },
             facingMode: 'user'
         }
     };
@@ -438,7 +444,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     if (!params.encodings) {
                         params.encodings = [{}];
                     }
-                    params.encodings[0].maxBitrate = 500000;
+                    params.encodings[0].maxBitrate = 2500000;
                     sender.setParameters(params).catch(console.error);
                 }
             });
