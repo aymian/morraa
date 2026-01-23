@@ -32,10 +32,21 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getOptimizedUrl, getVideoPoster } from "@/lib/cloudinary-helper";
 
-/**
- * STORY VIEW - "The Carousel"
- * Instagram-style immersive story viewer with side previews and smooth transitions.
- */
+
+
+const getRelativeTime = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h`;
+    return `${Math.floor(diffInHours / 24)}d`;
+};
 
 const StoryView = () => {
     const { username: paramUsername } = useParams();
@@ -340,8 +351,8 @@ const StoryView = () => {
             setMessage("");
             toast({ title: "Sent", description: "Reply sent to messages." });
             
-            // 3. Navigate to Messages
-            navigate(`/messages/@${activeGroup.username}`);
+            // Resume story if it was paused for typing (optional, but good UX)
+            // setIsPaused(false); 
             
         } catch (error: any) {
             console.error("Error sending message:", error);
@@ -436,7 +447,7 @@ const StoryView = () => {
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[13px] font-bold text-white tracking-wide">{activeGroup.userName}</span>
                                     {activeGroup.isVerified && <ShieldCheck size={12} className="text-[#FBBF24]" />}
-                                    <span className="text-white/40 text-[10px] font-medium">• 2h</span>
+                                    <span className="text-white/40 text-[10px] font-medium">• {getRelativeTime(activeStory.createdAt)}</span>
                                 </div>
                             </div>
                         </div>

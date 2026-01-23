@@ -68,6 +68,35 @@ import {
 const MOCK_CONVERSATIONS: any[] = [];
 const MOCK_MESSAGES: any[] = [];
 
+// Synthesized 'Glass' Notification Sound
+const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        // Bell/Glass Texture
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.15);
+
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.02); // Quick Attack
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5); // Smooth Decay
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+        console.error("Audio notification failed", e);
+    }
+};
+
 const Messages = () => {
     const { userId } = useParams();
     const navigate = useNavigate();
@@ -91,6 +120,18 @@ const Messages = () => {
     const studioFileInputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastTypingUpdateRef = useRef<number>(0);
+
+    // Notification Refs
+    const prevUnreadRef = useRef<number>(0);
+    const prevMsgCountRef = useRef<number>(0);
+    const isConvFirstLoadRef = useRef(true);
+    const isChatFirstLoadRef = useRef(true);
+    const selectedChatIdRef = useRef<string | null>(null);
+
+    // Sync ref for callback access
+    useEffect(() => {
+        selectedChatIdRef.current = selectedChat?.id || null;
+    }, [selectedChat]);
 
     const formatPresence = (timestamp: any) => {
         if (!timestamp) return "Identity Unknown";
@@ -224,6 +265,23 @@ const Messages = () => {
             }));
 
             const validConvs = convs.filter(c => c !== null);
+
+            // Notification Logic (Global - for background chats)
+            // Calculate total unread from chats that are NOT currently open to avoid double-notify
+            const totalUnread = validConvs.reduce((acc: number, c: any) => {
+                if (c.id === selectedChatIdRef.current) return acc; 
+                return acc + (c.unread || 0);
+            }, 0);
+            
+            // Play sound if unread count increased (new message in background)
+            if (totalUnread > prevUnreadRef.current && !isConvFirstLoadRef.current) {
+                playNotificationSound();
+            }
+            
+            prevUnreadRef.current = totalUnread;
+            // Only mark as loaded if we actually got data, or if it's empty but connection established
+            if (!snapshot.empty || validConvs.length === 0) isConvFirstLoadRef.current = false;
+
             setConversations(validConvs);
 
             // Handle selection or creation from URL
@@ -310,6 +368,9 @@ const Messages = () => {
 
     // Fetch Messages
     useEffect(() => {
+        isChatFirstLoadRef.current = true;
+        prevMsgCountRef.current = 0;
+
         if (!selectedChat) {
             setMessages([]);
             return;
@@ -348,6 +409,17 @@ const Messages = () => {
                 };
             });
             setMessages(msgs);
+
+            // Notification Logic (Active Chat)
+            if (msgs.length > prevMsgCountRef.current) {
+                const lastMsg = msgs[msgs.length - 1];
+                // Play sound if new message arrived from 'them' while we are watching
+                if (lastMsg && lastMsg.sender !== 'me' && !isChatFirstLoadRef.current) {
+                    playNotificationSound();
+                }
+            }
+            prevMsgCountRef.current = msgs.length;
+            isChatFirstLoadRef.current = false;
         });
 
         return () => unsubscribe();
