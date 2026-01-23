@@ -29,7 +29,6 @@ const StoryUpload = lazy(() => import("./pages/StoryUpload"));
 const StoryShare = lazy(() => import("./pages/StoryShare"));
 const StoryView = lazy(() => import("./pages/StoryView"));
 const View = lazy(() => import("./pages/View"));
-const FeedPreview = lazy(() => import("./pages/FeedPreview"));
 const VideoCallSetup = lazy(() => import("./pages/VideoCallSetup"));
 const CallPage = lazy(() => import("./pages/Call"));
 const Wallet = lazy(() => import("./pages/Wallet"));
@@ -64,7 +63,6 @@ const App = () => (
               <Route path="/story-upload" element={<StoryUpload />} />
               <Route path="/story-share" element={<StoryShare />} />
               <Route path="/view" element={<View />} />
-              <Route path="/feed-preview" element={<FeedPreview />} />
               <Route path="/video-call-setup" element={<VideoCallSetup />} />
               <Route path="/call" element={<CallPage />} />
               {/* Protected / App Routes */}

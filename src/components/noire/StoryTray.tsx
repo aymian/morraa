@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, onSnapshot, limit, getDoc, doc, where, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { Plus } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 const StoryTray = () => {
     const [activeStories, setActiveStories] = useState<any[]>([]);
     const [user, setUser] = useState<any>(null);
+    const [page, setPage] = useState(0);
+    const STORIES_PER_PAGE = 5;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,6 +29,7 @@ const StoryTray = () => {
                 const relevantUserIds = [...followingIds, currentUser.uid];
                 
                 // Firestore 'in' query limit is 30. We take the first 30 for now.
+                // In a real app, you might want to paginate or fetch differently.
                 const queryIds = relevantUserIds.slice(0, 30);
 
                 if (queryIds.length > 0) {
@@ -63,13 +66,6 @@ const StoryTray = () => {
                             return acc;
                         }, []);
 
-                        // Sort: Unseen first, then by latest story time
-                        grouped.sort((a, b) => {
-                            if (a.hasUnseen && !b.hasUnseen) return -1;
-                            if (!a.hasUnseen && b.hasUnseen) return 1;
-                            return 0;
-                        });
-
                         setActiveStories(grouped);
                     });
                 } else {
@@ -86,78 +82,73 @@ const StoryTray = () => {
         };
     }, []);
 
-    if (!user) return null;
+    if (activeStories.length === 0) return null;
+
+    const displayedStories = activeStories.slice(page * STORIES_PER_PAGE, (page + 1) * STORIES_PER_PAGE);
+    const hasNextPage = activeStories.length > (page + 1) * STORIES_PER_PAGE;
+    const hasPrevPage = page > 0;
 
     return (
-        <div className="flex items-center gap-4 py-4 overflow-x-auto no-scrollbar px-4 md:px-0">
-            {/* Add Story Button */}
-            <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/create?type=story')}
-                    className="relative"
+        <div className="flex items-center gap-3 py-2">
+            {hasPrevPage && (
+                <button 
+                    onClick={() => setPage(p => p - 1)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                 >
-                    <div className="w-[72px] h-[72px] rounded-full p-[2px] bg-white/5 border border-white/10">
-                        <div className="w-full h-full rounded-full bg-black overflow-hidden relative flex items-center justify-center">
-                            {user.photoURL ? (
-                                <img src={user.photoURL} className="w-full h-full object-cover opacity-60" loading="lazy" />
-                            ) : (
-                                <div className="w-full h-full bg-zinc-800" />
-                            )}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="bg-[#FBBF24] rounded-full p-1.5 shadow-lg border-2 border-black">
-                                    <Plus className="w-5 h-5 text-black stroke-[3]" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.button>
-                <span className="text-[11px] font-medium text-white/80">Your Story</span>
-            </div>
+                    <ChevronLeft className="w-5 h-5 text-white/70" />
+                </button>
+            )}
 
-            {/* Stories List */}
-            {activeStories.map((group) => (
+            {displayedStories.map((group) => (
                 <div key={group.userId} className="flex flex-col items-center gap-1 group cursor-pointer flex-shrink-0">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
-                            if (group.username) {
-                                navigate(`/view?type=story&username=@${group.username}`);
-                            } else {
-                                getDoc(doc(db, "users", group.userId)).then(snap => {
-                                    if (snap.exists()) {
-                                        const uData = snap.data();
-                                        navigate(`/view?type=story&username=@${uData.username}`);
-                                    }
-                                });
-                            }
-                        }}
-                        className="relative"
-                    >
-                        <div className={`w-[72px] h-[72px] rounded-full p-[3px] transition-all duration-500
-                            ${group.hasUnseen
-                                ? 'bg-gradient-to-tr from-[#FBBF24] via-[#FBBF24] to-yellow-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
-                                : 'bg-white/10 border border-white/10'
-                            }`}
+                                if (group.username) {
+                                    navigate(`/view?type=story&username=@${group.username}`);
+                                } else {
+                                    getDoc(doc(db, "users", group.userId)).then(snap => {
+                                        if (snap.exists()) {
+                                            const uData = snap.data();
+                                            navigate(`/view?type=story&username=@${uData.username}`);
+                                        }
+                                    });
+                                }
+                            }}
+                            className="relative"
                         >
-                            <div className="w-full h-full rounded-full bg-black border-[3px] border-black overflow-hidden relative">
-                                {group.userAvatar ? (
-                                    <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-xs font-black uppercase text-white/40">
-                                        {group.userName?.[0]}
-                                    </div>
-                                )}
+                            <div className={`w-12 h-12 rounded-full p-[2px] transition-all duration-500 border border-white/10
+                                ${group.hasUnseen
+                                    ? 'bg-gradient-to-tr from-[#FBBF24] via-[#FBBF24] to-yellow-200 shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                                    : 'bg-white/5 shadow-none'
+                                }`}
+                            >
+                                <div className="w-full h-full rounded-full bg-black border-[2px] border-black overflow-hidden relative">
+                                    {group.userAvatar ? (
+                                        <img src={group.userAvatar} className="w-full h-full object-cover" loading="lazy" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-[10px] font-black uppercase text-white/40">
+                                            {group.userName?.[0]}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </motion.button>
-                    <span className="text-[11px] font-medium text-white/80 truncate max-w-[70px] text-center">
-                        {group.userId === user.uid ? "Your Story" : (group.userName?.split(' ')[0] || "User")}
-                    </span>
-                </div>
-            ))}
+                        </motion.button>
+                        <span className="text-[9px] font-medium text-white/60 truncate max-w-[56px] text-center">
+                            {group.userName?.split(' ')[0] || "User"}
+                        </span>
+                    </div>
+                ))}
+
+            {hasNextPage && (
+                <button 
+                    onClick={() => setPage(p => p + 1)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                    <ChevronRight className="w-5 h-5 text-white/70" />
+                </button>
+            )}
         </div>
     );
 };

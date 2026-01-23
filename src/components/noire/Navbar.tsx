@@ -135,13 +135,13 @@ const Navbar = ({ onAuthClick, adminMode, logoOnly, showStories }: NavbarProps) 
           </div>
         </motion.div>
 
-        {/* Center Story Tray - Absolutely Positioned for True Centering */}
+        {/* Center Story Tray - Repositioned Left */}
         {showStories && !logoOnly && (
           <motion.div
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-auto absolute left-1/2 transform -translate-x-1/2 z-10"
+              className="pointer-events-auto absolute left-[280px] z-10"
           >
               <div className="glass-noire rounded-full px-6 py-1 border border-border/30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
                   <StoryTray />
