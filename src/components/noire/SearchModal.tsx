@@ -267,8 +267,11 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                                                             {user.fullName || user.email?.split('@')[0] || "Aura Member"}
                                                         </span>
                                                         {user.isVerified && (
-                                                            <div className="relative flex items-center justify-center w-4 h-4 bg-[#1DA1F2] rounded-full">
-                                                                <CheckCircle size={12} className="text-white fill-white" strokeWidth={0} />
+                                                            <div className="relative flex items-center justify-center w-[16px] h-[16px] bg-gradient-to-br from-[#4C9EEB] to-[#0866FF] rounded-full shadow-sm">
+                                                                <svg viewBox="0 0 40 40" className="w-[16px] h-[16px]" fill="none">
+                                                                    <path d="M19.7 8.93994L17.85 10.79L13.45 15.19L11.6 17.04C10.42 18.22 10.42 20.12 11.6 21.3L17.85 27.55C19.03 28.73 20.93 28.73 22.11 27.55L28.36 21.3C29.54 20.12 29.54 18.22 28.36 17.04L22.11 10.79L19.7 8.93994C19.32 8.55994 18.69 8.55994 18.31 8.93994C17.93 9.31994 17.93 9.94994 18.31 10.33L19.98 12L12 19.98L10.33 18.31C9.95 17.93 9.32 17.93 8.94 18.31C8.56 18.69 8.56 19.32 8.94 19.7L10.79 21.55L15.19 25.95L17.04 27.8C18.22 28.98 20.12 28.98 21.3 27.8L27.55 21.55C28.73 20.37 28.73 18.47 27.55 17.29L21.3 11.04L19.7 8.93994Z" fill="white" />
+                                                                    <path d="M19.98 12L28.36 20.38C28.74 20.76 28.74 21.39 28.36 21.77L22.11 28.02C21.73 28.4 21.1 28.4 20.72 28.02L11.6 18.9C11.22 18.52 11.22 17.89 11.6 17.51L17.85 11.26C18.23 10.88 18.86 10.88 19.24 11.26L19.98 12Z" fill="white" />
+                                                                </svg>
                                                             </div>
                                                         )}
                                                     </div>
