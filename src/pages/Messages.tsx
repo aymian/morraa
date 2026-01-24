@@ -750,34 +750,34 @@ const Messages = () => {
                     {selectedChat ? (
                         <>
                             {/* Chat Header */}
-                            <header className="h-[72px] sm:h-[88px] border-b border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-10 bg-black/40 backdrop-blur-md sticky top-0 z-20">
+                            <header className="h-[60px] sm:h-[88px] border-b border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-10 bg-black/40 backdrop-blur-md sticky top-0 z-20">
                                 <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
                                     {isMobileView && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => navigate('/messages')}
-                                            className="hover:bg-white/5 rounded-xl w-9 h-9 shrink-0"
+                                            className="hover:bg-white/5 rounded-xl w-8 h-8 shrink-0"
                                         >
                                             <ArrowLeft className="w-5 h-5 text-white" />
                                         </Button>
                                     )}
-                                    <div className="flex items-center gap-3 sm:gap-5 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 sm:gap-5 min-w-0 flex-1">
                                         <motion.div
                                             layoutId={`avatar-${selectedChat.id}`}
                                             className="relative shrink-0"
                                         >
-                                            <Avatar className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
+                                            <Avatar className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
                                                 <AvatarImage src={selectedChat.user.avatar} className="object-cover" />
                                                 <AvatarFallback className="bg-muted font-bold text-sm">{selectedChat.user.name.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                             {(Date.now() - (selectedChat.user.lastActive?.toMillis?.() || 0)) < 60000 && (
-                                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full border-2 sm:border-[3px] border-noire-deep shadow-glow-green" />
+                                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full border-2 sm:border-[3px] border-noire-deep shadow-glow-green" />
                                             )}
                                         </motion.div>
                                         <div className="flex flex-col min-w-0">
-                                            <h2 className="font-bold text-base sm:text-lg text-white leading-none tracking-tight truncate">{selectedChat.user.name}</h2>
-                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] mt-1 sm:mt-1.5 flex items-center gap-1.5 overflow-hidden h-4">
+                                            <h2 className="font-bold text-sm sm:text-lg text-white leading-none tracking-tight truncate">{selectedChat.user.name}</h2>
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] mt-0.5 sm:mt-1.5 flex items-center gap-1.5 overflow-hidden h-3.5 sm:h-4">
                                                 <AnimatePresence mode="wait">
                                                     {isPartnerTyping ? (
                                                         <motion.span
@@ -886,10 +886,10 @@ const Messages = () => {
                                                     <div className={`flex flex-col group relative ${isMe ? "items-end" : "items-start hover:translate-x-1"} transition-transform duration-300`}>
                                                         {msg.type === "text" ? (
                                                             <div className={`
-                                 px-4 py-3 sm:px-5 sm:py-3.5 rounded-[1.5rem] sm:rounded-[1.8rem] text-[13px] sm:text-[14px] leading-relaxed relative max-w-[85vw] sm:max-w-none
+                                 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-[1.2rem] sm:rounded-[1.8rem] text-[13px] sm:text-[14px] leading-snug relative max-w-[75%] sm:max-w-none break-words
                                  ${isMe
-                                                                    ? "bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-black font-semibold rounded-br-[0.5rem] shadow-[0_10px_30px_rgba(251,191,36,0.2)]"
-                                                                    : "bg-white/5 text-white/90 rounded-bl-[0.5rem] border border-white/5 backdrop-blur-xl group-hover:bg-white/[0.08] transition-colors"}
+                                                                    ? "bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-black font-semibold rounded-br-[0.2rem] shadow-[0_10px_30px_rgba(251,191,36,0.2)]"
+                                                                    : "bg-white/5 text-white/90 rounded-bl-[0.2rem] border border-white/5 backdrop-blur-xl group-hover:bg-white/[0.08] transition-colors"}
                                `}>
                                                                 {msg.replyTo && (
                                                                     <div className={`mb-2 p-2 rounded-xl text-[11px] border-l-2 bg-black/20 ${isMe ? 'border-black/30' : 'border-primary/50'}`}>
@@ -1098,7 +1098,7 @@ const Messages = () => {
                                         {/* Glowing border effect */}
                                         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 via-transparent to-primary/50 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-20 transition duration-1000 group-focus-within:duration-200" />
 
-                                        <div className="relative flex items-end gap-2 sm:gap-3 bg-white/10 border border-white/20 glass-noire rounded-[2rem] sm:rounded-[2.5rem] p-2 sm:p-3 transition-all duration-500 focus-within:border-primary/30 focus-within:bg-white/15 shadow-noire-elevated overflow-hidden">
+                                        <div className="relative flex items-end gap-1.5 sm:gap-3 bg-white/10 border border-white/20 glass-noire rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-3 transition-all duration-500 focus-within:border-primary/30 focus-within:bg-white/15 shadow-noire-elevated overflow-hidden">
                                             {/* Unified Progress Overlay */}
                                             <AnimatePresence>
                                                 {uploadProgress !== null && (
@@ -1125,7 +1125,7 @@ const Messages = () => {
                                                 )}
                                             </AnimatePresence>
 
-                                            <div className="flex items-center self-center pl-1 sm:pl-2">
+                                            <div className="flex items-center self-center pl-0.5 sm:pl-2 shrink-0">
                                                 <input
                                                     type="file"
                                                     ref={fileInputRef}
@@ -1141,7 +1141,7 @@ const Messages = () => {
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
-                                                            <Button variant="ghost" size="icon" className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all shadow-inner relative">
+                                                            <Button variant="ghost" size="icon" className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all shadow-inner relative">
                                                                 {uploadProgress !== null ? (
                                                                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-primary" />
                                                                 ) : (
@@ -1177,7 +1177,7 @@ const Messages = () => {
                                                 <textarea
                                                     placeholder={`Message ${selectedChat.user.name.split(' ')[0]}...`}
                                                     rows={1}
-                                                    className="w-full bg-transparent border-none focus:ring-0 text-sm sm:text-base py-2 sm:py-3 px-1 sm:px-2 resize-none text-white placeholder:text-muted-foreground/50 max-h-32 sm:max-h-40 overflow-y-auto"
+                                                    className="w-full bg-transparent border-none focus:ring-0 text-sm sm:text-base py-1.5 sm:py-3 px-1 sm:px-2 resize-none text-white placeholder:text-muted-foreground/50 max-h-32 sm:max-h-40 overflow-y-auto"
                                                     value={messageText}
                                                     onChange={(e) => {
                                                         setMessageText(e.target.value);
@@ -1194,7 +1194,7 @@ const Messages = () => {
                                                 />
                                             </div>
 
-                                            <div className="flex items-center gap-1 sm:gap-2 pr-1 sm:pr-2 self-center relative">
+                                            <div className="flex items-center gap-1 sm:gap-2 pr-0.5 sm:pr-2 self-center relative shrink-0">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -1240,7 +1240,7 @@ const Messages = () => {
                                                     <Button
                                                         onClick={handleSendMessage}
                                                         disabled={!messageText.trim()}
-                                                        className="w-9 h-9 sm:w-11 sm:h-11 bg-primary hover:bg-primary/90 text-black rounded-xl sm:rounded-2xl p-0 shadow-glow-gold overflow-hidden relative group/btn transition-all duration-300"
+                                                        className="w-8 h-8 sm:w-11 sm:h-11 bg-primary hover:bg-primary/90 text-black rounded-xl sm:rounded-2xl p-0 shadow-glow-gold overflow-hidden relative group/btn transition-all duration-300"
                                                     >
                                                         <Send className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                                                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
