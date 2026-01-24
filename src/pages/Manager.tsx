@@ -18,6 +18,17 @@ type DepositRequest = {
   createdAt?: any;
 };
 
+type VerificationRequest = {
+  id: string;
+  userId: string;
+  username: string;
+  fullName: string;
+  email: string;
+  followersCount: number;
+  status: "pending" | "approved" | "rejected";
+  createdAt?: any;
+};
+
 const MANAGER_USER = "yves";
 const MANAGER_PASS = "yves";
 
@@ -28,6 +39,7 @@ const Manager = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<DepositRequest[]>([]);
+  const [verificationItems, setVerificationItems] = useState<VerificationRequest[]>([]);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fbReady, setFbReady] = useState(false);
@@ -56,6 +68,18 @@ const Manager = () => {
         return bMs - aMs;
       });
       setItems(sorted);
+
+      // Fetch Verification Requests
+      const vq = query(collection(db, "verificationRequests"), where("status", "==", "pending"));
+      const vSnap = await getDocs(vq);
+      const vList = vSnap.docs.map((d) => ({ id: d.id, ...d.data() } as VerificationRequest));
+      const vSorted = vList.sort((a: any, b: any) => {
+        const aMs = a?.createdAt?.toMillis?.() ?? a?.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+        const bMs = b?.createdAt?.toMillis?.() ?? b?.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+        return bMs - aMs;
+      });
+      setVerificationItems(vSorted);
+
     } catch (e: any) {
       console.error("Manager fetch error:", e);
       setError(`Failed to load pending deposits. ${e?.code ? `[${e.code}] ` : ""}${e?.message || ""}`.trim());
@@ -130,6 +154,30 @@ const Manager = () => {
     } catch (e: any) {
       console.error("Update status error:", e);
       setError(e?.message || "Failed to update status.");
+    }
+  };
+
+  const handleVerificationStatus = async (id: string, status: "approved" | "rejected") => {
+    try {
+      await runTransaction(db, async (tx) => {
+        const reqRef = doc(db, "verificationRequests", id);
+        const snap = await tx.get(reqRef);
+        
+        if (!snap.exists()) throw new Error("Request not found.");
+        const data = snap.data();
+        
+        tx.update(reqRef, { status, processedAt: serverTimestamp() });
+
+        if (status === "approved") {
+           const userRef = doc(db, "users", data.userId);
+           tx.update(userRef, { isVerified: true });
+        }
+      });
+
+      setVerificationItems((prev) => prev.filter((p) => p.id !== id));
+    } catch (e: any) {
+      console.error("Verification status error:", e);
+      setError(e?.message || "Failed to update verification status.");
     }
   };
 
@@ -266,6 +314,62 @@ const Manager = () => {
             ))}
           </div>
         )}
+
+        <div className="mt-12 mb-6">
+            <h1 className="text-2xl font-semibold">Verification Requests</h1>
+            <p className="text-zinc-400 text-sm">Review identity verification applications.</p>
+        </div>
+
+        {fetching ? (
+            <div className="flex items-center gap-2 text-zinc-400">
+                <Loader2 className="animate-spin" size={16} />
+                Loading verification requests...
+            </div>
+        ) : verificationItems.length === 0 ? (
+            <div className="glass-noire border border-white/5 rounded-2xl p-6 text-center text-zinc-400">
+                No pending verification requests.
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {verificationItems.map((item) => (
+                    <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-noire border border-white/10 rounded-2xl p-5 space-y-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-bold text-white">{item.username}</p>
+                                <p className="text-xs text-zinc-400">{item.fullName}</p>
+                            </div>
+                            <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                                {item.followersCount} Followers
+                            </div>
+                        </div>
+                        <div className="text-sm text-zinc-400">
+                            <p>Email: <span className="text-white">{item.email}</span></p>
+                            <p>Submitted: {formattedDate(item.createdAt)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleVerificationStatus(item.id, "approved")}
+                                className="flex-1 bg-green-500/15 border border-green-500/40 text-green-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-green-500/25 transition-all"
+                            >
+                                <ShieldCheck size={16} /> Verify
+                            </button>
+                            <button
+                                onClick={() => handleVerificationStatus(item.id, "rejected")}
+                                className="flex-1 bg-red-500/15 border border-red-500/40 text-red-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-red-500/25 transition-all"
+                            >
+                                <ShieldX size={16} /> Reject
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        )}
+
         {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
     );

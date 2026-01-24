@@ -7,16 +7,17 @@ import {
     Camera, Check, Info, Smartphone, Mail, Phone,
     Lock, Eye, Moon, Zap, Wifi, HelpCircle, FileText,
     Share2, AlertTriangle, Download, Trash2, Key,
-    Music, Mic2, Cast, ChevronLeft, ToggleLeft, ToggleRight
+    Music, Mic2, Cast, ChevronLeft, ToggleLeft, ToggleRight, Calendar
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection, query, getDocs, serverTimestamp } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { cn, isEligibleForVerification } from "@/lib/utils";
 
 /**
  * ULTRA PRO Settings Page
@@ -41,6 +42,7 @@ const Settings = () => {
     const [phone, setPhone] = useState("");
     const [bio, setBio] = useState("");
     const [website, setWebsite] = useState("");
+    const [birthday, setBirthday] = useState("");
     const [saving, setSaving] = useState(false);
 
     // Mock Settings States (would be connected to backend in full prod)
@@ -70,6 +72,7 @@ const Settings = () => {
                     setPhone(data.phone || "");
                     setBio(data.bio || "");
                     setWebsite(data.website || "");
+                    setBirthday(data.birthday || "");
                 }
                 setLoading(false);
             } else {
@@ -88,7 +91,8 @@ const Settings = () => {
                 username,
                 phone,
                 bio,
-                website
+                website,
+                birthday
             });
             toast({
                 title: "Profile Sync Complete",
@@ -121,6 +125,51 @@ const Settings = () => {
         navigate("/login");
     };
 
+    const handleRequestVerification = async () => {
+        if (!user || !userData) return;
+
+        // 1. Check Age (Must be 18+)
+        if (!userData.birthday) {
+            toast({ variant: "destructive", title: "Missing Information", description: "Please add your birthday to your profile first." });
+            return;
+        }
+
+        if (!isEligibleForVerification(userData.birthday)) {
+            toast({ variant: "destructive", title: "Eligibility", description: "You must be at least 18 years old to be verified." });
+            return;
+        }
+
+        // 2. Check Followers (Must be 2+)
+        try {
+            const followersSnap = await getDocs(collection(db, "users", user.uid, "followers"));
+            if (followersSnap.size < 350) {
+                toast({ variant: "destructive", title: "Eligibility", description: `You need at least 2 followers. You currently have ${followersSnap.size}.` });
+                return;
+            }
+
+            // 3. Submit Request
+            await addDoc(collection(db, "verificationRequests"), {
+                userId: user.uid,
+                username: userData.username,
+                fullName: userData.fullName,
+                email: user.email,
+                followersCount: followersSnap.size,
+                status: "pending",
+                createdAt: serverTimestamp()
+            });
+
+            toast({ 
+                title: "Request Sent", 
+                description: "Your verification request has been sent to the manager.",
+                className: "bg-[#0A0A0A] border border-[#FBBF24]/30 text-white"
+            });
+
+        } catch (error) {
+            console.error("Verification request error:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to send request. Please try again." });
+        }
+    };
+
     const handleCategoryClick = (id: string) => {
         setActiveCategory(id);
         setIsMobileDetailOpen(true);
@@ -147,6 +196,7 @@ const Settings = () => {
                     fields: [
                         { label: "Full Name", value: fullName, setter: setFullName, icon: User, type: "text" },
                         { label: "Username", value: username, setter: setUsername, icon: User, type: "text", prefix: "@" },
+                        { label: "Date of Birth", value: birthday, setter: setBirthday, icon: Calendar, type: "date" },
                         { label: "Bio", value: bio, setter: setBio, icon: FileText, type: "textarea" },
                         { label: "Website", value: website, setter: setWebsite, icon: Globe, type: "url" },
                     ]
@@ -163,7 +213,7 @@ const Settings = () => {
                     title: "Account Actions",
                     type: "actions",
                     items: [
-                        { label: "Request Verification", icon: Check, action: () => toast({ title: "Request Sent", description: "We will review your profile shortly." }) },
+                        { label: "Request Verification", icon: Check, action: handleRequestVerification },
                         { label: "Change Password", icon: Key, action: () => toast({ title: "Email Sent", description: "Password reset link sent to your email." }) },
                         { label: "Delete Account", icon: Trash2, danger: true, action: () => toast({ title: "Action Blocked", description: "Please contact support to delete your account.", variant: "destructive" }) }
                     ]

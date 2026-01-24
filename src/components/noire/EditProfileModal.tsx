@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import { X, User, Save, Loader2, Camera, Link as LinkIcon, AlignLeft } from "lucide-react";
+import { X, User, Save, Loader2, Camera, Link as LinkIcon, AlignLeft, Calendar } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { isEligibleForVerification } from "@/lib/utils";
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -24,6 +25,7 @@ const EditProfileModal = ({ isOpen, onClose, userData, userId, onUpdate }: EditP
     const [username, setUsername] = useState("");
     const [bio, setBio] = useState("");
     const [website, setWebsite] = useState("");
+    const [birthday, setBirthday] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -35,6 +37,7 @@ const EditProfileModal = ({ isOpen, onClose, userData, userId, onUpdate }: EditP
             setUsername(userData.username || "");
             setBio(userData.bio || "");
             setWebsite(userData.website || "");
+            setBirthday(userData.birthday || "");
             setAvatarUrl(userData.avatarUrl || userData.profileImage || "");
             setSelectedFile(null);
             setPreviewUrl(null);
@@ -82,6 +85,7 @@ const EditProfileModal = ({ isOpen, onClose, userData, userId, onUpdate }: EditP
                 username,
                 bio,
                 website,
+                birthday,
                 avatarUrl: finalAvatarUrl,
                 profileImage: finalAvatarUrl, // Keep both for compatibility
                 updatedAt: new Date()
@@ -214,6 +218,24 @@ const EditProfileModal = ({ isOpen, onClose, userData, userId, onUpdate }: EditP
                                             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-[#FBBF24]/50 focus:bg-white/10 transition-all resize-none"
                                         />
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-white/60 uppercase tracking-wider ml-1">Date of Birth</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                        <input
+                                            type="date"
+                                            value={birthday}
+                                            onChange={(e) => setBirthday(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-[#FBBF24]/50 focus:bg-white/10 transition-all [color-scheme:dark]"
+                                        />
+                                    </div>
+                                    {birthday && !isEligibleForVerification(birthday) && (
+                                        <p className="text-[10px] text-red-400 font-medium ml-1">
+                                            Verification requires age 18+.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">

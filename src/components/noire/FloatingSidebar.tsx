@@ -16,7 +16,8 @@ import {
     LogOut,
     Sparkles,
     ArrowRight,
-    ChevronLeft
+    ChevronLeft,
+    CheckCircle
 } from "lucide-react";
 
 
@@ -245,7 +246,11 @@ return (
                                     <div className="flex flex-1 items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className={`text-sm font-bold tracking-tight ${active ? "text-white" : ""}`}>{item.label}</span>
-                                            {item.isVerified && <ShieldCheck size={14} className="text-[#FBBF24]" />}
+                                            {item.isVerified && (
+                                                <div className="relative flex items-center justify-center w-3.5 h-3.5 bg-[#1DA1F2] rounded-full">
+                                                    <CheckCircle size={10} className="text-white fill-white" strokeWidth={0} />
+                                                </div>
+                                            )}
                                         </div>
 
                                         {item.label === "Home" && (
@@ -329,26 +334,32 @@ return (
             </div>
 
             {/* Quick Status Bar */}
-            {!isCollapsed && (
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="bg-white/5 rounded-[1.8rem] p-3 flex items-center justify-between group cursor-pointer hover:bg-white/[0.08] transition-all"
-                    onClick={() => navigate('/wallet')}
-                >
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Influence Credit</span>
-                        <div className="flex items-center gap-1.5">
-                            <HandCoins size={14} className="text-[#FBBF24]" />
-                            <span className="text-xs font-bold font-mono text-white">$ {userData?.earnings || "00.00"}</span>
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className={`bg-white/5 rounded-[1.8rem] group cursor-pointer hover:bg-white/[0.08] transition-all ${
+                    isCollapsed ? 'p-3.5 mx-auto w-fit' : 'p-3 flex items-center justify-between'
+                }`}
+                onClick={() => navigate('/wallet')}
+            >
+                {isCollapsed ? (
+                    <HandCoins size={22} className="text-[#FBBF24]" />
+                ) : (
+                    <>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Influence Credit</span>
+                            <div className="flex items-center gap-1.5">
+                                <HandCoins size={14} className="text-[#FBBF24]" />
+                                <span className="text-xs font-bold font-mono text-white">{userData?.earnings || "0"} points</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FBBF24] to-transparent opacity-10" />
-                        <ArrowRight size={14} className="text-[#FBBF24] opacity-40 group-hover:opacity-100 transition-opacity translate-x-[-2px] group-hover:translate-x-0 transition-transform" />
-                    </div>
-                </motion.div>
-            )}
+                        <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 overflow-hidden relative">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#FBBF24] to-transparent opacity-10" />
+                            <ArrowRight size={14} className="text-[#FBBF24] opacity-40 group-hover:opacity-100 transition-opacity translate-x-[-2px] group-hover:translate-x-0 transition-transform" />
+                        </div>
+                    </>
+                )}
+            </motion.div>
         </div>
 
         {/* Bottom Section: IDENTITY */}

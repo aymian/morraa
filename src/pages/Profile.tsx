@@ -67,7 +67,7 @@ const Profile = () => {
                             );
                             const postsSnap = await getDocs(postsQuery);
                             console.log("Posts found:", postsSnap.size);
-                            
+
                             const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             setUserPosts(posts);
                         } catch (postError) {
@@ -162,7 +162,7 @@ const Profile = () => {
 
     const handleDeletePost = async (postId: string) => {
         if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) return;
-        
+
         setIsDeleting(postId);
         try {
             await deleteDoc(doc(db, "posts", postId));
@@ -183,16 +183,16 @@ const Profile = () => {
 
     const saveEdit = async () => {
         if (!editingPost) return;
-        
+
         try {
             await updateDoc(doc(db, "posts", editingPost.id), {
                 content: editContent
             });
-            
-            setUserPosts(prev => prev.map(p => 
+
+            setUserPosts(prev => prev.map(p =>
                 p.id === editingPost.id ? { ...p, content: editContent } : p
             ));
-            
+
             setEditingPost(null);
             toast({ title: "Post Updated", description: "Your changes have been saved." });
         } catch (error) {
@@ -256,10 +256,14 @@ const Profile = () => {
                         <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
                             <h1 className="text-xl md:text-2xl font-normal text-zinc-100 flex items-center gap-2">
                                 {userData?.username || "username"}
-                                {userData?.isVerified && <CheckCircle size={16} className="text-blue-500 fill-blue-500/10" />}
+                                {userData?.isVerified && (
+                                    <div className="relative flex items-center justify-center w-5 h-5 bg-[#1DA1F2] rounded-full">
+                                        <CheckCircle size={14} className="text-white fill-white" strokeWidth={0} />
+                                    </div>
+                                )}
                             </h1>
                             <div className="flex items-center gap-2">
-                                <button 
+                                <button
                                     onClick={() => setShowEditProfile(true)}
                                     className="md:hidden px-4 py-1.5 bg-[#363636] rounded-lg text-sm font-semibold text-white"
                                 >
@@ -323,7 +327,7 @@ const Profile = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-10 px-4 md:px-0">
-                    <button 
+                    <button
                         onClick={() => setShowEditProfile(true)}
                         className="flex-1 group relative overflow-hidden bg-[#363636] hover:bg-[#262626] rounded-xl transition-all duration-300 p-0.5"
                     >
@@ -332,14 +336,14 @@ const Profile = () => {
                             <span className="text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">Edit Profile</span>
                         </div>
                     </button>
-                    
+
                     <button className="flex-1 bg-[#363636] hover:bg-[#262626] text-white text-sm font-semibold py-2 rounded-xl transition-colors">
                         View archive
                     </button>
                 </div>
 
-                <EditProfileModal 
-                    isOpen={showEditProfile} 
+                <EditProfileModal
+                    isOpen={showEditProfile}
                     onClose={() => setShowEditProfile(false)}
                     userData={userData}
                     userId={firebaseUser?.uid}
@@ -351,7 +355,7 @@ const Profile = () => {
                         // The modal updates Firestore, but Profile.tsx fetches once.
                         // We should probably convert Profile.tsx to use onSnapshot for userData or reload window.
                         // Simple fix: reload or re-fetch.
-                        window.location.reload(); 
+                        window.location.reload();
                     }}
                 />
 
@@ -431,10 +435,10 @@ const Profile = () => {
                                             <span className="font-bold">{post.comments || 0}</span>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Edit/Delete Actions */}
                                     <div className="flex gap-3 mt-2">
-                                        <button 
+                                        <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 openEditModal(post);
@@ -444,7 +448,7 @@ const Profile = () => {
                                         >
                                             <Edit3 size={18} />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleDeletePost(post.id);
@@ -530,7 +534,7 @@ const Profile = () => {
                                 <h3 className="font-bold text-center flex-1 text-zinc-100">Edit Info</h3>
                                 <button onClick={() => setEditingPost(null)}><X size={20} className="text-zinc-100" /></button>
                             </div>
-                            
+
                             <div className="p-4 flex flex-col md:flex-row gap-4">
                                 <div className="w-full md:w-1/3 aspect-square bg-black rounded-lg overflow-hidden">
                                     {editingPost.mediaType === 'video' ? (
@@ -548,13 +552,13 @@ const Profile = () => {
                                         placeholder="Write a caption..."
                                     />
                                     <div className="flex justify-end gap-2 mt-4">
-                                        <button 
+                                        <button
                                             onClick={() => setEditingPost(null)}
                                             className="px-4 py-2 text-sm font-bold text-zinc-400 hover:text-white transition-colors"
                                         >
                                             Cancel
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={saveEdit}
                                             className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors"
                                         >

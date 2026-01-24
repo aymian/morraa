@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import NoireLogo from "@/components/noire/NoireLogo";
 import { auth, db } from "@/lib/firebase";
-import { doc, updateDoc, getDoc, collection, getDocs, limit, serverTimestamp, query, where } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, getDocs, limit, serverTimestamp, query, where, setDoc, addDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 type OnboardingStep =
@@ -59,6 +59,7 @@ const Onboarding = () => {
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
     const [suggestedLoading, setSuggestedLoading] = useState(false);
+    const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
 
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -114,11 +115,24 @@ const Onboarding = () => {
             setSuggestedLoading(true);
             try {
                 const userCol = collection(db, "users");
-                const q = query(userCol, limit(6));
+                const q = query(userCol, limit(6)); // Fetch a few more to filter out self
                 const snap = await getDocs(q);
-                const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) }));
+                
+                const listPromises = snap.docs.map(async (d) => {
+                    const userData = d.data();
+                    // Fetch real follower count
+                    const followersSnap = await getDocs(collection(db, "users", d.id, "followers"));
+                    return { 
+                        id: d.id, 
+                        ...userData,
+                        followerCount: followersSnap.size
+                    };
+                });
+                
+                const list = await Promise.all(listPromises);
                 setSuggestedUsers(list.filter(u => u.id !== auth.currentUser?.uid));
             } catch (e) {
+                console.error("Error loading users:", e);
                 setSuggestedUsers([]);
             } finally {
                 setSuggestedLoading(false);
@@ -126,6 +140,74 @@ const Onboarding = () => {
         };
         loadUsers();
     }, [step]);
+
+    const handleFollow = async (targetUser: any) => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+
+        // Optimistic update
+        const newFollowed = new Set(followedUsers);
+        newFollowed.add(targetUser.id);
+        setFollowedUsers(newFollowed);
+
+        try {
+            const followRef = doc(db, "users", currentUser.uid, "following", targetUser.id);
+            const followerRef = doc(db, "users", targetUser.id, "followers", currentUser.uid);
+
+            await setDoc(followRef, { timestamp: serverTimestamp() });
+            
+            // Defensive write for follower
+            try {
+                await setDoc(followerRef, { timestamp: serverTimestamp() });
+            } catch (err) {
+                console.warn("Follower mirrored write rejected:", err);
+            }
+
+            // Create notification
+            await addDoc(collection(db, "notifications"), {
+                type: "follow",
+                fromUserId: currentUser.uid,
+                fromUsername: userData.username || currentUser.displayName || "New User",
+                fromUserImage: userData.photo || currentUser.photoURL,
+                toUserId: targetUser.id,
+                createdAt: serverTimestamp(),
+                message: `${userData.username || "Someone"} started following you.`
+            });
+
+            toast({ title: "Following", description: `You are now following ${targetUser.username || "this user"}` });
+
+        } catch (error) {
+            console.error("Follow error:", error);
+            // Revert optimistic update on error
+            newFollowed.delete(targetUser.id);
+            setFollowedUsers(new Set(newFollowed));
+            toast({ variant: "destructive", title: "Error", description: "Failed to follow user." });
+        }
+    };
+
+    const handleFollowAll = async () => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            nextStep();
+            return;
+        }
+
+        const usersToFollow = suggestedUsers.filter(u => !followedUsers.has(u.id));
+        if (usersToFollow.length === 0) {
+            nextStep();
+            return;
+        }
+
+        // Optimistic update all
+        const newFollowed = new Set(followedUsers);
+        usersToFollow.forEach(u => newFollowed.add(u.id));
+        setFollowedUsers(newFollowed);
+
+        // Process in parallel
+        await Promise.all(usersToFollow.map(u => handleFollow(u)));
+        
+        nextStep();
+    };
 
     // Check username availability
     useEffect(() => {
@@ -671,26 +753,39 @@ const Onboarding = () => {
                 {!suggestedLoading && suggestedUsers.length === 0 && (
                     <p className="text-center text-muted-foreground text-sm">No users yet. You can skip.</p>
                 )}
-                {suggestedUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 glass-noire border border-white/5 rounded-2xl">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/5 overflow-hidden">
-                                <img src={user.photo || `https://i.pravatar.cc/100?u=${user.username || user.id}`} />
+                {suggestedUsers.map((user) => {
+                    const isFollowing = followedUsers.has(user.id);
+                    return (
+                        <div key={user.id} className="flex items-center justify-between p-4 glass-noire border border-white/5 rounded-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-white/5 overflow-hidden">
+                                    <img src={user.photo || `https://i.pravatar.cc/100?u=${user.username || user.id}`} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-sm font-bold">{user.username || user.fullName || "Morra User"}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {user.followerCount !== undefined ? `${user.followerCount} followers` : (user.bio ? user.bio.slice(0, 40) : "New to Morra")}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-left">
-                                <p className="text-sm font-bold">{user.username || user.fullName || "Morra User"}</p>
-                                <p className="text-[10px] text-muted-foreground">{user.bio ? user.bio.slice(0, 40) : "New to Morra"}</p>
-                            </div>
+                            <button 
+                                onClick={() => handleFollow(user)}
+                                disabled={isFollowing}
+                                className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                    isFollowing 
+                                    ? "bg-white/10 text-muted-foreground cursor-default" 
+                                    : "bg-primary text-primary-foreground hover:opacity-90"
+                                }`}
+                            >
+                                {isFollowing ? "Following" : "Follow"}
+                            </button>
                         </div>
-                        <button className="px-5 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                            Follow
-                        </button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="flex flex-col gap-4 w-full">
-                <button onClick={nextStep} className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl">
+                <button onClick={handleFollowAll} className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl">
                     Follow All & Continue
                 </button>
                 <button onClick={nextStep} className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">
@@ -700,7 +795,10 @@ const Onboarding = () => {
         </div>
     );
 
-    const InviteStep = () => (
+    const InviteStep = () => {
+        const inviteUrl = `morra.io/invite/${userData.username || auth.currentUser?.uid || 'you'}`;
+
+        return (
         <div className="flex flex-col items-center justify-center space-y-8 max-w-md mx-auto py-12">
             <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-4">
                 <Share2 className="w-10 h-10 text-primary" />
@@ -715,9 +813,17 @@ const Onboarding = () => {
             <div className="w-full glass-noire p-5 border border-white/10 rounded-2xl space-y-4 text-center">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Your Unique Invite Link</p>
                 <div className="bg-black/40 p-3 rounded-xl border border-white/5 break-all text-xs font-mono text-primary">
-                    morra.io/invite/yves_773
+                    {inviteUrl}
                 </div>
-                <button className="text-xs font-bold text-foreground underline underline-offset-4">Copy Link</button>
+                <button 
+                    onClick={() => {
+                        navigator.clipboard.writeText(`https://${inviteUrl}`);
+                        toast({ title: "Copied", description: "Link copied to clipboard." });
+                    }}
+                    className="text-xs font-bold text-foreground underline underline-offset-4"
+                >
+                    Copy Link
+                </button>
             </div>
 
             <div className="flex flex-col gap-4 w-full">
@@ -729,7 +835,8 @@ const Onboarding = () => {
                 </button>
             </div>
         </div>
-    );
+        );
+    };
 
     const NotificationStep = () => (
         <div className="flex flex-col items-center justify-center space-y-8 max-w-md mx-auto py-12">

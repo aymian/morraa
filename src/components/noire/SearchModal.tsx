@@ -250,10 +250,10 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                                             <div className="flex items-center gap-4 text-left">
                                                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/10 p-0.5 bg-gradient-to-br from-white/10 to-transparent">
                                                     {user.profileImage || user.avatarUrl || user.photoURL ? (
-                                                        <img 
-                                                            src={user.profileImage || user.avatarUrl || user.photoURL} 
-                                                            alt={user.username} 
-                                                            className="w-full h-full object-cover rounded-[0.9rem]" 
+                                                        <img
+                                                            src={user.profileImage || user.avatarUrl || user.photoURL}
+                                                            alt={user.username}
+                                                            className="w-full h-full object-cover rounded-[0.9rem]"
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full bg-white/5 flex items-center justify-center text-xl font-bold">
@@ -266,7 +266,11 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                                                         <span className="text-lg font-bold text-white leading-none">
                                                             {user.fullName || user.email?.split('@')[0] || "Aura Member"}
                                                         </span>
-                                                        {user.isVerified && <ShieldCheck size={16} className="text-primary" />}
+                                                        {user.isVerified && (
+                                                            <div className="relative flex items-center justify-center w-4 h-4 bg-[#1DA1F2] rounded-full">
+                                                                <CheckCircle size={12} className="text-white fill-white" strokeWidth={0} />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <span className="text-xs text-muted-foreground font-bold tracking-widest uppercase mt-1">
                                                         {user.username ? `@${user.username}` : user.email || "Identity Verified"}

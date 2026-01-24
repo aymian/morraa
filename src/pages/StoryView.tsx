@@ -91,7 +91,7 @@ const StoryView = () => {
 
         // Fetch ALL active stories (similar to StoryTray) to build the carousel
         const storiesQuery = query(collection(db, "stories"), limit(100));
-        
+
         const unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
             const rawStories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
             const now = Date.now();
@@ -141,14 +141,14 @@ const StoryView = () => {
         if (allStoryGroups.length > 0 && initialUsername) {
             const cleanHandle = initialUsername.replace('@', '').toLowerCase();
             const index = allStoryGroups.findIndex(g => g.username?.toLowerCase() === cleanHandle);
-            
+
             if (index !== -1) {
                 setCurrentGroupIndex(index);
                 setCurrentStoryIndex(0);
                 setProgress(0);
             } else if (!isLoading) {
-                 // Handle not found
-                 // console.warn("User story not found in active stream");
+                // Handle not found
+                // console.warn("User story not found in active stream");
             }
         }
     }, [allStoryGroups, initialUsername, isLoading]);
@@ -162,17 +162,17 @@ const StoryView = () => {
     // 3. Preview Viewers Fetching
     useEffect(() => {
         if (currentGroupIndex === -1 || !user) return;
-        
+
         const currentGroup = allStoryGroups[currentGroupIndex];
         const currentStory = currentGroup?.stories[currentStoryIndex];
-        
+
         if (currentGroup?.userId === user.uid && currentStory?.seenIds?.length > 0) {
             const fetchPreviews = async () => {
                 try {
                     const recentIds = currentStory.seenIds.slice(-3).reverse();
                     const previews = await Promise.all(recentIds.map(async (uid: string) => {
-                         const snap = await getDoc(doc(db, "users", uid));
-                         return snap.exists() ? { id: uid, ...snap.data() } : null;
+                        const snap = await getDoc(doc(db, "users", uid));
+                        return snap.exists() ? { id: uid, ...snap.data() } : null;
                     }));
                     setPreviewViewers(previews.filter(p => p !== null));
                 } catch (e) {
@@ -193,7 +193,7 @@ const StoryView = () => {
         if (!currentGroup) return;
 
         const currentStory = currentGroup.stories[currentStoryIndex];
-        
+
         // Use real video duration if available, otherwise fallback to DB duration or default
         let duration = STORY_DURATION;
         if (currentStory.mediaType === 'video') {
@@ -279,17 +279,17 @@ const StoryView = () => {
             setViewersList([]);
             return;
         }
-        
+
         setViewersLoading(true);
         try {
             // Limit to recent 20 for performance
             const recentIds = seenIds.slice(-20).reverse();
-            
+
             const viewers = await Promise.all(recentIds.map(async (uid) => {
-                 const snap = await getDoc(doc(db, "users", uid));
-                 return snap.exists() ? { id: uid, ...snap.data() } : null;
+                const snap = await getDoc(doc(db, "users", uid));
+                return snap.exists() ? { id: uid, ...snap.data() } : null;
             }));
-            
+
             setViewersList(viewers.filter(v => v !== null));
         } catch (e) {
             console.error(e);
@@ -308,7 +308,7 @@ const StoryView = () => {
             toast({ title: "Story Deleted", description: "Fragment removed." });
             setShowInteractionModal(null);
             if (allStoryGroups[currentGroupIndex].stories.length === 1) {
-                 navigate('/'); // Or next user
+                navigate('/'); // Or next user
             }
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -317,15 +317,15 @@ const StoryView = () => {
 
     const handleSendMessage = async () => {
         if (!message.trim() || !user || currentGroupIndex === -1) return;
-        
+
         const activeGroup = allStoryGroups[currentGroupIndex];
         const activeStory = activeGroup.stories[currentStoryIndex];
         const recipientId = activeGroup.userId;
-        
+
         // 1. Create/Ensure Conversation Exists
         const chatId = [user.uid, recipientId].sort().join("_");
         const conversationRef = doc(db, "conversations", chatId);
-        
+
         try {
             await setDoc(conversationRef, {
                 participants: [user.uid, recipientId],
@@ -350,10 +350,10 @@ const StoryView = () => {
 
             setMessage("");
             toast({ title: "Sent", description: "Reply sent to messages." });
-            
+
             // Resume story if it was paused for typing (optional, but good UX)
             // setIsPaused(false); 
-            
+
         } catch (error: any) {
             console.error("Error sending message:", error);
             toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
@@ -364,13 +364,13 @@ const StoryView = () => {
 
     if (isLoading) return (
         <div className="fixed inset-0 bg-[#050505] flex items-center justify-center">
-             <div className="w-8 h-8 border-4 border-[#FBBF24]/20 border-t-[#FBBF24] rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#FBBF24]/20 border-t-[#FBBF24] rounded-full animate-spin" />
         </div>
     );
 
     if (currentGroupIndex === -1 && !isLoading) return (
-         <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center font-sans">
-             <div className="relative w-full max-w-[450px] aspect-[9/16] bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 flex flex-col items-center justify-center p-8 text-center">
+        <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center font-sans">
+            <div className="relative w-full max-w-[450px] aspect-[9/16] bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                     <div className="w-12 h-1 bg-white/20 rounded-full rotate-45 absolute" />
                     <div className="w-12 h-1 bg-white/20 rounded-full -rotate-45 absolute" />
@@ -380,7 +380,7 @@ const StoryView = () => {
                 <button onClick={() => navigate('/')} className="bg-white text-black px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform">
                     Return to Dashboard
                 </button>
-             </div>
+            </div>
         </div>
     );
 
@@ -394,18 +394,18 @@ const StoryView = () => {
     return (
         <div className="fixed inset-0 bg-[#1a1a1a] z-[2000] flex items-center justify-center overflow-hidden font-sans">
             {/* Close Button */}
-            <button 
-                onClick={() => navigate('/')} 
+            <button
+                onClick={() => navigate('/')}
                 className="absolute top-6 right-6 z-[2010] text-white/60 hover:text-white transition-colors"
             >
                 <X size={32} />
             </button>
 
             <div className="relative w-full h-full max-w-7xl flex items-center justify-center gap-4 md:gap-12 px-4">
-                
+
                 {/* PREVIOUS STORY PREVIEW (Left) */}
                 <div className="hidden md:flex flex-col items-center justify-center w-[200px] h-[350px] opacity-40 scale-90 blur-[1px] transition-all duration-500 cursor-pointer hover:opacity-60 hover:scale-95 hover:blur-0"
-                     onClick={() => prevGroup && navigate(`/view?type=story&username=@${prevGroup.username}`)}>
+                    onClick={() => prevGroup && navigate(`/view?type=story&username=@${prevGroup.username}`)}>
                     {prevGroup && (
                         <div className="relative w-full h-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
                             <img src={prevGroup.stories[0].mediaUrl} className="w-full h-full object-cover opacity-50" />
@@ -422,8 +422,8 @@ const StoryView = () => {
 
                 {/* ACTIVE STORY CARD (Center) */}
                 <div className="relative w-full md:w-[420px] aspect-[9/16] md:aspect-[9/16] h-full md:h-auto max-h-[85vh] bg-black md:rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border-0 md:border border-white/10 ring-1 ring-white/5">
-                     
-                     {/* Progress Bars */}
+
+                    {/* Progress Bars */}
                     <div className="absolute top-4 left-4 right-4 z-50 flex gap-1.5 px-1">
                         {activeGroup.stories.map((story: any, idx: number) => (
                             <div key={story.id} className="h-0.5 flex-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
@@ -446,7 +446,11 @@ const StoryView = () => {
                             <div className="flex flex-col drop-shadow-md">
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[13px] font-bold text-white tracking-wide">{activeGroup.userName}</span>
-                                    {activeGroup.isVerified && <ShieldCheck size={12} className="text-[#FBBF24]" />}
+                                    {activeGroup.isVerified && (
+                                        <div className="relative flex items-center justify-center w-3.5 h-3.5 bg-[#1DA1F2] rounded-full">
+                                            <CheckCircle size={10} className="text-white fill-white" strokeWidth={0} />
+                                        </div>
+                                    )}
                                     <span className="text-white/40 text-[10px] font-medium">• {getRelativeTime(activeStory.createdAt)}</span>
                                 </div>
                             </div>
@@ -467,9 +471,9 @@ const StoryView = () => {
                     {/* Media Display */}
                     <div className="absolute inset-0 bg-zinc-900">
                         {activeStory.mediaType === 'image' ? (
-                            <img 
-                                src={getOptimizedUrl(activeStory.mediaUrl, 'image')} 
-                                className="w-full h-full object-cover" 
+                            <img
+                                src={getOptimizedUrl(activeStory.mediaUrl, 'image')}
+                                className="w-full h-full object-cover"
                                 alt="Story"
                                 loading="eager"
                             />
@@ -508,8 +512,8 @@ const StoryView = () => {
                             })()}
                         </div>
 
-                         {/* Text Overlay */}
-                         {activeStory.textOverlay && (
+                        {/* Text Overlay */}
+                        {activeStory.textOverlay && (
                             <div className="absolute inset-0 pointer-events-none z-[45] overflow-hidden">
                                 <p
                                     style={{
@@ -541,7 +545,7 @@ const StoryView = () => {
                                 </p>
                             </div>
                         )}
-                        
+
                         {/* Gradient Protection */}
                         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
                     </div>
@@ -549,14 +553,14 @@ const StoryView = () => {
                     {/* Bottom Interaction Bar */}
                     <div className="absolute bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-black via-black/60 to-transparent">
                         {isOwner ? (
-                             <button 
+                            <button
                                 onClick={() => {
                                     setIsPaused(true);
                                     setShowViewersModal(true);
                                     fetchViewers(activeStory.seenIds || []);
                                 }}
                                 className="w-full flex items-center justify-between px-4 py-4 transition-all"
-                             >
+                            >
                                 <div className="flex items-center gap-3">
                                     <div className="flex -space-x-3 overflow-hidden pl-1">
                                         {previewViewers.length > 0 ? (
@@ -566,9 +570,9 @@ const StoryView = () => {
                                                 </div>
                                             ))
                                         ) : (
-                                             <div className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center">
-                                                <Eye size={14} className="text-white/40"/>
-                                             </div>
+                                            <div className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center">
+                                                <Eye size={14} className="text-white/40" />
+                                            </div>
                                         )}
                                     </div>
                                     <div className="flex flex-col items-start">
@@ -581,28 +585,28 @@ const StoryView = () => {
                                         <Trash2 size={18} />
                                     </div>
                                 </div>
-                             </button>
+                            </button>
                         ) : (
                             <div className="flex items-center gap-3">
                                 <div className="flex-1 h-11 bg-transparent border border-white/20 rounded-full px-5 flex items-center hover:border-white/40 transition-colors cursor-text group">
                                     <input
-                                    type="text"
-                                    placeholder={`Reply to ${activeGroup.userName}...`}
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    className="w-full bg-transparent border-none outline-none text-sm text-white placeholder:text-white/60"
-                                />
-                            </div>
-                            <button
-                                onClick={toggleLike}
-                                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${activeStory.likedIds?.includes(user?.uid) ? 'text-red-500 scale-110' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                            >
-                                <Heart size={24} fill={activeStory.likedIds?.includes(user?.uid) ? "currentColor" : "none"} />
-                            </button>
-                            <button onClick={handleSendMessage} className="w-11 h-11 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all">
-                                <Send size={22} className="-rotate-45 mb-1 ml-1" />
-                            </button>
+                                        type="text"
+                                        placeholder={`Reply to ${activeGroup.userName}...`}
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                        className="w-full bg-transparent border-none outline-none text-sm text-white placeholder:text-white/60"
+                                    />
+                                </div>
+                                <button
+                                    onClick={toggleLike}
+                                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${activeStory.likedIds?.includes(user?.uid) ? 'text-red-500 scale-110' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+                                >
+                                    <Heart size={24} fill={activeStory.likedIds?.includes(user?.uid) ? "currentColor" : "none"} />
+                                </button>
+                                <button onClick={handleSendMessage} className="w-11 h-11 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all">
+                                    <Send size={22} className="-rotate-45 mb-1 ml-1" />
+                                </button>
                             </div>
                         )}
                     </div>
@@ -611,7 +615,7 @@ const StoryView = () => {
 
                 {/* NEXT STORY PREVIEW (Right) */}
                 <div className="hidden md:flex flex-col items-center justify-center w-[200px] h-[350px] opacity-40 scale-90 blur-[1px] transition-all duration-500 cursor-pointer hover:opacity-60 hover:scale-95 hover:blur-0"
-                     onClick={() => nextGroup && navigate(`/view?type=story&username=@${nextGroup.username}`)}>
+                    onClick={() => nextGroup && navigate(`/view?type=story&username=@${nextGroup.username}`)}>
                     {nextGroup && (
                         <div className="relative w-full h-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
                             <img src={nextGroup.stories[0].mediaUrl} className="w-full h-full object-cover opacity-50" />
@@ -632,8 +636,8 @@ const StoryView = () => {
                         <div className="absolute inset-0 z-[2050] flex items-end md:items-center justify-center md:bg-black/50 md:backdrop-blur-sm">
                             {/* Dismiss Area */}
                             <div className="absolute inset-0" onClick={() => { setShowViewersModal(false); setIsPaused(false); }} />
-                            
-                            <motion.div 
+
+                            <motion.div
                                 initial={{ y: "100%" }}
                                 animate={{ y: 0 }}
                                 exit={{ y: "100%" }}
@@ -646,17 +650,17 @@ const StoryView = () => {
                                 </div>
 
                                 <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-white">Story Views</h3>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-white/40 bg-white/5 px-2 py-1 rounded-md">{viewersList.length}</span>
-                                    <button 
-                                        onClick={() => { setShowViewersModal(false); setIsPaused(false); }}
-                                        className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all"
-                                    >
-                                        <X size={16} />
-                                    </button>
+                                    <h3 className="text-lg font-bold text-white">Story Views</h3>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-bold text-white/40 bg-white/5 px-2 py-1 rounded-md">{viewersList.length}</span>
+                                        <button
+                                            onClick={() => { setShowViewersModal(false); setIsPaused(false); }}
+                                            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                                     {viewersLoading ? (

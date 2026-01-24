@@ -371,22 +371,25 @@ const UserDetails = () => {
                         <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
                             <h1 className="text-xl md:text-2xl font-normal text-zinc-100 flex items-center gap-2">
                                 {userData?.username || "identity"}
-                                {userData?.isVerified && <CheckCircle size={16} className="text-blue-500 fill-blue-500/10" />}
+                                {userData?.isVerified && (
+                                    <div className="relative flex items-center justify-center w-5 h-5 bg-[#1DA1F2] rounded-full">
+                                        <CheckCircle size={14} className="text-white fill-white" strokeWidth={0} />
+                                    </div>
+                                )}
                             </h1>
-                            
+
                             {/* Desktop Actions */}
                             <div className="hidden md:flex items-center gap-2">
                                 <button
                                     onClick={handleFollowAction}
-                                    className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                                        isFollowing 
-                                        ? "bg-[#363636] text-white hover:bg-[#262626]" 
-                                        : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
-                                    }`}
+                                    className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-colors ${isFollowing
+                                            ? "bg-[#363636] text-white hover:bg-[#262626]"
+                                            : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
+                                        }`}
                                 >
                                     {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
                                 </button>
-                                
+
                                 {isFollowing && (
                                     <button
                                         onClick={() => navigate(`/messages/${userData.username}`)}
@@ -428,14 +431,14 @@ const UserDetails = () => {
                                 <span className="font-bold text-white">{userPosts.length}</span>
                                 <span className="text-zinc-400">posts</span>
                             </div>
-                            <div 
+                            <div
                                 className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
                                 onClick={() => fetchConnections("followers")}
                             >
                                 <span className="font-bold text-white">{followersCount}</span>
                                 <span className="text-zinc-400">followers</span>
                             </div>
-                            <div 
+                            <div
                                 className="flex gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
                                 onClick={() => fetchConnections("following")}
                             >
@@ -456,21 +459,20 @@ const UserDetails = () => {
 
                 {/* Mobile Bio & Actions */}
                 <div className="md:hidden px-4 mb-6 space-y-4">
-                     <div className="space-y-1">
+                    <div className="space-y-1">
                         <p className="font-bold text-sm text-white">{userData?.fullName || "Aura Identity"}</p>
                         <p className="text-sm text-zinc-300 whitespace-pre-wrap">
                             {userData?.bio || "Silent in flame, calm as steel."}
                         </p>
-                     </div>
+                    </div>
 
-                     <div className="flex gap-2">
+                    <div className="flex gap-2">
                         <button
                             onClick={handleFollowAction}
-                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                isFollowing 
-                                ? "bg-[#363636] text-white" 
-                                : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
-                            }`}
+                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${isFollowing
+                                    ? "bg-[#363636] text-white"
+                                    : "bg-[#FBBF24] text-black hover:bg-[#F59E0B]"
+                                }`}
                         >
                             {isFollowing ? "Following" : requestSent ? "Requested" : "Follow"}
                         </button>
@@ -482,7 +484,7 @@ const UserDetails = () => {
                                 Message
                             </button>
                         )}
-                     </div>
+                    </div>
                 </div>
 
                 {/* Highlights Section */}
@@ -517,8 +519,8 @@ const UserDetails = () => {
                             Posts
                         </button>
                         <button className="flex items-center gap-2 py-4 border-t border-transparent text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors -mt-[1px]">
-                             <User size={12} />
-                             Tagged
+                            <User size={12} />
+                            Tagged
                         </button>
                     </div>
                 </div>
@@ -559,7 +561,7 @@ const UserDetails = () => {
                                                 </div>
                                             </div>
                                             {currentUser?.uid === targetUid && (
-                                                <button 
+                                                <button
                                                     onClick={(e) => handleDeletePost(post.id, e)}
                                                     className="bg-red-500/80 p-2 rounded-full text-white hover:bg-red-500 transition-colors mt-2"
                                                     title="Remove Post"
@@ -601,11 +603,11 @@ const UserDetails = () => {
                                         <X size={20} className="text-white" />
                                     </button>
                                 </div>
-                                
+
                                 {/* Search Bar */}
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-                                    <input 
+                                    <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchQuery}
@@ -623,31 +625,31 @@ const UserDetails = () => {
                                 ) : (
                                     <div className="space-y-1">
                                         {connections
-                                            .filter(u => 
-                                                u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                            .filter(u =>
+                                                u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                 u.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
                                             )
                                             .map((u) => (
-                                            <div 
-                                                key={u.uid} 
-                                                className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
-                                                onClick={() => {
-                                                    setShowConnections(false);
-                                                    navigate(`/@${u.username}`);
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-zinc-800 bg-cover bg-center border border-white/10" style={{ backgroundImage: `url(${u.avatarUrl || u.profileImage})` }} />
-                                                    <div>
-                                                        <p className="font-bold text-sm text-white">{u.username}</p>
-                                                        <p className="text-xs text-zinc-400">{u.fullName}</p>
+                                                <div
+                                                    key={u.uid}
+                                                    className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-colors"
+                                                    onClick={() => {
+                                                        setShowConnections(false);
+                                                        navigate(`/@${u.username}`);
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-zinc-800 bg-cover bg-center border border-white/10" style={{ backgroundImage: `url(${u.avatarUrl || u.profileImage})` }} />
+                                                        <div>
+                                                            <p className="font-bold text-sm text-white">{u.username}</p>
+                                                            <p className="text-xs text-zinc-400">{u.fullName}</p>
+                                                        </div>
                                                     </div>
+                                                    <button className="px-4 py-1.5 bg-white/5 text-white text-xs font-bold rounded-lg hover:bg-white/10 transition-colors border border-white/5">
+                                                        View
+                                                    </button>
                                                 </div>
-                                                <button className="px-4 py-1.5 bg-white/5 text-white text-xs font-bold rounded-lg hover:bg-white/10 transition-colors border border-white/5">
-                                                    View
-                                                </button>
-                                            </div>
-                                        ))}
+                                            ))}
                                         {connections.length === 0 && !connectionsLoading && (
                                             <p className="text-center text-zinc-500 py-8 text-sm">No users found.</p>
                                         )}
