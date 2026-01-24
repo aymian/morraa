@@ -69,8 +69,7 @@ const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
           </h1>
 
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-12 font-body font-light leading-relaxed">
-            Morra isn't just an app. It's an immersive social ecosystem where your
-            digital presence feels as real as your physical one. Share, connect, and thrive.
+            Post, get engagement, convert points to money.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -184,18 +183,6 @@ const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
               >
                 Already have an account? <span className="text-primary group-hover:underline">Log in</span>
               </button>
-            </div>
-
-            {/* Subtle Reasonings - Visualizing 'Why this works' */}
-            <div className="mt-16 grid grid-cols-2 gap-8 md:gap-16 opacity-40">
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold mb-2">Clear Value</span>
-                <p className="text-xs italic">Create + Earn</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold mb-2">No Overload</span>
-                <p className="text-xs italic">Immersive & Focused</p>
-              </div>
             </div>
           </motion.div>
         </div>

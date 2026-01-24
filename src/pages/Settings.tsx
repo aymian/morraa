@@ -1,10 +1,13 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     User, Settings as SettingsIcon, Bell, Shield,
     Volume2, Globe, CreditCard, LogOut, ChevronRight,
-    Camera, Check, Info, Smartphone, Mail, Phone
+    Camera, Check, Info, Smartphone, Mail, Phone,
+    Lock, Eye, Moon, Zap, Wifi, HelpCircle, FileText,
+    Share2, AlertTriangle, Download, Trash2, Key,
+    Music, Mic2, Cast, ChevronLeft, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -13,16 +16,22 @@ import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 /**
- * PRO Settings Page - Organized, Clean, Functional
+ * ULTRA PRO Settings Page
+ * Surpassing industry standards with a "Noire" premium aesthetic.
  */
 
 const Settings = () => {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState("account");
+    
+    // Navigation State
+    const [activeCategory, setActiveCategory] = useState<string | null>("account");
+    const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+    
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -30,7 +39,23 @@ const Settings = () => {
     const [fullName, setFullName] = useState("");
     const [username, setUsername] = useState("");
     const [phone, setPhone] = useState("");
+    const [bio, setBio] = useState("");
+    const [website, setWebsite] = useState("");
     const [saving, setSaving] = useState(false);
+
+    // Mock Settings States (would be connected to backend in full prod)
+    const [settings, setSettings] = useState({
+        privateAccount: false,
+        activityStatus: true,
+        readReceipts: true,
+        dataSaver: false,
+        autoplay: true,
+        highQualityUploads: true,
+        pushNotifications: true,
+        emailNotifications: true,
+        marketingEmails: false,
+        darkMode: true,
+    });
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -43,6 +68,8 @@ const Settings = () => {
                     setFullName(data.fullName || "");
                     setUsername(data.username || "");
                     setPhone(data.phone || "");
+                    setBio(data.bio || "");
+                    setWebsite(data.website || "");
                 }
                 setLoading(false);
             } else {
@@ -59,16 +86,19 @@ const Settings = () => {
             await updateDoc(doc(db, "users", user.uid), {
                 fullName,
                 username,
-                phone
+                phone,
+                bio,
+                website
             });
             toast({
-                title: "Profile Updated",
-                description: "Your settings have been saved locally in the aura.",
+                title: "Profile Sync Complete",
+                description: "Your digital persona has been updated across the aura.",
+                className: "bg-[#0A0A0A] border border-[#FBBF24]/30 text-white"
             });
         } catch (error: any) {
             toast({
-                title: "Error",
-                description: "Failed to update profile. Check your connection.",
+                title: "Sync Failed",
+                description: "Could not update profile. Please check your connection.",
                 variant: "destructive",
             });
         } finally {
@@ -76,174 +106,417 @@ const Settings = () => {
         }
     };
 
+    const handleToggle = (key: keyof typeof settings) => {
+        setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+        toast({
+            title: "Preference Saved",
+            description: "Settings updated successfully.",
+            duration: 1500,
+            className: "bg-[#0A0A0A] border border-white/10 text-white"
+        });
+    };
+
     const handleLogout = async () => {
         await signOut(auth);
         navigate("/login");
     };
 
+    const handleCategoryClick = (id: string) => {
+        setActiveCategory(id);
+        setIsMobileDetailOpen(true);
+    };
+
+    const handleBackToMenu = () => {
+        setIsMobileDetailOpen(false);
+    };
+
     if (loading) return null;
 
-    const menuItems = [
-        { id: "account", label: "Account Details", icon: User },
-        { id: "notifications", label: "Notifications", icon: Bell },
-        { id: "security", label: "Privacy & Security", icon: Shield },
-        { id: "audio", label: "Audio Profile", icon: Volume2 },
-        { id: "billing", label: "Subscription", icon: CreditCard },
+    // --- Configuration ---
+
+    const menuCategories = [
+        {
+            id: "account",
+            label: "Account Center",
+            icon: User,
+            description: "Personal details, security, and verification.",
+            sections: [
+                {
+                    title: "Profile Identity",
+                    type: "form",
+                    fields: [
+                        { label: "Full Name", value: fullName, setter: setFullName, icon: User, type: "text" },
+                        { label: "Username", value: username, setter: setUsername, icon: User, type: "text", prefix: "@" },
+                        { label: "Bio", value: bio, setter: setBio, icon: FileText, type: "textarea" },
+                        { label: "Website", value: website, setter: setWebsite, icon: Globe, type: "url" },
+                    ]
+                },
+                {
+                    title: "Contact Info",
+                    type: "form",
+                    fields: [
+                        { label: "Email", value: user?.email, icon: Mail, type: "email", disabled: true },
+                        { label: "Phone", value: phone, setter: setPhone, icon: Phone, type: "tel" },
+                    ]
+                },
+                {
+                    title: "Account Actions",
+                    type: "actions",
+                    items: [
+                        { label: "Request Verification", icon: Check, action: () => toast({ title: "Request Sent", description: "We will review your profile shortly." }) },
+                        { label: "Change Password", icon: Key, action: () => toast({ title: "Email Sent", description: "Password reset link sent to your email." }) },
+                        { label: "Delete Account", icon: Trash2, danger: true, action: () => toast({ title: "Action Blocked", description: "Please contact support to delete your account.", variant: "destructive" }) }
+                    ]
+                }
+            ]
+        },
+        {
+            id: "privacy",
+            label: "Privacy & Safety",
+            icon: Lock,
+            description: "Control who sees what and manage your data.",
+            sections: [
+                {
+                    title: "Discoverability",
+                    type: "toggles",
+                    items: [
+                        { key: "privateAccount", label: "Private Account", desc: "Only followers can see your posts" },
+                        { key: "activityStatus", label: "Activity Status", desc: "Show when you're active together" },
+                        { key: "readReceipts", label: "Read Receipts", desc: "Show when you've seen messages" },
+                    ]
+                },
+                {
+                    title: "Data & Permissions",
+                    type: "actions",
+                    items: [
+                        { label: "Blocked Accounts", icon: Shield, action: () => {} },
+                        { label: "Download Your Data", icon: Download, action: () => {} },
+                    ]
+                }
+            ]
+        },
+        {
+            id: "notifications",
+            label: "Notifications",
+            icon: Bell,
+            description: "Manage how we communicate with you.",
+            sections: [
+                {
+                    title: "Push Notifications",
+                    type: "toggles",
+                    items: [
+                        { key: "pushNotifications", label: "Pause All", desc: "Temporarily pause notifications" },
+                    ]
+                },
+                {
+                    title: "Email",
+                    type: "toggles",
+                    items: [
+                        { key: "emailNotifications", label: "Feedback Emails", desc: "Give feedback on Morra" },
+                        { key: "marketingEmails", label: "Product Emails", desc: "Tips, news, and updates" },
+                    ]
+                }
+            ]
+        },
+        {
+            id: "content",
+            label: "Content & Display",
+            icon: Eye,
+            description: "Customize your viewing experience.",
+            sections: [
+                {
+                    title: "Media Quality",
+                    type: "toggles",
+                    items: [
+                        { key: "highQualityUploads", label: "Upload at Highest Quality", desc: "Always upload high-res media" },
+                        { key: "dataSaver", label: "Data Saver", desc: "Use less data for videos" },
+                        { key: "autoplay", label: "Autoplay Videos", desc: "Play videos automatically" },
+                    ]
+                },
+                {
+                    title: "Accessibility",
+                    type: "actions",
+                    items: [
+                        { label: "Captions", icon: FileText, action: () => {} },
+                        { label: "Dark Mode", icon: Moon, action: () => {}, value: "On" },
+                    ]
+                }
+            ]
+        },
+        {
+            id: "wallet",
+            label: "Wallet & Earnings",
+            icon: CreditCard,
+            description: "Manage your balance and payout methods.",
+            sections: [
+                {
+                    title: "Balance",
+                    type: "custom",
+                    content: (
+                        <div className="bg-gradient-to-r from-[#FBBF24]/20 to-[#F59E0B]/20 p-6 rounded-3xl border border-[#FBBF24]/30 mb-6">
+                            <p className="text-sm font-bold text-[#FBBF24] uppercase tracking-widest mb-1">Total Balance</p>
+                            <h2 className="text-4xl font-display font-bold text-white mb-4">$0.00</h2>
+                            <div className="flex gap-3">
+                                <button onClick={() => navigate('/deposit')} className="flex-1 py-3 bg-[#FBBF24] text-black font-bold rounded-xl text-sm">Deposit</button>
+                                <button onClick={() => navigate('/withdraw')} className="flex-1 py-3 bg-white/10 text-white font-bold rounded-xl text-sm hover:bg-white/20">Withdraw</button>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "Monetization",
+                    type: "actions",
+                    items: [
+                        { label: "Refer & Earn", icon: Zap, action: () => navigate('/refer'), value: "Get Paid" },
+                        { label: "Payout Settings", icon: CreditCard, action: () => {} },
+                        { label: "Transaction History", icon: FileText, action: () => {} },
+                    ]
+                }
+            ]
+        },
+        {
+            id: "support",
+            label: "Support & About",
+            icon: HelpCircle,
+            description: "Get help and view legal information.",
+            sections: [
+                {
+                    title: "Help",
+                    type: "actions",
+                    items: [
+                        { label: "Help Center", icon: HelpCircle, action: () => {} },
+                        { label: "Report a Problem", icon: AlertTriangle, action: () => {} },
+                    ]
+                },
+                {
+                    title: "Legal",
+                    type: "actions",
+                    items: [
+                        { label: "Terms of Service", icon: FileText, action: () => {} },
+                        { label: "Privacy Policy", icon: Lock, action: () => {} },
+                        { label: "Open Source Libraries", icon: Share2, action: () => {} },
+                    ]
+                }
+            ]
+        }
     ];
 
+    const activeMenu = menuCategories.find(c => c.id === activeCategory);
+
     return (
-        <div className="min-h-screen bg-background text-foreground pb-24 content-shift">
+        <div className="min-h-screen bg-background text-foreground pb-4 content-shift overflow-hidden">
             {user && <FloatingSidebar />}
             <Navbar />
 
-            <main className="container mx-auto px-6 pt-32 max-w-6xl">
-                <header className="mb-12">
-                    <h1 className="text-4xl font-display font-bold flex items-center gap-4">
-                        <SettingsIcon className="text-primary w-10 h-10" />
-                        Settings
-                    </h1>
-                    <p className="text-muted-foreground font-body mt-2">Manage your NOIRE experience and account preferences.</p>
-                </header>
+            <main className="container mx-auto px-4 md:px-6 pt-24 md:pt-32 max-w-7xl h-[calc(100vh-100px)]">
+                <div className="flex h-full gap-8 relative">
+                    
+                    {/* --- Sidebar / Main Menu --- */}
+                    <motion.aside 
+                        className={`
+                            w-full md:w-[350px] lg:w-[400px] flex flex-col h-full overflow-y-auto custom-scrollbar pb-4
+                            ${isMobileDetailOpen ? 'hidden md:flex' : 'flex'}
+                        `}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                    >
+                        <header className="mb-8 px-2">
+                            <h1 className="text-3xl md:text-4xl font-display font-bold flex items-center gap-3">
+                                <SettingsIcon className="text-primary w-8 h-8" />
+                                Settings
+                            </h1>
+                            <p className="text-muted-foreground font-body mt-2 text-sm md:text-base">
+                                Fine-tune your Morra experience.
+                            </p>
+                        </header>
 
-                <div className="flex flex-col lg:flex-row gap-10">
-                    {/* Sidebar Menu */}
-                    <aside className="lg:w-72 space-y-2">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveTab(item.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-body text-sm ${activeTab === item.id
-                                    ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5"
-                                    : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                                    }`}
-                            >
-                                <item.icon size={18} />
-                                <span className="flex-1 text-left font-bold">{item.label}</span>
-                                {activeTab === item.id && <ChevronRight size={14} />}
-                            </button>
-                        ))}
+                        <div className="space-y-3 flex-1">
+                            {menuCategories.map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => handleCategoryClick(cat.id)}
+                                    className={`
+                                        w-full flex items-center gap-4 p-4 rounded-3xl transition-all duration-300 border
+                                        ${activeCategory === cat.id 
+                                            ? "bg-white/5 border-primary/30 shadow-[0_0_30px_rgba(251,191,36,0.1)]" 
+                                            : "bg-transparent border-transparent hover:bg-white/5 hover:border-white/5"}
+                                    `}
+                                >
+                                    <div className={`
+                                        w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors
+                                        ${activeCategory === cat.id ? "bg-primary text-black" : "bg-white/5 text-muted-foreground"}
+                                    `}>
+                                        <cat.icon size={22} />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <h3 className={`font-bold text-base ${activeCategory === cat.id ? "text-foreground" : "text-muted-foreground"}`}>
+                                            {cat.label}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground/60 line-clamp-1">{cat.description}</p>
+                                    </div>
+                                    <ChevronRight size={18} className={`text-muted-foreground/40 ${activeCategory === cat.id ? "text-primary" : ""}`} />
+                                </button>
+                            ))}
+                        </div>
 
-                        <div className="pt-8">
+                        <div className="pt-6 px-2 mt-auto">
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-body text-sm font-bold"
+                                className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all font-bold"
                             >
-                                <LogOut size={18} />
-                                Sign Out
+                                <LogOut size={20} />
+                                Log Out
                             </button>
+                            <p className="text-center text-[10px] text-muted-foreground/30 mt-4 uppercase tracking-widest font-bold">
+                                Morra v2.4.0 (Build 842)
+                            </p>
                         </div>
-                    </aside>
+                    </motion.aside>
 
-                    {/* Content Area */}
-                    <div className="flex-1">
-                        <div className="glass-noire border border-white/5 rounded-[40px] p-8 md:p-12">
-                            {activeTab === "account" && (
-                                <motion.div
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                >
-                                    <div className="flex items-center gap-6 mb-10">
-                                        <div className="relative group">
-                                            <div className="w-24 h-24 rounded-[32px] overflow-hidden border-2 border-primary/30 relative">
-                                                {userData?.avatarUrl ? (
-                                                    <img src={userData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-muted flex items-center justify-center text-primary">
-                                                        <User size={32} />
+                    {/* --- Detail View (Desktop & Mobile Slide-over) --- */}
+                    <AnimatePresence mode="wait">
+                        {(activeCategory || isMobileDetailOpen) && (
+                            <motion.section 
+                                key={activeCategory}
+                                className={`
+                                    flex-1 h-full overflow-y-auto custom-scrollbar md:block
+                                    ${isMobileDetailOpen ? 'fixed inset-0 z-50 bg-background md:static md:bg-transparent' : 'hidden'}
+                                `}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                                <div className="glass-noire md:border border-white/5 md:rounded-[40px] h-full md:h-auto min-h-full p-6 md:p-10 pb-10">
+                                    
+                                    {/* Mobile Header */}
+                                    <div className="md:hidden flex items-center gap-4 mb-8 pt-4">
+                                        <button 
+                                            onClick={handleBackToMenu}
+                                            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"
+                                        >
+                                            <ChevronLeft size={24} />
+                                        </button>
+                                        <h2 className="text-2xl font-bold">{activeMenu?.label}</h2>
+                                    </div>
+
+                                    {/* Desktop Header */}
+                                    <div className="hidden md:flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
+                                        <div className="w-14 h-14 rounded-[20px] bg-primary/10 flex items-center justify-center text-primary">
+                                            {activeMenu && <activeMenu.icon size={32} />}
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl font-display font-bold">{activeMenu?.label}</h2>
+                                            <p className="text-muted-foreground">{activeMenu?.description}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-10 max-w-3xl">
+                                        {activeMenu?.sections.map((section: any, idx: number) => (
+                                            <div key={idx} className="space-y-6">
+                                                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/50 pl-2">
+                                                    {section.title}
+                                                </h3>
+
+                                                {section.type === "custom" && section.content}
+
+                                                {section.type === "form" && (
+                                                    <div className="space-y-6">
+                                                        {section.fields.map((field: any, fIdx: number) => (
+                                                            <div key={fIdx} className="space-y-2">
+                                                                <label className="text-xs font-bold text-muted-foreground ml-4">{field.label}</label>
+                                                                <div className="relative group">
+                                                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                                                                        <field.icon size={18} />
+                                                                    </div>
+                                                                    {field.type === "textarea" ? (
+                                                                        <textarea
+                                                                            value={field.value}
+                                                                            onChange={(e) => field.setter(e.target.value)}
+                                                                            className="w-full pl-14 pr-6 py-4 bg-muted/20 border border-white/5 rounded-3xl font-body text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all resize-none min-h-[120px]"
+                                                                            placeholder={`Enter your ${field.label.toLowerCase()}...`}
+                                                                        />
+                                                                    ) : (
+                                                                        <input
+                                                                            type={field.type}
+                                                                            value={field.value}
+                                                                            onChange={(e) => field.setter && field.setter(e.target.value)}
+                                                                            disabled={field.disabled}
+                                                                            className="w-full pl-14 pr-6 py-4 bg-muted/20 border border-white/5 rounded-3xl font-body text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}...`}
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        <div className="flex justify-end pt-4">
+                                                            <button
+                                                                onClick={handleUpdateProfile}
+                                                                disabled={saving}
+                                                                className="px-8 py-3 bg-primary text-black font-bold rounded-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                                                            >
+                                                                {saving ? "Saving..." : "Save Changes"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {section.type === "toggles" && (
+                                                    <div className="space-y-4">
+                                                        {section.items.map((item: any, tIdx: number) => (
+                                                            <div key={tIdx} className="flex items-center justify-between p-4 rounded-3xl bg-muted/10 border border-white/5">
+                                                                <div>
+                                                                    <p className="font-bold text-sm">{item.label}</p>
+                                                                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                                                                </div>
+                                                                <Switch
+                                                                    checked={settings[item.key as keyof typeof settings]}
+                                                                    onCheckedChange={() => handleToggle(item.key)}
+                                                                    className="data-[state=checked]:bg-primary"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {section.type === "actions" && (
+                                                    <div className="space-y-3">
+                                                        {section.items.map((item: any, aIdx: number) => (
+                                                            <button
+                                                                key={aIdx}
+                                                                onClick={item.action}
+                                                                className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all duration-200 group
+                                                                    ${item.danger 
+                                                                        ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" 
+                                                                        : "bg-muted/10 border-white/5 hover:bg-white/5 hover:border-white/10"}
+                                                                `}
+                                                            >
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`
+                                                                        w-10 h-10 rounded-xl flex items-center justify-center
+                                                                        ${item.danger ? "bg-red-500/20 text-red-500" : "bg-white/5 text-muted-foreground group-hover:text-primary"}
+                                                                    `}>
+                                                                        <item.icon size={20} />
+                                                                    </div>
+                                                                    <span className={`font-bold ${item.danger ? "text-red-500" : "text-foreground"}`}>
+                                                                        {item.label}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    {item.value && <span className="text-xs text-muted-foreground font-mono">{item.value}</span>}
+                                                                    <ChevronRight size={18} className="text-muted-foreground/30 group-hover:text-foreground" />
+                                                                </div>
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 )}
                                             </div>
-                                            <button className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-xl hover:scale-110 transition-transform">
-                                                <Camera size={14} />
-                                            </button>
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-display font-bold">{userData?.fullName || "User Name"}</h3>
-                                            <p className="text-sm text-muted-foreground font-body">Pro Plan Member since Jan 2024</p>
-                                        </div>
+                                        ))}
                                     </div>
-
-                                    <form onSubmit={handleUpdateProfile} className="space-y-8">
-                                        <div className="grid md:grid-cols-2 gap-8">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Full Name</label>
-                                                <div className="relative">
-                                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                    <input
-                                                        type="text"
-                                                        value={fullName}
-                                                        onChange={(e) => setFullName(e.target.value)}
-                                                        className="w-full pl-12 pr-4 py-4 bg-muted/20 border border-white/5 rounded-2xl font-body text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-                                                        placeholder="Your Name"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Username</label>
-                                                <div className="relative">
-                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold">@</div>
-                                                    <input
-                                                        type="text"
-                                                        value={username}
-                                                        onChange={(e) => setUsername(e.target.value)}
-                                                        className="w-full pl-10 pr-4 py-4 bg-muted/20 border border-white/5 rounded-2xl font-body text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-                                                        placeholder="username"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Email Address</label>
-                                                <div className="relative">
-                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                    <input
-                                                        type="email"
-                                                        value={user?.email || ""}
-                                                        disabled
-                                                        className="w-full pl-12 pr-4 py-4 bg-muted/5 border border-white/5 rounded-2xl font-body text-sm text-muted-foreground cursor-not-allowed"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Phone Number</label>
-                                                <div className="relative">
-                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                    <input
-                                                        type="tel"
-                                                        value={phone}
-                                                        onChange={(e) => setPhone(e.target.value)}
-                                                        className="w-full pl-12 pr-4 py-4 bg-muted/20 border border-white/5 rounded-2xl font-body text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-                                                        placeholder="+1 (555) 000-0000"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-6 border-t border-white/5 flex justify-end">
-                                            <button
-                                                type="submit"
-                                                disabled={saving}
-                                                className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold font-body transition-all hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50"
-                                            >
-                                                {saving ? "Syncing..." : "Save Changes"}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </motion.div>
-                            )}
-
-                            {activeTab !== "account" && (
-                                <div className="text-center py-20">
-                                    <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <Info size={32} className="text-muted-foreground" />
-                                    </div>
-                                    <h3 className="text-xl font-display font-bold mb-2">Section Under Construction</h3>
-                                    <p className="text-muted-foreground font-body max-w-sm mx-auto">
-                                        We are currently fine-tuning these settings to provide you with a world-class experience. Stay tuned.
-                                    </p>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </motion.section>
+                        )}
+                    </AnimatePresence>
                 </div>
             </main>
 

@@ -35,6 +35,7 @@ const Wallet = lazy(() => import("./pages/Wallet"));
 const Deposit = lazy(() => import("./pages/Deposit"));
 const Withdraw = lazy(() => import("./pages/Withdraw"));
 const Manager = lazy(() => import("./pages/Manager"));
+const Refer = lazy(() => import("./pages/Refer"));
 import Callback from "./pages/Callback";
 import { CallProvider } from "./components/calling/CallProvider";
 
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="/library" element={<Library />} />
                 <Route path="/moods" element={<Moods />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/refer" element={<Refer />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:userId" element={<Messages />} />

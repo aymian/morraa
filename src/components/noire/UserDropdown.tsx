@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { User, Settings, LogOut, ChevronDown, Sparkles, Music2, Heart } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, Sparkles, Share2 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -103,9 +103,7 @@ const UserDropdown = ({ user, userData }: UserDropdownProps) => {
                         {/* Menu Items */}
                         <div className="p-2">
                             {[
-                                { label: "Profile", icon: User, action: () => navigate("/profile") },
-                                { label: "My Library", icon: Heart, action: () => navigate("/library") },
-                                { label: "Mood Playlists", icon: Music2, action: () => navigate("/moods") },
+                                { label: "Refer", icon: Share2, action: () => navigate("/refer") },
                                 { label: "Settings", icon: Settings, action: () => navigate("/settings") },
                             ].map((item) => (
                                 <button

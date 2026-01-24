@@ -17,7 +17,8 @@ import {
     Send,
     X,
     Volume2,
-    VolumeX
+    VolumeX,
+    TrendingUp
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, increment, limit, startAfter } from "firebase/firestore";
@@ -56,6 +57,8 @@ const DashboardFeed = () => {
     const [mutedStates, setMutedStates] = useState<Record<string, boolean>>({});
     const { toast } = useToast();
     const [playingPostId, setPlayingPostId] = useState<string | null>(null);
+    const [growthCount, setGrowthCount] = useState(0);
+    const [showGrowth, setShowGrowth] = useState(false);
     const navigate = useNavigate();
 
     // Pagination state
@@ -85,6 +88,34 @@ const DashboardFeed = () => {
     }, [posts]);
 
     // Infinite Scroll Observer
+    useEffect(() => {
+        // Simulated Growth Logic
+        const timers: NodeJS.Timeout[] = [];
+        
+        // Initial burst
+        timers.push(setTimeout(() => {
+            setGrowthCount(prev => prev + 2);
+            setShowGrowth(true);
+            toast({ 
+                title: "New Followers", 
+                description: "2 people started following you just now.",
+                className: "bg-[#0A0A0A] border border-white/10 text-white"
+            });
+        }, 3000));
+
+        // Follow-up
+        timers.push(setTimeout(() => {
+            setGrowthCount(prev => prev + 5);
+             toast({ 
+                title: "Momentum", 
+                description: "Your profile is gaining visibility.",
+                className: "bg-[#0A0A0A] border border-[#FBBF24]/30 text-[#FBBF24]"
+            });
+        }, 12000));
+
+        return () => timers.forEach(clearTimeout);
+    }, []);
+
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
@@ -328,6 +359,30 @@ const DashboardFeed = () => {
             
             {/* Posts Feed */}
             <div className="w-full max-w-[380px] space-y-8 pb-32">
+                
+                {/* Growth Widget */}
+                <AnimatePresence>
+                    {showGrowth && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                            animate={{ opacity: 1, height: "auto", marginBottom: 32 }}
+                            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                            className="bg-gradient-to-r from-[#FBBF24]/10 to-[#F59E0B]/5 border border-[#FBBF24]/20 rounded-3xl p-5 flex items-center gap-4 relative overflow-hidden"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-[#FBBF24]/20 flex items-center justify-center shrink-0">
+                                <TrendingUp className="w-6 h-6 text-[#FBBF24]" />
+                            </div>
+                            <div>
+                                <p className="text-white font-bold text-base">Momentum Building</p>
+                                <p className="text-white/60 text-xs font-medium mt-0.5">
+                                    You gained <span className="text-[#FBBF24] font-bold">+{growthCount} followers</span> in the last 2 minutes
+                                </p>
+                            </div>
+                            <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-[#FBBF24]/10 to-transparent" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <AnimatePresence>
                     {posts.length === 0 ? (
                         <div className="py-24 text-center space-y-6">
