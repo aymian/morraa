@@ -35,6 +35,7 @@ const Wallet = lazy(() => import("./pages/Wallet"));
 const Deposit = lazy(() => import("./pages/Deposit"));
 const Withdraw = lazy(() => import("./pages/Withdraw"));
 const Manager = lazy(() => import("./pages/Manager"));
+import Callback from "./pages/Callback";
 import { CallProvider } from "./components/calling/CallProvider";
 
 
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/callback" element={<Callback />} />
               <Route path="/email-phone" element={<EmailPhoneAuth />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/onboarding" element={<Onboarding />} />

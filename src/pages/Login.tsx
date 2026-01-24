@@ -13,6 +13,7 @@ import NoireLogo from "@/components/noire/NoireLogo";
 import { auth, db } from "@/lib/firebase";
 import {
   GoogleAuthProvider,
+  TwitterAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
@@ -45,12 +46,6 @@ const XIcon = () => (
   </svg>
 );
 
-const AppleIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
-    <path d="M12.152 6.896c-.341 0-1.121-.194-2.126-.194-1.175 0-2.433.882-3.13 1.956-1.152 1.76-1.152 4.156-.379 6.225.378 1.012 1.06 2.016 1.956 2.593.44.285 1.01.441 1.63.441.743 0 1.252-.441 2.025-.441.773 0 1.25.441 2.024.441s1.512-.441 1.956-1.011c.783-.997 1.152-2.112 1.252-2.316-.015-.03-.984-.378-1.555-1.109-.571-.734-.875-1.637-.875-2.64 0-1.076.326-1.958.986-2.613.661-.655 1.488-1.016 1.488-1.016-.076-.106-.411-.531-1.077-.966-.667-.435-1.745-.733-3.175-.365zm2.348-2.67c.72-.88 1.134-1.986 1.134-3.125 0-.154-.014-.308-.041-.462-1.027.041-2.022.44-2.73 1.189-.72.88-1.134 1.986-1.134 3.125 0 .154.014.308.041.462.153 0 .307.014.46.014.87 0 1.763-.34 2.27-1.203z" />
-  </svg>
-);
-
 const Login = () => {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const navigate = useNavigate();
@@ -62,14 +57,27 @@ const Login = () => {
     { id: 3, image: "/assets/hero/community.png", user: "The Nexus", handle: "@nexus", rotation: 6, y: 20, scale: 0.8 },
   ];
 
-  const handleSocialAuth = async (provider: string) => {
+  const handleSocialAuth = async (providerName: string) => {
     try {
-      if (provider !== "Google") {
-        toast({ title: "Coming Soon", description: `${provider} login will be active shortly.` });
+      if (providerName === "Spotify") {
+        const clientId = "4597632630b54b4b9b8658064f1ef7ad";
+        const redirectUri = "https://morraa.vercel.app/callback?spotify";
+        const scope = "user-read-private user-read-email";
+        window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
         return;
       }
-      const authProvider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, authProvider);
+
+      let provider;
+      if (providerName === "Google") {
+        provider = new GoogleAuthProvider();
+      } else if (providerName === "X") {
+        provider = new TwitterAuthProvider();
+      } else {
+        toast({ title: "Coming Soon", description: `${providerName} login will be active shortly.` });
+        return;
+      }
+
+      const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
       const userRef = doc(db, "users", user.uid);
@@ -88,6 +96,7 @@ const Login = () => {
       const done = updated.exists() && updated.data()?.onboardingComplete;
       navigate(done ? "/" : "/onboarding");
     } catch (error: any) {
+      console.error("Auth Error:", error);
       toast({ title: "Social Auth Error", description: error.message, variant: "destructive" });
     }
   };
@@ -106,13 +115,6 @@ const Login = () => {
       bg: "bg-black text-white border border-white/20",
       hover: "hover:bg-white/5",
       action: () => handleSocialAuth("X")
-    },
-    {
-      name: "Apple",
-      icon: AppleIcon,
-      bg: "bg-[#050505] text-white",
-      hover: "hover:bg-black/80",
-      action: () => handleSocialAuth("Apple")
     },
     {
       name: "Spotify",
