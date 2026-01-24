@@ -57,9 +57,9 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pb-4 pt-2 px-4 bg-gradient-to-t from-black via-black/90 to-transparent"
+      className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pb-2 pt-2 px-4 pointer-events-none"
     >
-      <div className="glass-noire rounded-[2.5rem] px-6 py-4 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between backdrop-blur-2xl bg-[#0A0A0A]/80">
+      <div className="pointer-events-auto glass-noire rounded-[2.5rem] px-6 py-4 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between backdrop-blur-2xl bg-[#0A0A0A]/90">
         
         {user ? (
           // Authenticated State

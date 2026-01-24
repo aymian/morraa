@@ -20,7 +20,7 @@ const AppLayout = () => {
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">
             {user && !isFocusMode && <FloatingSidebar />}
-            <Navbar logoOnly={isFocusMode} />
+            {!isMessagesPage && <Navbar logoOnly={isFocusMode} />}
             <Outlet />
         </div>
     );

@@ -637,7 +637,7 @@ const Messages = () => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.05)_0%,transparent_70%)] opacity-50" />
             </div>
 
-            <Navbar logoOnly={true} onAuthClick={() => { }} />
+            {!isMobileView && <Navbar logoOnly={true} onAuthClick={() => { }} />}
             {user && <FloatingSidebar />}
 
             <div className="flex-1 flex overflow-hidden pt-0 lg:mt-0">
@@ -671,8 +671,8 @@ const Messages = () => {
                         </div>
                     </div>
 
-                    <ScrollArea className="flex-1 px-3 pb-24 lg:pb-6">
-                        <div className="space-y-2">
+                    <ScrollArea className="flex-1 px-3 lg:pb-6">
+                        <div className="space-y-2 pb-32 lg:pb-0">
                             <AnimatePresence mode="popLayout">
                                 {filteredConversations.map((conv, idx) => (
                                     <motion.div
@@ -750,7 +750,7 @@ const Messages = () => {
                     {selectedChat ? (
                         <>
                             {/* Chat Header */}
-                            <header className="h-[72px] sm:h-[88px] border-b border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-10 glass-noire sticky top-0 z-20">
+                            <header className="h-[72px] sm:h-[88px] border-b border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-10 bg-black/40 backdrop-blur-md sticky top-0 z-20">
                                 <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
                                     {isMobileView && (
                                         <Button
@@ -1057,7 +1057,7 @@ const Messages = () => {
                             </ScrollArea>
 
                             {/* Message Input Container */}
-                            <footer className="px-3 pb-4 sm:px-6 sm:pb-6 lg:px-10 lg:pb-8 pt-0 bg-transparent z-10">
+                            <footer className="px-3 pb-4 sm:px-6 sm:pb-6 lg:px-10 lg:pb-8 pt-2 bg-black/80 backdrop-blur-lg border-t border-white/5 z-10">
                                 <div className="max-w-2xl mx-auto">
                                     {/* Reply / Edit Preview */}
                                     <AnimatePresence>
@@ -1302,7 +1302,7 @@ const Messages = () => {
                 </section>
             </div>
 
-            <MobileBottomNav onAuthClick={() => { }} />
+            {!selectedChat && <MobileBottomNav onAuthClick={() => { }} />}
         </main>
     );
 };
