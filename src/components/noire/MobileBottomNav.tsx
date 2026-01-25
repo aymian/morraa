@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useLocation } from "react-router-dom";
+import SearchModal from "./SearchModal";
 
 /**
  * MORRA Mobile Bottom Navigation
@@ -16,6 +17,7 @@ interface MobileBottomNavProps {
 
 const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
   const [user, setUser] = useState<any>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,7 +41,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
   // Authenticated User Navigation (Instagram-like but better)
   const authNavItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: Search, label: "Search", path: "/library" },
+    { icon: Search, label: "Search", path: "#", action: () => setIsSearchOpen(true) },
     { icon: Plus, label: "Create", path: "/create", isAction: true },
     { icon: Wallet, label: "Wallet", path: "/wallet" },
     { icon: User, label: "Profile", path: "/profile" },
@@ -83,7 +85,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
             return (
               <button
                 key={item.label}
-                onClick={() => navigate(item.path)}
+                onClick={() => item.action ? item.action() : navigate(item.path)}
                 className="relative flex flex-col items-center justify-center w-10 h-10 transition-all duration-300"
               >
                 {active && (
@@ -94,7 +96,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
                 )}
                 <item.icon
                   className={`w-6 h-6 transition-all duration-300 ${
-                    active 
+                    active || (item.label === "Search" && isSearchOpen)
                       ? "text-[#FBBF24] fill-[#FBBF24]/10 stroke-[2.5]" 
                       : "text-zinc-500 stroke-[1.5]"
                   }`}
@@ -147,6 +149,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
           </>
         )}
       </div>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </motion.nav>
   );
 };

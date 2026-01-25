@@ -144,6 +144,7 @@ const FloatingSidebar = ({ forceCollapsed = false }: FloatingSidebarProps) => {
         { icon: Bell, label: "Activity", path: "/notifications" },
         { icon: Bookmark, label: "Collection", path: "/saved" },
         { icon: Wallet, label: "Vault", path: "/wallet", hasDot: true },
+        { icon: HandCoins, label: "Refer & Earn", path: "/refer", hasDot: true },
         { icon: ShieldCheck, label: "Verification", path: "/verification" },
         { icon: Sparkles, label: "Feed Preview", path: "/feed-preview" },
         { icon: Settings, label: "Settings", path: "/settings" },

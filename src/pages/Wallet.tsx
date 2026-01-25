@@ -13,6 +13,7 @@ import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import NoireLogo from "@/components/noire/NoireLogo";
+import { useSyncBalance } from "@/hooks/useSyncBalance";
 
 // Simple Icons for demo
 const MusicIcon = () => (
@@ -36,6 +37,72 @@ const Wallet = () => {
     const [sendAmount, setSendAmount] = useState("");
     const [receiveModalOpen, setReceiveModalOpen] = useState(false);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [convertPoints, setConvertPoints] = useState("");
+
+    // Sync balance based on likes (Pass Balance, Earnings, and Spent Points, Referral Points)
+    useSyncBalance(user?.uid, userData?.balance, userData?.earnings, userData?.spentPoints, userData?.referralPoints);
+
+    const handleConvertPoints = async () => {
+        if (!userData || !user) return;
+        
+        const points = parseFloat(convertPoints);
+        if (isNaN(points) || points <= 0) {
+            alert("Please enter a valid amount of points.");
+            return;
+        }
+
+        if (points > (userData.earnings || 0)) {
+            alert("Insufficient points.");
+            return;
+        }
+
+        const frwAmount = points * 10; // 50 points = 500 FRW => 1 point = 10 FRW
+
+        try {
+             await runTransaction(db, async (transaction) => {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await transaction.get(userDocRef);
+                if (!userDoc.exists()) {
+                    throw "User does not exist!";
+                }
+
+                const currentEarnings = userDoc.data().earnings || 0;
+                const currentSpent = userDoc.data().spentPoints || 0;
+
+                if (currentEarnings < points) {
+                    throw "Insufficient points!";
+                }
+                
+                const newEarnings = currentEarnings - points;
+                const newBalance = (userDoc.data().balance || 0) + frwAmount;
+                const newSpent = currentSpent + points;
+
+                transaction.update(userDocRef, {
+                    earnings: newEarnings,
+                    balance: newBalance,
+                    spentPoints: newSpent
+                });
+
+                // Add transaction record
+                const newTxRef = doc(collection(db, "transactions"));
+                transaction.set(newTxRef, {
+                    userId: user.uid,
+                    amount: frwAmount,
+                    pointsConverted: points,
+                    type: "conversion",
+                    note: `Converted ${points} points to ${frwAmount} FRW`,
+                    createdAt: serverTimestamp()
+                });
+            });
+
+            setConvertPoints("");
+            alert(`Successfully converted ${points} points to ${frwAmount} FRW!`);
+
+        } catch (e) {
+            console.error("Conversion failed: ", e);
+            alert("Conversion failed. Please try again.");
+        }
+    };
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -351,6 +418,8 @@ const Wallet = () => {
                                 )}
                                     </motion.div>
 
+
+
                             {/* Deposit / Withdraw */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <button
@@ -410,6 +479,111 @@ const Wallet = () => {
                                     </div>
                                 </motion.div>
                             )}
+
+                            {/* Influence Cards Section */}
+                            <div className="mt-12">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-normal text-zinc-100 mb-1">Influence Cards</h3>
+                                        <p className="text-zinc-400 text-sm">Your points and rewards</p>
+                                    </div>
+                                    <Activity size={24} className="text-purple-400 opacity-50" />
+                                </div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.3 }}
+                                    className="relative"
+                                >
+                                    <div className="relative overflow-hidden rounded-[2.5rem] p-8 min-h-[220px] flex flex-col justify-between bg-gradient-to-br from-zinc-900 to-black border border-white/10 shadow-xl group">
+                                        {/* Background Elements */}
+                                        <div className="absolute inset-0 opacity-20">
+                                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
+                                        </div>
+
+                                        <div className="relative z-10 flex flex-col justify-between h-full">
+                                            {/* Top Row */}
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                                        <NoireLogo size={16} showText={false} />
+                                                    </div>
+                                                    <span className="font-mono text-sm tracking-widest text-zinc-400">INFLUENCE</span>
+                                                </div>
+                                                <Activity size={24} className="text-purple-400 opacity-50" />
+                                            </div>
+
+                                            {/* Balance */}
+                                            <div className="mb-4">
+                                                <p className="text-zinc-500 text-xs mb-1 tracking-wider">POINTS BALANCE</p>
+                                                <p className="text-white text-3xl font-light">
+                                                    {userData?.earnings ? userData.earnings.toFixed(2) : "0.00"} <span className="text-lg text-zinc-500">PTS</span>
+                                                </p>
+                                            </div>
+
+                                            {/* Bottom Row */}
+                                            <div className="flex items-end justify-between">
+                                                <div>
+                                                    <p className="text-zinc-500 text-xs">Earn points by engaging</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-purple-400/80 text-xs font-medium tracking-wider">REWARDS WALLET</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Shine Effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                    </div>
+                                </motion.div>
+
+                                {/* Converter Card */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.4 }}
+                                    className="relative mt-6"
+                                >
+                                    <div className="relative overflow-hidden rounded-[2.5rem] p-8 bg-zinc-900/50 border border-white/5 shadow-xl group">
+                                         <div className="flex justify-between items-start mb-6">
+                                            <div>
+                                                <h4 className="text-lg font-normal text-zinc-100">Point Converter</h4>
+                                                <p className="text-zinc-500 text-xs">50 Points = 500 FRW</p>
+                                                <p className="text-[#FBBF24] text-xs mt-1 font-mono">Available: {userData?.earnings ? userData.earnings.toFixed(2) : "0.00"} Points</p>
+                                            </div>
+                                            <div className="p-2 bg-white/5 rounded-xl">
+                                                <ArrowDownLeft size={20} className="text-[#FBBF24]" />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <div className="flex-1 relative">
+                                                <input
+                                                    type="number"
+                                                    value={convertPoints}
+                                                    onChange={(e) => setConvertPoints(e.target.value)}
+                                                    placeholder="Enter points"
+                                                    className="w-full glass-noire border border-white/10 rounded-xl px-4 py-3 pl-10 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-sm"
+                                                />
+                                                <div className="absolute left-3 top-3.5 text-zinc-500">
+                                                    <Activity size={14} />
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleConvertPoints}
+                                                className="px-6 py-3 bg-[#FBBF24]/10 border border-[#FBBF24]/30 rounded-xl hover:bg-[#FBBF24]/20 transition-colors font-medium text-sm text-[#FBBF24]"
+                                            >
+                                                Convert
+                                            </button>
+                                        </div>
+                                         <p className="text-zinc-600 text-[10px] mt-3 ml-1">
+                                            {convertPoints ? `${parseFloat(convertPoints) * 10} FRW` : "0 FRW"}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </div>
                         </div>
 
                         {/* Right: Vault Controls */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, getDocs, limit, startAt, endAt, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { createPortal } from "react-dom";
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -187,14 +188,16 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
         navigate(`/@${username}`);
     };
 
-    return (
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4 sm:px-6"
+                    className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4 sm:px-6 pointer-events-auto"
                 >
                     {/* Backdrop */}
                     <div
@@ -326,7 +329,8 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 };
 

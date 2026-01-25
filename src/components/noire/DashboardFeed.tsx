@@ -32,6 +32,7 @@ import { getOptimizedUrl, getVideoPoster } from "@/lib/cloudinary-helper";
 import { Loader2 } from "lucide-react";
 
 interface Post {
+    userId: string;
     isVerified: any;
     userAvatar: any;
     userName: any;
@@ -146,7 +147,7 @@ const DashboardFeed = () => {
             const fetchedPosts = documentSnapshots.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            })) as Post[];
+            })).filter((p: any) => p.type !== 'Thread') as Post[];
 
             setPosts(fetchedPosts);
             setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
@@ -182,7 +183,7 @@ const DashboardFeed = () => {
             const newPosts = documentSnapshots.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            })) as Post[];
+            })).filter((p: any) => p.type !== 'Thread') as Post[];
 
             setPosts(prev => [...prev, ...newPosts]);
             setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
@@ -264,6 +265,14 @@ const DashboardFeed = () => {
                 likedIds: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
                 likes: isLiked ? increment(-1) : increment(1)
             });
+
+            // Update Author's Earnings (0.25 points per like)
+            if (post.userId) {
+                const authorRef = doc(db, "users", post.userId);
+                await updateDoc(authorRef, {
+                    earnings: isLiked ? increment(-0.25) : increment(0.25)
+                });
+            }
         } catch (error) {
             console.error("Error toggling like:", error);
             toast({ 

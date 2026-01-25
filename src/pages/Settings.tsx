@@ -11,13 +11,14 @@ import {
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, addDoc, collection, query, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection, query, getDocs, serverTimestamp, onSnapshot } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { cn, isEligibleForVerification } from "@/lib/utils";
+import { useSyncBalance } from "@/hooks/useSyncBalance";
 
 /**
  * ULTRA PRO Settings Page
@@ -33,6 +34,9 @@ const Settings = () => {
     const [activeCategory, setActiveCategory] = useState<string | null>("account");
     const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
     
+    // Sync balance based on likes
+    useSyncBalance(user?.uid, userData?.balance);
+
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -60,21 +64,23 @@ const Settings = () => {
     });
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    setUserData(data);
-                    setFullName(data.fullName || "");
-                    setUsername(data.username || "");
-                    setPhone(data.phone || "");
-                    setBio(data.bio || "");
-                    setWebsite(data.website || "");
-                    setBirthday(data.birthday || "");
-                }
+                const unsubDoc = onSnapshot(doc(db, "users", currentUser.uid), (userDoc) => {
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        setUserData(data);
+                        setFullName(data.fullName || "");
+                        setUsername(data.username || "");
+                        setPhone(data.phone || "");
+                        setBio(data.bio || "");
+                        setWebsite(data.website || "");
+                        setBirthday(data.birthday || "");
+                    }
+                });
                 setLoading(false);
+                return () => unsubDoc();
             } else {
                 navigate("/login");
             }

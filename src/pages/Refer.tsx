@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Copy, CheckCircle, Users, Zap } from "lucide-react";
+import { Copy, CheckCircle, Users, Zap, Gift, DollarSign, TrendingUp } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
@@ -21,11 +21,14 @@ const Refer = () => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if (userDoc.exists()) {
-                    setUserData(userDoc.data());
-                }
+                // Real-time listener for stats updates
+                const unsubDoc = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        setUserData(docSnap.data());
+                    }
+                });
                 setLoading(false);
+                return () => unsubDoc();
             } else {
                 navigate("/login");
             }
@@ -34,11 +37,14 @@ const Refer = () => {
     }, [navigate]);
 
     const handleCopyLink = () => {
-        const inviteLink = `https://morraa.vercel.app/invite/${userData?.username || user?.uid}`;
+        const referralCode = userData?.username || user?.uid;
+        // Direct to signup page with ref code
+        const inviteLink = `${window.location.origin}/login?type=signup&ref=${referralCode}`;
+        
         navigator.clipboard.writeText(inviteLink);
         toast({
-            title: "Link Copied",
-            description: "Share this with your friends to earn rewards.",
+            title: "Referral Link Copied",
+            description: "Share this link to earn 5 points per signup!",
             className: "bg-[#0A0A0A] border border-[#FBBF24]/30 text-white"
         });
     };
@@ -57,14 +63,34 @@ const Refer = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-noire border border-primary/30 text-primary text-xs font-bold tracking-widest uppercase mb-6"
                     >
-                        <Zap className="w-3.5 h-3.5" />
-                        Grow Your Circle
+                        <Gift className="w-3.5 h-3.5" />
+                        Referral Program
                     </motion.div>
-                    <h1 className="text-4xl md:text-6xl font-display font-bold mb-4">Refer & Earn</h1>
+                    <h1 className="text-4xl md:text-6xl font-display font-bold mb-4">Refer & Earn Real Cash</h1>
                     <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                        Invite creators to Morra and earn exclusive badges and visibility boosts.
+                        Invite friends to Morra. You get <span className="text-primary font-bold">5 Points</span>. They get <span className="text-primary font-bold">10 Points</span>.
+                        <br />
+                        Convert points to cash instantly.
                     </p>
                 </header>
+
+                {/* Stats Section */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
+                    <div className="glass-noire p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center">
+                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-2">Referrals</p>
+                        <p className="text-3xl font-display font-bold">{userData?.referralCount || 0}</p>
+                    </div>
+                    <div className="glass-noire p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center">
+                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-2">Points Earned</p>
+                        <p className="text-3xl font-display font-bold text-primary">{userData?.referralPoints || 0}</p>
+                    </div>
+                    <div className="col-span-2 md:col-span-1 glass-noire p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center bg-primary/5">
+                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-2">Potential Value</p>
+                        <p className="text-3xl font-display font-bold text-green-400">
+                            {((userData?.referralPoints || 0) * 10).toLocaleString()} <span className="text-sm text-muted-foreground">RWF</span>
+                        </p>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <motion.div 
@@ -75,8 +101,8 @@ const Refer = () => {
                     >
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full" />
                         <Users className="w-10 h-10 text-primary mb-6" />
-                        <h3 className="text-2xl font-bold mb-2">Community Growth</h3>
-                        <p className="text-muted-foreground">Build your own tribe. When friends join using your link, you both get a visibility spike.</p>
+                        <h3 className="text-2xl font-bold mb-2">1. Share Your Link</h3>
+                        <p className="text-muted-foreground">Send your unique referral link to friends, creators, or followers.</p>
                     </motion.div>
 
                     <motion.div 
@@ -86,9 +112,9 @@ const Refer = () => {
                         className="glass-noire p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-[50px] rounded-full" />
-                        <CheckCircle className="w-10 h-10 text-accent mb-6" />
-                        <h3 className="text-2xl font-bold mb-2">Verified Status</h3>
-                        <p className="text-muted-foreground">Refer 5 active creators to fast-track your verification badge application.</p>
+                        <DollarSign className="w-10 h-10 text-accent mb-6" />
+                        <h3 className="text-2xl font-bold mb-2">2. Earn & Cash Out</h3>
+                        <p className="text-muted-foreground">Get 5 Points for every signup. Convert points to RWF in your Wallet instantly.</p>
                     </motion.div>
                 </div>
 
@@ -101,8 +127,8 @@ const Refer = () => {
                     <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Your Unique Invite Link</p>
                     
                     <div className="flex items-center gap-4 bg-black/40 p-2 pl-6 rounded-2xl border border-white/10 mb-6">
-                        <span className="flex-1 text-left font-mono text-primary truncate">
-                            morraa.vercel.app/invite/{userData?.username || user?.uid}
+                        <span className="flex-1 text-left font-mono text-primary text-sm truncate">
+                            {window.location.origin}/login?type=signup&ref={userData?.username || user?.uid}
                         </span>
                         <button 
                             onClick={handleCopyLink}
@@ -114,7 +140,7 @@ const Refer = () => {
                     </div>
 
                     <p className="text-xs text-muted-foreground italic">
-                        Limit: 50 invites per week. Quality over quantity.
+                        New users must sign up with a @gmail.com address.
                     </p>
                 </motion.div>
             </main>

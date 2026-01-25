@@ -17,7 +17,9 @@ import {
     DollarSign,
     Briefcase,
     AlertCircle,
-    Loader2
+    Loader2,
+    Gift,
+    Copy
 } from "lucide-react";
 import NoireLogo from "@/components/noire/NoireLogo";
 import { auth, db } from "@/lib/firebase";
@@ -40,7 +42,8 @@ type OnboardingStep =
     | 'follows'
     | 'invite'
     | 'notifications'
-    | 'welcome';
+    | 'welcome'
+    | 'referral-rewards';
 
 const Onboarding = () => {
     const [step, setStep] = useState<OnboardingStep>('splash');
@@ -68,7 +71,7 @@ const Onboarding = () => {
     const stepsList: OnboardingStep[] = [
         'splash', 'value-prop', 'framing', 'birthday', 'phone', 'otp',
         'username', 'gender', 'bio', 'photo', 'monetization',
-        'safety', 'follows', 'invite', 'notifications', 'welcome'
+        'safety', 'follows', 'invite', 'notifications', 'welcome', 'referral-rewards'
     ];
 
     useEffect(() => {
@@ -902,23 +905,107 @@ const Onboarding = () => {
                 <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={async () => {
-                        await saveAllProfileData(true);
-                        navigate('/');
-                    }}
+                    onClick={() => nextStep()}
                     className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl shadow-glow-gold"
                 >
-                    Explore Morra
+                    Continue
                 </motion.button>
-                <button
-                    onClick={() => navigate('/')}
-                    className="text-xs font-bold text-muted-foreground uppercase tracking-widest"
-                >
-                    Create your first post
-                </button>
             </div>
         </div>
     );
+
+    const ReferralRewardsStep = () => {
+        const [earnings, setEarnings] = useState<number | null>(null);
+        
+        useEffect(() => {
+             const fetchEarnings = async () => {
+                 if (auth.currentUser) {
+                     const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+                     if (snap.exists()) {
+                         setEarnings(snap.data().earnings || 0);
+                     }
+                 }
+             };
+             fetchEarnings();
+        }, []);
+
+        const referralCode = userData.username || auth.currentUser?.uid || 'you';
+        const inviteUrl = `morra.io/?ref=${referralCode}`;
+
+        return (
+            <div className="flex flex-col items-center justify-center space-y-8 max-w-md mx-auto py-12 text-center relative">
+                 <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full glass-noire border border-primary/20 rounded-3xl p-8 relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-primary/5 blur-3xl" />
+                    
+                    <div className="relative z-10 flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                            <Gift className="w-10 h-10 text-primary" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <h3 className="text-3xl font-display font-bold text-primary">
+                                {earnings && earnings >= 10 ? "You got 10 Points!" : "Start Earning Rewards"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                {earnings && earnings >= 10 
+                                    ? "Welcome bonus credited to your wallet."
+                                    : "Refer friends to start earning points."}
+                            </p>
+                        </div>
+
+                        <div className="w-full h-px bg-white/10" />
+
+                        <div className="space-y-4">
+                            <h4 className="text-xl font-bold">Earn More Rewards</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Refer friends and earn <span className="text-primary font-bold">5 Points</span> for every signup.
+                                Points can be converted to real cash in your Wallet.
+                            </p>
+                        </div>
+
+                        <div className="w-full bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col gap-2">
+                             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Your Referral Link</p>
+                             <div className="flex items-center gap-2">
+                                <code className="flex-1 text-xs text-primary font-mono truncate">{inviteUrl}</code>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://${inviteUrl}`);
+                                        toast({ title: "Copied!", description: "Referral link copied." });
+                                    }}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                             </div>
+                        </div>
+                    </div>
+                </motion.div>
+
+                <div className="flex flex-col gap-4 w-full">
+                    <button
+                        onClick={async () => {
+                             await saveAllProfileData(true);
+                             if (earnings && earnings >= 10) {
+                                toast({ 
+                                    title: "10 Points Credited", 
+                                    description: "Welcome to Morra! Check your wallet.",
+                                    duration: 5000 
+                                });
+                             }
+                             navigate('/');
+                        }}
+                        className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl shadow-glow-gold"
+                    >
+                        Start Exploring
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-[#080808] text-white flex flex-col p-6 overflow-x-hidden pt-12">
@@ -967,6 +1054,7 @@ const Onboarding = () => {
                         {step === 'invite' && InviteStep()}
                         {step === 'notifications' && NotificationStep()}
                         {step === 'welcome' && WelcomeStep()}
+                        {step === 'referral-rewards' && ReferralRewardsStep()}
                     </motion.div>
                 </AnimatePresence>
             </div>

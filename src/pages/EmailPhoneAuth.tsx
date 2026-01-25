@@ -17,24 +17,28 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const EmailPhoneAuth = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const type = (searchParams.get("type") as "login" | "signup") || "login";
+    const refCode = searchParams.get("ref") || "";
+    
     const [authMode, setAuthMode] = useState<"login" | "signup">(type);
     const [showPassword, setShowPassword] = useState(false);
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
+    const [referralCode, setReferralCode] = useState(refCode);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
 
     useEffect(() => {
         setAuthMode(type);
-    }, [type]);
+        if (refCode) setReferralCode(refCode);
+    }, [type, refCode]);
 
     const handleModeSwitch = (mode: "login" | "signup") => {
         setAuthMode(mode);
@@ -47,8 +51,45 @@ const EmailPhoneAuth = () => {
 
         try {
             if (authMode === "signup") {
+                // Email Validation: Only @gmail.com
+                if (!identifier.toLowerCase().endsWith("@gmail.com")) {
+                    toast({ 
+                        title: "Registration Restricted", 
+                        description: "Only @gmail.com addresses are currently accepted to prevent spam.", 
+                        variant: "destructive" 
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
                 const userCredential = await createUserWithEmailAndPassword(auth, identifier, password);
                 const user = userCredential.user;
+
+                // Referral Logic
+                let initialEarnings = 0;
+                let validReferrerId = null;
+
+                if (referralCode && referralCode !== user.uid) {
+                    try {
+                        const referrerRef = doc(db, "users", referralCode);
+                        const referrerSnap = await getDoc(referrerRef);
+
+                        if (referrerSnap.exists()) {
+                            validReferrerId = referralCode;
+                            initialEarnings = 10; // Bonus for new user
+
+                            // Credit Referrer (+5 points)
+                            await updateDoc(referrerRef, {
+                                earnings: increment(5),
+                                referralPoints: increment(5),
+                                referralCount: increment(1)
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Referral processing error:", err);
+                        // Continue signup even if referral fails
+                    }
+                }
 
                 await setDoc(doc(db, "users", user.uid), {
                     uid: user.uid,
@@ -57,6 +98,9 @@ const EmailPhoneAuth = () => {
                     createdAt: serverTimestamp(),
                     emailVerified: false,
                     onboardingComplete: false,
+                    earnings: initialEarnings,
+                    referralPoints: initialEarnings, // Track referral bonus separately
+                    referredBy: validReferrerId
                 });
 
                 await supabase.auth.signInWithOtp({
@@ -166,6 +210,28 @@ const EmailPhoneAuth = () => {
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                     </div>
+
+                    <AnimatePresence>
+                        {authMode === "signup" && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="relative mt-2">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        value={referralCode}
+                                        onChange={(e) => setReferralCode(e.target.value)}
+                                        placeholder="Referral Code (Optional)"
+                                        className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-muted/10 border border-white/5 focus:border-primary/50 outline-none transition-all text-sm"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <motion.button
                         whileHover={{ scale: 1.01 }}

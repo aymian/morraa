@@ -30,6 +30,7 @@ const Profile = () => {
     const navigate = useNavigate();
 
     const [userPosts, setUserPosts] = useState<any[]>([]);
+    const [userThreads, setUserThreads] = useState<any[]>([]);
     const [isPrivate, setIsPrivate] = useState(false);
 
     // Connections Modal State
@@ -68,8 +69,21 @@ const Profile = () => {
                             const postsSnap = await getDocs(postsQuery);
                             console.log("Posts found:", postsSnap.size);
 
-                            const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter((p: any) => p.type !== 'Thread');
                             setUserPosts(posts);
+
+                            // Recalculate earnings based on likes (0.25 points per like)
+                            const totalLikes = posts.reduce((acc, post: any) => acc + (post.likes || 0), 0);
+                            const calculatedEarnings = totalLikes * 0.25;
+
+                            if (calculatedEarnings !== data.earnings) {
+                                console.log(`Syncing earnings: ${data.earnings} -> ${calculatedEarnings}`);
+                                await updateDoc(doc(db, "users", user.uid), {
+                                    earnings: calculatedEarnings
+                                });
+                                // Update local state to reflect change immediately
+                                setUserData({ ...data, earnings: calculatedEarnings });
+                            }
                         } catch (postError) {
                             console.error("Post fetch error details:", postError);
                             // Fallback: Try without ordering if index is missing or field is missing
@@ -81,7 +95,7 @@ const Profile = () => {
                                 );
                                 const fallbackSnap = await getDocs(fallbackQuery);
                                 console.log("Fallback posts found:", fallbackSnap.size);
-                                const posts = fallbackSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                const posts = fallbackSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter((p: any) => p.type !== 'Thread');
                                 // Sort manually if needed
                                 posts.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                                 setUserPosts(posts);
@@ -99,6 +113,31 @@ const Profile = () => {
                             setFollowingCount(followingSnap.size);
                         } catch (socialError) {
                             console.error("Error fetching social counts:", socialError);
+                        }
+
+                        // Fetch Threads
+                        try {
+                            const threadsQuery = query(
+                                collection(db, "posts"),
+                                where("userId", "==", user.uid),
+                                where("type", "==", "Thread"),
+                                orderBy("createdAt", "desc")
+                            );
+                            const threadsSnap = await getDocs(threadsQuery);
+                            const threads = threadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setUserThreads(threads);
+                        } catch (threadError) {
+                            console.error("Error fetching threads:", threadError);
+                             try {
+                                const threadsQuery = query(
+                                    collection(db, "posts"),
+                                    where("userId", "==", user.uid),
+                                    where("type", "==", "Thread")
+                                );
+                                const threadsSnap = await getDocs(threadsQuery);
+                                const threads = threadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                setUserThreads(threads);
+                             } catch (e) { console.error("Fallback thread fetch failed", e); }
                         }
                     }
                 } catch (error) {
@@ -362,29 +401,44 @@ const Profile = () => {
                     }}
                 />
 
-                {/* Highlights Section */}
+                {/* Threads Section */}
                 <div className="flex gap-6 overflow-x-auto no-scrollbar mb-12 px-4 md:px-0 pb-2">
-                    {[
-                        { label: "Highlights", img: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=150&h=150&fit=crop" },
-                        { label: "love", img: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=150&h=150&fit=crop" },
-                        { label: "silence", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=150&h=150&fit=crop" },
-                        { label: "New", isAdd: true }
-                    ].map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0">
+                    {/* New Thread Button */}
+                    <div 
+                        onClick={() => navigate('/post-entry?type=Thread')}
+                        className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"
+                    >
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full p-[1px] bg-zinc-800 border border-white/10 group-hover:border-white/30 transition-colors">
+                            <div className="w-full h-full rounded-full bg-black p-[2px] overflow-hidden flex items-center justify-center">
+                                <div className="w-full h-full border border-white/20 rounded-full flex items-center justify-center bg-zinc-900 group-hover:bg-zinc-800">
+                                    <span className="text-3xl text-white font-thin">+</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span className="text-xs text-zinc-100 font-medium">New</span>
+                    </div>
+
+                    {/* Render User Threads */}
+                    {userThreads.map((thread, i) => (
+                        <div key={thread.id || i} className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0">
                             <div className="w-16 h-16 md:w-20 md:h-20 rounded-full p-[1px] bg-zinc-800 border border-white/10 group-hover:border-white/30 transition-colors">
                                 <div className="w-full h-full rounded-full bg-black p-[2px] overflow-hidden flex items-center justify-center">
-                                    {item.isAdd ? (
-                                        <div className="w-full h-full border border-white/20 rounded-full flex items-center justify-center bg-zinc-900 group-hover:bg-zinc-800">
-                                            <Search size={24} className="text-white rotate-90" /> {/* Using Search as a generic plus-like icon for now? Actually lets use a proper Plus */}
-                                            {/* Lucide Plus imported above is fine, replacing Search with Plus logic visually if needed or just styling */}
-                                            <span className="text-2xl text-white font-thin">+</span>
-                                        </div>
+                                    {thread.mediaUrl ? (
+                                        thread.mediaType === 'video' ? (
+                                            <video src={thread.mediaUrl} className="w-full h-full object-cover rounded-full opacity-80 group-hover:opacity-100 transition-opacity" autoPlay muted loop playsInline />
+                                        ) : (
+                                            <img src={thread.mediaUrl} className="w-full h-full object-cover rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
+                                        )
                                     ) : (
-                                        <img src={item.img} className="w-full h-full object-cover rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
+                                        <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center text-xs text-center p-1 text-zinc-500">
+                                            #
+                                        </div>
                                     )}
                                 </div>
                             </div>
-                            <span className="text-xs text-zinc-100 font-medium">{item.label}</span>
+                            <span className="text-xs text-zinc-100 font-medium truncate w-16 text-center">
+                                {thread.content ? thread.content.substring(0, 8) + (thread.content.length > 8 ? "..." : "") : "Thread"}
+                            </span>
                         </div>
                     ))}
                 </div>

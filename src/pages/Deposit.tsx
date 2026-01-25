@@ -1,13 +1,14 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowDownCircle, Loader2, Upload } from "lucide-react";
 import Navbar from "@/components/noire/Navbar";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { auth, db } from "@/lib/firebase";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { useSyncBalance } from "@/hooks/useSyncBalance";
 
 const Deposit = () => {
   const navigate = useNavigate();
@@ -22,22 +23,27 @@ const Deposit = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync balance based on likes
+  useSyncBalance(user?.uid, userData?.balance);
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) {
         navigate("/login");
         return;
       }
       setUser(u);
-      try {
-        const snap = await getDoc(doc(db, "users", u.uid));
+      
+      const unsubDoc = onSnapshot(doc(db, "users", u.uid), (snap) => {
         setUserData(snap.exists() ? snap.data() : null);
-      } catch (e: any) {
-        console.error("Deposit page load error:", e);
-        setError("Failed to load your wallet. Please try again.");
-      } finally {
         setLoading(false);
-      }
+      }, (error) => {
+        console.error("Deposit page load error:", error);
+        setError("Failed to load your wallet. Please try again.");
+        setLoading(false);
+      });
+      
+      return () => unsubDoc();
     });
     return () => unsub();
   }, [navigate]);
