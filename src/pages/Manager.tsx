@@ -29,6 +29,19 @@ type VerificationRequest = {
   createdAt?: any;
 };
 
+type WithdrawRequest = {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  amount: number;
+  fee: number;
+  netAmount: number;
+  phoneNumber: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt?: any;
+};
+
 const MANAGER_USER = "yves";
 const MANAGER_PASS = "yves";
 
@@ -40,6 +53,7 @@ const Manager = () => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<DepositRequest[]>([]);
   const [verificationItems, setVerificationItems] = useState<VerificationRequest[]>([]);
+  const [withdrawItems, setWithdrawItems] = useState<WithdrawRequest[]>([]);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fbReady, setFbReady] = useState(false);
@@ -80,6 +94,17 @@ const Manager = () => {
       });
       setVerificationItems(vSorted);
 
+      // Fetch Withdraw Requests
+      const wq = query(collection(db, "withdrawRequests"), where("status", "==", "pending"));
+      const wSnap = await getDocs(wq);
+      const wList = wSnap.docs.map((d) => ({ id: d.id, ...d.data() } as WithdrawRequest));
+      const wSorted = wList.sort((a: any, b: any) => {
+        const aMs = a?.createdAt?.toMillis?.() ?? a?.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+        const bMs = b?.createdAt?.toMillis?.() ?? b?.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+        return bMs - aMs;
+      });
+      setWithdrawItems(wSorted);
+
     } catch (e: any) {
       console.error("Manager fetch error:", e);
       setError(`Failed to load pending deposits. ${e?.code ? `[${e.code}] ` : ""}${e?.message || ""}`.trim());
@@ -112,7 +137,7 @@ const Manager = () => {
         // 1. All Reads First
         const reqRef = doc(db, "depositRequests", id);
         const snap = await tx.get(reqRef);
-        
+
         if (!snap.exists()) throw new Error("Request not found.");
         const data = snap.data();
         if (data.status !== "pending") throw new Error("Already processed.");
@@ -121,7 +146,7 @@ const Manager = () => {
         // If approved, we need to read user data too
         let currentBalance = 0;
         let userRef = null;
-        
+
         if (status === "approved") {
           userRef = doc(db, "users", data.userId);
           const userSnap = await tx.get(userRef);
@@ -162,15 +187,15 @@ const Manager = () => {
       await runTransaction(db, async (tx) => {
         const reqRef = doc(db, "verificationRequests", id);
         const snap = await tx.get(reqRef);
-        
+
         if (!snap.exists()) throw new Error("Request not found.");
         const data = snap.data();
-        
+
         tx.update(reqRef, { status, processedAt: serverTimestamp() });
 
         if (status === "approved") {
-           const userRef = doc(db, "users", data.userId);
-           tx.update(userRef, { isVerified: true });
+          const userRef = doc(db, "users", data.userId);
+          tx.update(userRef, { isVerified: true });
         }
       });
 
@@ -178,6 +203,59 @@ const Manager = () => {
     } catch (e: any) {
       console.error("Verification status error:", e);
       setError(e?.message || "Failed to update verification status.");
+    }
+  };
+
+  const handleWithdrawStatus = async (id: string, status: "approved" | "rejected") => {
+    try {
+      let requestData: any = null;
+
+      await runTransaction(db, async (tx) => {
+        const reqRef = doc(db, "withdrawRequests", id);
+        const snap = await tx.get(reqRef);
+
+        if (!snap.exists()) throw new Error("Request not found.");
+        const data = snap.data();
+        if (data.status !== "pending") throw new Error("Already processed.");
+        requestData = data;
+
+        let currentBalance = 0;
+        let userRef = null;
+
+        if (status === "approved") {
+          userRef = doc(db, "users", data.userId);
+          const userSnap = await tx.get(userRef);
+          currentBalance = userSnap.exists() ? Number((userSnap.data() as any).balance || 0) : 0;
+
+          if (currentBalance < data.amount) {
+            throw new Error("User has insufficient balance now.");
+          }
+        }
+
+        tx.update(reqRef, { status, processedAt: serverTimestamp() });
+
+        if (status === "approved" && userRef) {
+          tx.update(userRef, { balance: currentBalance - Number(data.amount) });
+        }
+      });
+
+      if (status === "approved" && requestData?.userId) {
+        await addDoc(collection(db, "transactions"), {
+          userId: requestData.userId,
+          amount: Number(requestData.amount),
+          currency: "RWF",
+          type: "withdraw",
+          source: "manager",
+          requestId: id,
+          note: `Withdrawal to ${requestData.phoneNumber} (Received: RWF ${requestData.netAmount})`,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      setWithdrawItems((prev) => prev.filter((p) => p.id !== id));
+    } catch (e: any) {
+      console.error("Withdraw status error:", e);
+      setError(e?.message || "Failed to update withdraw status.");
     }
   };
 
@@ -316,64 +394,120 @@ const Manager = () => {
         )}
 
         <div className="mt-12 mb-6">
-            <h1 className="text-2xl font-semibold">Verification Requests</h1>
-            <p className="text-zinc-400 text-sm">Review identity verification applications.</p>
+          <h1 className="text-2xl font-semibold">Verification Requests</h1>
+          <p className="text-zinc-400 text-sm">Review identity verification applications.</p>
         </div>
 
         {fetching ? (
-            <div className="flex items-center gap-2 text-zinc-400">
-                <Loader2 className="animate-spin" size={16} />
-                Loading verification requests...
-            </div>
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Loader2 className="animate-spin" size={16} />
+            Loading verification requests...
+          </div>
         ) : verificationItems.length === 0 ? (
-            <div className="glass-noire border border-white/5 rounded-2xl p-6 text-center text-zinc-400">
-                No pending verification requests.
-            </div>
+          <div className="glass-noire border border-white/5 rounded-2xl p-6 text-center text-zinc-400">
+            No pending verification requests.
+          </div>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {verificationItems.map((item) => (
-                    <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="glass-noire border border-white/10 rounded-2xl p-5 space-y-3"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-bold text-white">{item.username}</p>
-                                <p className="text-xs text-zinc-400">{item.fullName}</p>
-                            </div>
-                            <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
-                                {item.followersCount} Followers
-                            </div>
-                        </div>
-                        <div className="text-sm text-zinc-400">
-                            <p>Email: <span className="text-white">{item.email}</span></p>
-                            <p>Submitted: {formattedDate(item.createdAt)}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleVerificationStatus(item.id, "approved")}
-                                className="flex-1 bg-green-500/15 border border-green-500/40 text-green-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-green-500/25 transition-all"
-                            >
-                                <ShieldCheck size={16} /> Verify
-                            </button>
-                            <button
-                                onClick={() => handleVerificationStatus(item.id, "rejected")}
-                                className="flex-1 bg-red-500/15 border border-red-500/40 text-red-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-red-500/25 transition-all"
-                            >
-                                <ShieldX size={16} /> Reject
-                            </button>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {verificationItems.map((item) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-noire border border-white/10 rounded-2xl p-5 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-white">{item.username}</p>
+                    <p className="text-xs text-zinc-400">{item.fullName}</p>
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                    {item.followersCount} Followers
+                  </div>
+                </div>
+                <div className="text-sm text-zinc-400">
+                  <p>Email: <span className="text-white">{item.email}</span></p>
+                  <p>Submitted: {formattedDate(item.createdAt)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleVerificationStatus(item.id, "approved")}
+                    className="flex-1 bg-green-500/15 border border-green-500/40 text-green-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-green-500/25 transition-all"
+                  >
+                    <ShieldCheck size={16} /> Verify
+                  </button>
+                  <button
+                    onClick={() => handleVerificationStatus(item.id, "rejected")}
+                    className="flex-1 bg-red-500/15 border border-red-500/40 text-red-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-red-500/25 transition-all"
+                  >
+                    <ShieldX size={16} /> Reject
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-12 mb-6">
+          <h1 className="text-2xl font-semibold">Withdrawal Requests</h1>
+          <p className="text-zinc-400 text-sm">Review user cash-out requests.</p>
+        </div>
+
+        {fetching ? (
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Loader2 className="animate-spin" size={16} />
+            Loading withdrawal requests...
+          </div>
+        ) : withdrawItems.length === 0 ? (
+          <div className="glass-noire border border-white/5 rounded-2xl p-6 text-center text-zinc-400">
+            No pending withdrawal requests.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {withdrawItems.map((item) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-noire border border-white/10 rounded-2xl p-5 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-white">{item.userName}</p>
+                    <p className="text-xs text-zinc-400">{item.userEmail}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold text-red-400">-{item.amount} RWF</p>
+                    <p className="text-[10px] text-zinc-500">Net: {item.netAmount} RWF (20% fee)</p>
+                  </div>
+                </div>
+                <div className="text-sm text-zinc-400">
+                  <p>Send to phone: <span className="text-white font-mono">{item.phoneNumber}</span></p>
+                  <p>Submitted: {formattedDate(item.createdAt)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleWithdrawStatus(item.id, "approved")}
+                    className="flex-1 bg-green-500/15 border border-green-500/40 text-green-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-green-500/25 transition-all"
+                  >
+                    <ShieldCheck size={16} /> Approve
+                  </button>
+                  <button
+                    onClick={() => handleWithdrawStatus(item.id, "rejected")}
+                    className="flex-1 bg-red-500/15 border border-red-500/40 text-red-200 rounded-xl px-4 py-2 flex items-center justify-center gap-2 hover:bg-red-500/25 transition-all"
+                  >
+                    <ShieldX size={16} /> Reject
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         )}
 
         {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
     );
-  }, [authed, error, fetching, items, password, username]);
+  }, [authed, error, fetching, items, verificationItems, withdrawItems, password, username]);
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden content-shift">

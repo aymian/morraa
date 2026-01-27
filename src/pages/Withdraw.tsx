@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, runTransaction } from "firebase/firestore";
+import { doc, getDoc, runTransaction, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowUpCircle, Loader2 } from "lucide-react";
 import Navbar from "@/components/noire/Navbar";
@@ -13,6 +13,7 @@ const Withdraw = () => {
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [amount, setAmount] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,17 @@ const Withdraw = () => {
     return Number.isFinite(n) ? n : NaN;
   }, [amount]);
 
-  const canSubmit = !loading && !submitting && user && parsedAmount > 0;
+  const fee = useMemo(() => {
+    if (!parsedAmount || isNaN(parsedAmount)) return 0;
+    return parsedAmount * 0.20;
+  }, [parsedAmount]);
+
+  const netAmount = useMemo(() => {
+    if (!parsedAmount || isNaN(parsedAmount)) return 0;
+    return parsedAmount - fee;
+  }, [parsedAmount, fee]);
+
+  const canSubmit = !loading && !submitting && user && parsedAmount > 0 && phoneNumber.trim().length >= 10;
 
   const handleWithdraw = async () => {
     if (!user) return;
@@ -50,19 +61,38 @@ const Withdraw = () => {
       setError("Enter a valid amount.");
       return;
     }
+    if (phoneNumber.trim().length < 10) {
+      setError("Enter a valid phone number.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
     try {
-      await runTransaction(db, async (tx) => {
-        const ref = doc(db, "users", user.uid);
-        const snap = await tx.get(ref);
-        const current = snap.exists() ? Number(snap.data().balance || 0) : 0;
-        if (current < parsedAmount) {
-          throw new Error("Insufficient balance.");
-        }
-        tx.update(ref, { balance: current - parsedAmount });
+      // Check balance first
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) throw new Error("User not found.");
+      const currentBalance = Number(userSnap.data().balance || 0);
+
+      if (currentBalance < parsedAmount) {
+        throw new Error("Insufficient balance.");
+      }
+
+      // Instead of updating balance, we create a withdrawal request
+      await addDoc(collection(db, "withdrawRequests"), {
+        userId: user.uid,
+        userName: userData?.fullName || userData?.username || "Unknown User",
+        userEmail: user.email,
+        amount: parsedAmount,
+        fee: fee,
+        netAmount: netAmount,
+        phoneNumber: phoneNumber,
+        status: "pending",
+        createdAt: serverTimestamp()
       });
+
+      alert("Withdrawal request submitted! Waiting for manager approval.");
       navigate("/wallet");
     } catch (e: any) {
       console.error("Withdraw failed:", e);
@@ -108,20 +138,51 @@ const Withdraw = () => {
             <div className="flex items-center justify-between mb-6">
               <p className="text-zinc-400 text-sm">Available Balance</p>
               <p className="text-white font-semibold">
-                ${userData?.balance?.toFixed?.(2) ?? "0.00"}
+                {userData?.balance ? `RWF ${userData.balance.toLocaleString()}` : "RWF 0"}
               </p>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-zinc-400 text-sm">Amount</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                step="0.01"
-                className="w-full glass-noire border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-lg"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-zinc-400 text-sm">Amount to Withdraw (RWF)</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full glass-noire border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-zinc-400 text-sm">Phone Number to Receive Money</label>
+                <input
+                  type="text"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="e.g. 078XXXXXXX"
+                  className="w-full glass-noire border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-[#FBBF24]/50 transition-colors text-lg"
+                />
+              </div>
+
+              {parsedAmount > 0 && (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Withdrawal Amount:</span>
+                    <span>RWF {parsedAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Processing Fee (20%):</span>
+                    <span className="text-red-400">- RWF {fee.toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-white/10 my-1" />
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-zinc-400">You will receive:</span>
+                    <span className="text-[#FBBF24]">RWF {netAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+
               {error && <p className="text-sm text-red-400">{error}</p>}
             </div>
 
@@ -136,7 +197,7 @@ const Withdraw = () => {
                   Processing…
                 </>
               ) : (
-                "Confirm Withdraw"
+                "Submit Request"
               )}
             </button>
           </div>
