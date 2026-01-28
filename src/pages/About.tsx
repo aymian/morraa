@@ -116,6 +116,33 @@ const About = () => {
                 </div>
             </section>
 
+            {/* CEO Section */}
+            <section className="py-20 px-6">
+                <div className="container mx-auto flex flex-col items-center">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        className="flex flex-col items-center"
+                    >
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-primary/30 p-1 bg-background shadow-2xl">
+                                <img
+                                    src="/assets/images/image.png"
+                                    alt="Ishimwe Yves Ian"
+                                    className="w-full h-full object-cover rounded-full transition-transform duration-700 group-hover:scale-110"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-8 text-center">
+                            <h3 className="text-3xl md:text-4xl font-display font-bold text-gradient-gold">Ishimwe Yves Ian</h3>
+                            <p className="text-sm md:text-base text-muted-foreground uppercase tracking-[0.4em] font-bold mt-2 opacity-60">The CEO of this App</p>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
             {/* Footer Placeholder for visual completeness */}
             <footer className="py-20 border-t border-border/20 text-center">
                 <div className="container mx-auto px-6">

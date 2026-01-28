@@ -15,6 +15,7 @@ import {
     HandCoins,
     LogOut,
     Sparkles,
+    Music2,
     ArrowRight,
     ChevronLeft,
     CheckCircle
@@ -137,6 +138,7 @@ const FloatingSidebar = ({ forceCollapsed = false }: FloatingSidebarProps) => {
         { icon: Home, label: "Home", path: "/" },
         { icon: Compass, label: "Explore", path: "/moods" },
         { icon: MessageCircle, label: "Messages", path: "/messages", hasNotification: unreadCount > 0 },
+        { icon: Music2, label: "Music", path: "/music" },
         { icon: UserIcon, label: "Profile", path: "/profile", isVerified: userData?.isVerified },
     ];
 

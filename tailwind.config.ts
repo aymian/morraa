@@ -123,6 +123,7 @@ export default {
         glow: "glow 3s ease-in-out infinite",
         shimmer: "shimmer 3s linear infinite",
         wave: "wave 1.5s ease-in-out infinite",
+        "spin-slow": "spin 8s linear infinite",
       },
     },
   },

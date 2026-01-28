@@ -155,34 +155,26 @@ const HeroSection = ({ onAuthClick }: HeroSectionProps) => {
             </motion.div>
           ))}
 
-          {/* Impact Subtext & Secondary CTAs */}
+          {/* CEO Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            className="mt-12 flex flex-col items-center"
+            className="mt-20 pt-20 border-t border-white/5 flex flex-col items-center"
           >
-            <p className="text-xl md:text-2xl text-muted-foreground font-display italic mb-10 max-w-xl">
-              "A social network where your voice and growth matter."
-            </p>
-
-            <div className="flex flex-col items-center gap-6">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onAuthClick("signup")}
-                className="px-10 py-4 bg-primary text-primary-foreground font-bold rounded-full shadow-glow-gold transition-all"
-              >
-                Get Started
-              </motion.button>
-
-              <button
-                onClick={() => onAuthClick("login")}
-                className="text-sm font-bold text-muted-foreground hover:text-foreground transition-all flex items-center gap-2 group"
-              >
-                Already have an account? <span className="text-primary group-hover:underline">Log in</span>
-              </button>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 border-primary/30 p-1 bg-background shadow-2xl">
+                <img
+                  src="/assets/images/image.png"
+                  alt="Ishimwe Yves Ian"
+                  className="w-full h-full object-cover rounded-full transition-transform duration-700 group-hover:scale-110"
+                />
+              </div>
+            </div>
+            <div className="mt-8 text-center">
+              <h3 className="text-2xl md:text-3xl font-display font-bold text-gradient-gold">Ishimwe Yves Ian</h3>
+              <p className="text-sm md:text-base text-muted-foreground uppercase tracking-[0.4em] font-bold mt-2 opacity-60">The CEO of this App</p>
             </div>
           </motion.div>
         </div>

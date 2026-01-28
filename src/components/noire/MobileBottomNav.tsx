@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Home, Search, Plus, Play, User, Sparkles, LogIn, MessageSquare, Info, Wallet } from "lucide-react";
+import { Home, Search, Plus, Play, User, Sparkles, LogIn, MessageSquare, Info, Wallet, Music2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -43,7 +43,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Search", path: "#", action: () => setIsSearchOpen(true) },
     { icon: Plus, label: "Create", path: "/create", isAction: true },
-    { icon: Wallet, label: "Wallet", path: "/wallet" },
+    { icon: Music2, label: "Music", path: "/music" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
@@ -62,12 +62,12 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
       className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pb-2 pt-2 px-4 pointer-events-none"
     >
       <div className="pointer-events-auto glass-noire rounded-[2.5rem] px-6 py-4 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center justify-between backdrop-blur-2xl bg-[#0A0A0A]/90">
-        
+
         {user ? (
           // Authenticated State
           authNavItems.map((item) => {
             const active = isActive(item.path);
-            
+
             if (item.isAction) {
               return (
                 <button
@@ -95,11 +95,10 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
                   />
                 )}
                 <item.icon
-                  className={`w-6 h-6 transition-all duration-300 ${
-                    active || (item.label === "Search" && isSearchOpen)
-                      ? "text-[#FBBF24] fill-[#FBBF24]/10 stroke-[2.5]" 
+                  className={`w-6 h-6 transition-all duration-300 ${active || (item.label === "Search" && isSearchOpen)
+                      ? "text-[#FBBF24] fill-[#FBBF24]/10 stroke-[2.5]"
                       : "text-zinc-500 stroke-[1.5]"
-                  }`}
+                    }`}
                 />
               </button>
             );
@@ -117,9 +116,8 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
                     className="relative flex flex-col items-center justify-center transition-all duration-300"
                   >
                     <item.icon
-                      className={`w-6 h-6 transition-all duration-300 ${
-                        active ? "text-[#FBBF24]" : "text-zinc-500"
-                      }`}
+                      className={`w-6 h-6 transition-all duration-300 ${active ? "text-[#FBBF24]" : "text-zinc-500"
+                        }`}
                     />
                   </button>
                 );
@@ -129,7 +127,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
             <div className="w-px h-8 bg-white/10 mx-2" />
 
             <div className="flex items-center gap-3">
-               <motion.button
+              <motion.button
                 onClick={() => handleAuthClick("signup")}
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#FBBF24] text-black rounded-xl font-bold text-xs shadow-glow-gold"
                 whileTap={{ scale: 0.95 }}
@@ -137,7 +135,7 @@ const MobileBottomNav = ({ onAuthClick }: MobileBottomNavProps) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Join</span>
               </motion.button>
-              
+
               <motion.button
                 onClick={() => handleAuthClick("login")}
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-white"

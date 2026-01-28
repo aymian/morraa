@@ -36,6 +36,8 @@ const Deposit = lazy(() => import("./pages/Deposit"));
 const Withdraw = lazy(() => import("./pages/Withdraw"));
 const Manager = lazy(() => import("./pages/Manager"));
 const Refer = lazy(() => import("./pages/Refer"));
+const Music = lazy(() => import("./pages/Music"));
+const SpotifyCallback = lazy(() => import("./pages/SpotifyCallback"));
 import Callback from "./pages/Callback";
 import { CallProvider } from "./components/calling/CallProvider";
 
@@ -60,6 +62,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/callback" element={<Callback />} />
+              <Route path="/spotify-callback" element={<SpotifyCallback />} />
               <Route path="/email-phone" element={<EmailPhoneAuth />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/onboarding" element={<Onboarding />} />
@@ -84,6 +87,7 @@ const App = () => (
                 <Route path="/deposit" element={<Deposit />} />
                 <Route path="/withdraw" element={<Withdraw />} />
                 <Route path="/manager" element={<Manager />} />
+                <Route path="/music" element={<Music />} />
 
                 {/* Identity Routes (must be below specific segment routes) */}
                 <Route path="/:username" element={<UserDetails />} />

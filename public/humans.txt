@@ -1,0 +1,10 @@
+/* TEAM */
+CEO & Lead Developer: Ishimwe Yves Ian
+Contact: ishimweyia@gmail.com
+Location: Rwanda
+
+/* SITE */
+Last update: 2026/01/28
+Language: English
+Software: React, Vite, Firebase, Tailwind CSS
+Design: NOIRE Premium Design System

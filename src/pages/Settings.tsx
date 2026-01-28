@@ -9,9 +9,10 @@ import {
     Share2, AlertTriangle, Download, Trash2, Key,
     Music, Mic2, Cast, ChevronLeft, ToggleLeft, ToggleRight, Calendar
 } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, addDoc, collection, query, getDocs, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { auth, db, storage } from "@/lib/firebase";
+import { onAuthStateChanged, signOut, deleteUser, reauthenticateWithPopup, GoogleAuthProvider, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { doc, getDoc, updateDoc, addDoc, collection, query, getDocs, serverTimestamp, onSnapshot, deleteDoc, writeBatch } from "firebase/firestore";
+import { ref, deleteObject, listAll } from "firebase/storage";
 import Navbar from "@/components/noire/Navbar";
 import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
@@ -29,11 +30,11 @@ const Settings = () => {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
-    
+
     // Navigation State
     const [activeCategory, setActiveCategory] = useState<string | null>("account");
     const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
-    
+
     // Sync balance based on likes
     useSyncBalance(user?.uid, userData?.balance);
 
@@ -131,6 +132,74 @@ const Settings = () => {
         navigate("/login");
     };
 
+    const handleDeleteAccount = async () => {
+        if (!user) return;
+
+        const confirmDelete = window.confirm(
+            "CRITICAL ACTION: This will permanently delete your Morra account, balance, and all associated data. This cannot be undone. Are you absolutely certain?"
+        );
+
+        if (!confirmDelete) return;
+
+        setSaving(true);
+        try {
+            // 1. Storage Cleanup (Optional but good practice)
+            // Note: Thorough cleanup usually requires a backend function, 
+            // but we'll attempt basic Firestore cleanup here.
+
+            const userId = user.uid;
+
+            // 2. Delete User Document and subcollections
+            const batch = writeBatch(db);
+
+            // Delete notifications
+            const notificationsQuery = query(collection(db, "users", userId, "notifications"));
+            const notificationsSnap = await getDocs(notificationsQuery);
+            notificationsSnap.forEach((doc) => batch.delete(doc.ref));
+
+            // Delete followers/following references (simplistic version)
+            // A full deletion would involve finding every doc where this user is mentioned.
+
+            // Delete main user document
+            batch.delete(doc(db, "users", userId));
+
+            // Execute batched Firestore deletions
+            await batch.commit();
+
+            // 3. Delete Firebase Auth User
+            // Note: deleteUser() requires a recent login. 
+            // If it fails, we catch the "requires-recent-login" error.
+            await deleteUser(user);
+
+            toast({
+                title: "Account Terminated",
+                description: "Your digital essence has been wiped from the aura.",
+                className: "bg-red-950 border-red-500 text-white"
+            });
+
+            navigate("/login");
+
+        } catch (error: any) {
+            console.error("Deletion error:", error);
+
+            if (error.code === 'auth/requires-recent-login') {
+                toast({
+                    title: "Security Verification Required",
+                    description: "For your protection, please log out and log back in before deleting your account.",
+                    variant: "destructive"
+                });
+            } else {
+                toast({
+                    title: "Engine Error",
+                    description: "A system error occurred during deletion. Please try again later.",
+                    variant: "destructive"
+                });
+            }
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleRequestVerification = async () => {
         if (!user || !userData) return;
 
@@ -164,8 +233,8 @@ const Settings = () => {
                 createdAt: serverTimestamp()
             });
 
-            toast({ 
-                title: "Request Sent", 
+            toast({
+                title: "Request Sent",
                 description: "Your verification request has been sent to the manager.",
                 className: "bg-[#0A0A0A] border border-[#FBBF24]/30 text-white"
             });
@@ -221,7 +290,7 @@ const Settings = () => {
                     items: [
                         { label: "Request Verification", icon: Check, action: handleRequestVerification },
                         { label: "Change Password", icon: Key, action: () => toast({ title: "Email Sent", description: "Password reset link sent to your email." }) },
-                        { label: "Delete Account", icon: Trash2, danger: true, action: () => toast({ title: "Action Blocked", description: "Please contact support to delete your account.", variant: "destructive" }) }
+                        { label: "Delete Account Permanently", icon: Trash2, danger: true, action: handleDeleteAccount }
                     ]
                 }
             ]
@@ -245,8 +314,8 @@ const Settings = () => {
                     title: "Data & Permissions",
                     type: "actions",
                     items: [
-                        { label: "Blocked Accounts", icon: Shield, action: () => {} },
-                        { label: "Download Your Data", icon: Download, action: () => {} },
+                        { label: "Blocked Accounts", icon: Shield, action: () => { } },
+                        { label: "Download Your Data", icon: Download, action: () => { } },
                     ]
                 }
             ]
@@ -293,8 +362,8 @@ const Settings = () => {
                     title: "Accessibility",
                     type: "actions",
                     items: [
-                        { label: "Captions", icon: FileText, action: () => {} },
-                        { label: "Dark Mode", icon: Moon, action: () => {}, value: "On" },
+                        { label: "Captions", icon: FileText, action: () => { } },
+                        { label: "Dark Mode", icon: Moon, action: () => { }, value: "On" },
                     ]
                 }
             ]
@@ -324,8 +393,8 @@ const Settings = () => {
                     type: "actions",
                     items: [
                         { label: "Refer & Earn", icon: Zap, action: () => navigate('/refer'), value: "Get Paid" },
-                        { label: "Payout Settings", icon: CreditCard, action: () => {} },
-                        { label: "Transaction History", icon: FileText, action: () => {} },
+                        { label: "Payout Settings", icon: CreditCard, action: () => { } },
+                        { label: "Transaction History", icon: FileText, action: () => { } },
                     ]
                 }
             ]
@@ -340,17 +409,17 @@ const Settings = () => {
                     title: "Help",
                     type: "actions",
                     items: [
-                        { label: "Help Center", icon: HelpCircle, action: () => {} },
-                        { label: "Report a Problem", icon: AlertTriangle, action: () => {} },
+                        { label: "Help Center", icon: HelpCircle, action: () => { } },
+                        { label: "Report a Problem", icon: AlertTriangle, action: () => { } },
                     ]
                 },
                 {
                     title: "Legal",
                     type: "actions",
                     items: [
-                        { label: "Terms of Service", icon: FileText, action: () => {} },
-                        { label: "Privacy Policy", icon: Lock, action: () => {} },
-                        { label: "Open Source Libraries", icon: Share2, action: () => {} },
+                        { label: "Terms of Service", icon: FileText, action: () => { } },
+                        { label: "Privacy Policy", icon: Lock, action: () => { } },
+                        { label: "Open Source Libraries", icon: Share2, action: () => { } },
                     ]
                 }
             ]
@@ -366,9 +435,9 @@ const Settings = () => {
 
             <main className="container mx-auto px-4 md:px-6 pt-24 md:pt-32 max-w-7xl h-[calc(100vh-100px)]">
                 <div className="flex h-full gap-8 relative">
-                    
+
                     {/* --- Sidebar / Main Menu --- */}
-                    <motion.aside 
+                    <motion.aside
                         className={`
                             w-full md:w-[350px] lg:w-[400px] flex flex-col h-full overflow-y-auto custom-scrollbar pb-4
                             ${isMobileDetailOpen ? 'hidden md:flex' : 'flex'}
@@ -393,8 +462,8 @@ const Settings = () => {
                                     onClick={() => handleCategoryClick(cat.id)}
                                     className={`
                                         w-full flex items-center gap-4 p-4 rounded-3xl transition-all duration-300 border
-                                        ${activeCategory === cat.id 
-                                            ? "bg-white/5 border-primary/30 shadow-[0_0_30px_rgba(251,191,36,0.1)]" 
+                                        ${activeCategory === cat.id
+                                            ? "bg-white/5 border-primary/30 shadow-[0_0_30px_rgba(251,191,36,0.1)]"
                                             : "bg-transparent border-transparent hover:bg-white/5 hover:border-white/5"}
                                     `}
                                 >
@@ -432,7 +501,7 @@ const Settings = () => {
                     {/* --- Detail View (Desktop & Mobile Slide-over) --- */}
                     <AnimatePresence mode="wait">
                         {(activeCategory || isMobileDetailOpen) && (
-                            <motion.section 
+                            <motion.section
                                 key={activeCategory}
                                 className={`
                                     flex-1 h-full overflow-y-auto custom-scrollbar md:block
@@ -444,10 +513,10 @@ const Settings = () => {
                                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             >
                                 <div className="glass-noire md:border border-white/5 md:rounded-[40px] h-full md:h-auto min-h-full p-6 md:p-10 pb-10">
-                                    
+
                                     {/* Mobile Header */}
                                     <div className="md:hidden flex items-center gap-4 mb-8 pt-4">
-                                        <button 
+                                        <button
                                             onClick={handleBackToMenu}
                                             className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"
                                         >
@@ -542,8 +611,8 @@ const Settings = () => {
                                                                 key={aIdx}
                                                                 onClick={item.action}
                                                                 className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all duration-200 group
-                                                                    ${item.danger 
-                                                                        ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" 
+                                                                    ${item.danger
+                                                                        ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10"
                                                                         : "bg-muted/10 border-white/5 hover:bg-white/5 hover:border-white/10"}
                                                                 `}
                                                             >
