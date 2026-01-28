@@ -13,12 +13,6 @@ import MobileBottomNav from "@/components/noire/MobileBottomNav";
 import FloatingSidebar from "@/components/noire/FloatingSidebar";
 import { toast } from "sonner";
 
-declare global {
-    interface Window {
-        onSpotifyIframeApiReady: (IFrameAPI: any) => void;
-    }
-}
-
 // Optimized Skeleton Component
 const Skeleton = ({ className }: { className: string }) => (
     <div className={`animate-pulse bg-white/5 rounded-2xl ${className}`} />
@@ -50,12 +44,13 @@ const Music = () => {
     }, []);
 
     const loadSpotifyApi = () => {
-        // Define callback before script loading
-        window.onSpotifyIframeApiReady = (IFrameAPI: any) => {
+        // Use casting to avoid declare global which can sometimes trip Rollup AST parsers
+        const win = window as any;
+
+        win.onSpotifyIframeApiReady = (IFrameAPI: any) => {
             const element = document.getElementById('spotify-embed-container');
             if (!element) return;
 
-            // Use minimal visible size to ensure Spotify initializes
             const options = {
                 width: '100%',
                 height: '80px',
@@ -69,10 +64,6 @@ const Music = () => {
                 controller.on('playback_update', (e: any) => {
                     const paused = e.data.isPaused;
                     setIsPlaying(!paused);
-                });
-
-                controller.on('ready', () => {
-                    console.log('Spotify Controller Ready');
                 });
             });
         };
@@ -126,26 +117,19 @@ const Music = () => {
         setShowResults(false);
 
         if (embedController.current && isControllerReady) {
-            // Re-initialize play/pause state for UI
             setIsPlaying(true);
-
-            // Spotify API requires load then play
             embedController.current.loadUri(track.uri);
-
-            // Brief delay to allow iframe to swap URIs before calling play
             setTimeout(() => {
                 embedController.current.play();
             }, 100);
         } else {
-            toast.error("Vibration engine is still initializing. Please wait 2 seconds.");
+            toast.error("Vibration engine is still initializing...");
         }
     };
 
     const togglePlay = () => {
         if (embedController.current && isControllerReady) {
             embedController.current.togglePlay();
-        } else {
-            toast.error("Controller not ready. Refreshing core sync...");
         }
     };
 
@@ -154,7 +138,6 @@ const Music = () => {
             <FloatingSidebar />
             <Navbar />
 
-            {/* Hidden but initialized container - necessary for controller to work */}
             <div className="fixed bottom-0 left-0 opacity-0 pointer-events-none -z-50 w-px h-px overflow-hidden">
                 <div id="spotify-embed-container" />
             </div>
@@ -203,7 +186,9 @@ const Music = () => {
                                             />
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="font-bold truncate text-base group-hover:text-primary transition-colors">{track.name}</h4>
-                                                <p className="text-gray-500 text-xs truncate uppercase tracking-widest font-black opacity-40">{track.artists[0].name}</p>
+                                                <p className="text-gray-500 text-xs truncate uppercase tracking-widest font-black opacity-40">
+                                                    {track.artists?.[0]?.name || "Unknown Artist"}
+                                                </p>
                                             </div>
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                                                 <Play size={14} className="text-primary fill-primary" />
@@ -255,7 +240,9 @@ const Music = () => {
                                         </div>
                                     </div>
                                     <h4 className="font-bold truncate text-sm mb-1">{album.name}</h4>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest">{album.artists[0]?.name}</p>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest">
+                                        {album.artists?.[0]?.name || "Unknown"}
+                                    </p>
                                 </motion.div>
                             ))
                         )}
@@ -281,17 +268,19 @@ const Music = () => {
                                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                                     className="w-64 h-64 rounded-full border-[10px] border-black shadow-2xl overflow-hidden mb-8 ring-1 ring-white/10"
                                 >
-                                    <img src={selectedTrack.album.images[0]?.url} className="w-full h-full object-cover" />
+                                    <img src={selectedTrack.album?.images[0]?.url} className="w-full h-full object-cover" />
                                 </motion.div>
                                 <h2 className="text-2xl font-display font-black mb-2 leading-tight">{selectedTrack.name}</h2>
-                                <p className="text-primary font-bold text-[10px] uppercase tracking-widest opacity-60">{selectedTrack.artists[0].name}</p>
+                                <p className="text-primary font-bold text-[10px] uppercase tracking-widest opacity-60">
+                                    {selectedTrack.artists?.map((a: any) => a.name).join(", ") || "Unknown Artist"}
+                                </p>
                             </div>
 
                             <div className="md:w-3/5 p-10 flex flex-col justify-between">
                                 <div className="flex justify-between items-start">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black tracking-widest text-primary/40 uppercase">AURA SIGNATURE ENGINE</span>
-                                        {!isControllerReady && <span className="text-[8px] text-red-500 font-bold animate-pulse mt-1 uppercase">Warming up synchronization...</span>}
+                                        {!isControllerReady && <span className="text-[8px] text-red-500 font-bold animate-pulse mt-1 uppercase">Warming up sync...</span>}
                                     </div>
                                     <button onClick={() => setSelectedTrack(null)} className="p-2 hover:bg-white/5 rounded-full transition-all text-gray-500 hover:text-white">
                                         <X size={24} />
@@ -315,7 +304,7 @@ const Music = () => {
                                         <motion.button
                                             whileTap={{ scale: 0.9 }}
                                             onClick={togglePlay}
-                                            className="w-20 h-20 bg-primary text-black rounded-full flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                                            className="w-20 h-20 bg-primary text-black rounded-full flex items-center justify-center"
                                         >
                                             {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
                                         </motion.button>
@@ -323,14 +312,12 @@ const Music = () => {
                                     </div>
 
                                     <div className="flex items-center justify-between bg-white/5 p-5 rounded-2xl border border-white/5">
-                                        <div className="flex items-center gap-6">
-                                            <div className="flex items-center gap-3">
-                                                <Volume2 size={18} className="text-white/40" />
-                                                <div className="w-24 h-1 bg-white/10 rounded-full"><div className="w-3/4 h-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" /></div>
-                                            </div>
+                                        <div className="flex items-center gap-3">
+                                            <Volume2 size={18} className="text-white/40" />
+                                            <div className="w-24 h-1 bg-white/10 rounded-full"><div className="w-3/4 h-full bg-primary" /></div>
                                         </div>
                                         <button
-                                            onClick={() => window.open(selectedTrack.external_urls.spotify, '_blank')}
+                                            onClick={() => window.open(selectedTrack.external_urls?.spotify, '_blank')}
                                             className="px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all"
                                         >
                                             View Source
