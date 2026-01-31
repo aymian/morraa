@@ -95,3 +95,29 @@ export const getFallbackPreview = async (trackName: string, artistName: string) 
     }
     return null;
 };
+
+// User-level token (Authorization Code Flow)
+export const exchangeCodeForToken = async (code: string) => {
+    const redirectUri = window.location.origin + '/spotify-callback';
+    
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + btoa(CLIENT_ID + ':' + CLIENT_SECRET)
+        },
+        body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: redirectUri
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Token exchange error details:", errorData);
+        throw new Error('Failed to exchange code for token');
+    }
+
+    return response.json();
+};
